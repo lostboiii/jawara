@@ -6,10 +6,17 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:jawara/main.dart';
 
 void main() {
+  testWidgets('Home shows navigation buttons', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Expect the home screen title and three buttons
+    expect(find.textContaining('Akses Halaman'), findsOneWidget);
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Mutasi Keluarga'), findsOneWidget);
+    expect(find.text('Channel Transfer'), findsOneWidget);
   testWidgets('Home page renders correctly', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
