@@ -126,6 +126,7 @@ class _ActivityLogPageState extends State<ActivityLogPage> {
       builder: (context) => const FilterAktivitasDialog(),
     );
     
+    if (!mounted) return;
     if (result != null) {
       // Handle filter result
       ScaffoldMessenger.of(context).showSnackBar(

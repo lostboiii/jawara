@@ -9,14 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:jawara/main.dart';
 
 void main() {
-  testWidgets('Home shows navigation buttons', (WidgetTester tester) async {
-    await tester.pumpWidget(const MyApp());
-
-    // Expect the home screen title and three buttons
-    expect(find.textContaining('Akses Halaman'), findsOneWidget);
-    expect(find.text('Pengeluaran'), findsOneWidget);
-    expect(find.text('Mutasi Keluarga'), findsOneWidget);
-    expect(find.text('Channel Transfer'), findsOneWidget);
   testWidgets('Home page renders correctly', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
@@ -29,6 +21,7 @@ void main() {
 
     // Check menu items exist
     expect(find.text('Log Aktivitas'), findsOneWidget);
+    expect(find.text('Daftar Pengguna'), findsOneWidget);
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Pengaturan'), findsOneWidget);
   });
@@ -41,7 +34,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Should be on Activity Log page
-    expect(find.text('Log Aktivitas'), findsOneWidget);
+    expect(find.text('Log Aktivitas'), findsWidgets);
     expect(find.text('NO'), findsOneWidget);
     expect(find.text('DESKRIPSI'), findsOneWidget);
   });

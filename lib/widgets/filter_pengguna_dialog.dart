@@ -105,7 +105,7 @@ class _FilterPenggunaDialogState extends State<FilterPenggunaDialog> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 decoration: InputDecoration(
                   hintText: '-- Pilih Status --',
                   hintStyle: TextStyle(color: Colors.grey[400]),

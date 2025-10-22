@@ -129,6 +129,7 @@ class _UserListPageState extends State<UserListPage> {
       builder: (context) => const FilterPenggunaDialog(),
     );
     
+    if (!mounted) return;
     if (result != null) {
       // Handle filter result
       ScaffoldMessenger.of(context).showSnackBar(
