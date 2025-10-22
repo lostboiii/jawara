@@ -5,26 +5,37 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:jawara/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  testWidgets('Home page renders correctly', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Check app bar title
+    expect(find.text('Jawara'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Check welcome text
+    expect(find.text('Selamat Datang'), findsOneWidget);
+    expect(find.text('Pilih menu yang ingin Anda akses'), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Check menu items exist
+    expect(find.text('Log Aktivitas'), findsOneWidget);
+    expect(find.text('Dashboard'), findsOneWidget);
+    expect(find.text('Pengaturan'), findsOneWidget);
+  });
+
+  testWidgets('Navigate to Activity Log page', (WidgetTester tester) async {
+    await tester.pumpWidget(const MyApp());
+
+    // Tap on Log Aktivitas card
+    await tester.tap(find.text('Log Aktivitas'));
+    await tester.pumpAndSettle();
+
+    // Should be on Activity Log page
+    expect(find.text('Log Aktivitas'), findsOneWidget);
+    expect(find.text('NO'), findsOneWidget);
+    expect(find.text('DESKRIPSI'), findsOneWidget);
   });
 }
