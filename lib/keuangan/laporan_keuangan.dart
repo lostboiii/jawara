@@ -123,15 +123,13 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                                     initialDate: DateTime.now(),
                                     firstDate: DateTime(2000),
                                     lastDate: DateTime(2101));
-                                if (pickedDate != null) {
-                                  String formattedDate =
-                                      "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
-                                  setState(() {
-                                    _tanggalMulaiController.text =
-                                        formattedDate;
-                                  });
-                                }
-                              },
+                                String formattedDate =
+                                    "${pickedDate?.day}-${pickedDate?.month}-${pickedDate?.year}";
+                                setState(() {
+                                  _tanggalMulaiController.text =
+                                      formattedDate;
+                                });
+                                                            },
                             ),
                           ],
                         ),
@@ -158,15 +156,13 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                                     initialDate: DateTime.now(),
                                     firstDate: DateTime(2000),
                                     lastDate: DateTime(2101));
-                                if (pickedDate != null) {
-                                  String formattedDate =
-                                      "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
-                                  setState(() {
-                                    _tanggalAkhirController.text =
-                                        formattedDate;
-                                  });
-                                }
-                              },
+                                String formattedDate =
+                                    "${pickedDate?.day}-${pickedDate?.month}-${pickedDate?.year}";
+                                setState(() {
+                                  _tanggalAkhirController.text =
+                                      formattedDate;
+                                });
+                                                            },
                             ),
                           ],
                         ),
@@ -177,7 +173,7 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                   const Text("Jenis Laporan"),
                   const SizedBox(height: 5),
                   DropdownButtonFormField<String>(
-                    value: "Semua",
+                    initialValue: "Semua",
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       isDense: true,

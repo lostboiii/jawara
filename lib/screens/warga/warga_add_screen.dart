@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class WargaAddScreen extends StatefulWidget {
+  const WargaAddScreen({super.key});
+
   @override
   _WargaAddScreenState createState() => _WargaAddScreenState();
 }
@@ -253,7 +255,7 @@ class _WargaAddScreenState extends State<WargaAddScreen> {
         Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
         SizedBox(height: 8),
         DropdownButtonFormField<String>(
-          value: value,
+          initialValue: value,
           decoration: InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
@@ -325,14 +327,12 @@ class _WargaAddScreenState extends State<WargaAddScreen> {
               firstDate: DateTime(1900),
               lastDate: DateTime.now(),
             );
-            if (pickedDate != null) {
-              setState(() {
-                selectedDate = pickedDate;
-                tanggalLahirController.text =
-                    DateFormat('dd/MM/yyyy').format(pickedDate);
-              });
-            }
-          },
+            setState(() {
+              selectedDate = pickedDate;
+              tanggalLahirController.text =
+                  DateFormat('dd/MM/yyyy').format(pickedDate!);
+            });
+                    },
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Tanggal lahir wajib dipilih';
