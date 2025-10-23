@@ -173,7 +173,7 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                   const Text("Jenis Laporan"),
                   const SizedBox(height: 5),
                   DropdownButtonFormField<String>(
-                    value: "Semua",
+                    initialValue: "Semua",
                     decoration: const InputDecoration(
                       border: OutlineInputBorder(),
                       isDense: true,
