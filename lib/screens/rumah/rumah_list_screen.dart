@@ -1,5 +1,6 @@
 // lib/screens/rumah/rumah_list_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class RumahListScreen extends StatefulWidget {
   const RumahListScreen({super.key});
@@ -49,9 +50,13 @@ class _RumahListScreenState extends State<RumahListScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text('Data Rumah', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list),

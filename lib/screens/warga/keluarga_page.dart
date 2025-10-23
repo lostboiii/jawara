@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class KeluargaPage extends StatelessWidget {
   const KeluargaPage({super.key});
@@ -6,7 +7,16 @@ class KeluargaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Data Keluarga")),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        title: const Text("Data Keluarga", style: TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+      ),
       body: ListView(
         children: const [
           ListTile(title: Text("Kepala Keluarga: Budi Santoso")),

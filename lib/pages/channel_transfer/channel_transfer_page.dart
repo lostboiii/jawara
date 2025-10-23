@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'channel_item.dart';
 import 'channel_transfer_detail_page.dart';
 
@@ -205,7 +206,16 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Channel Transfer')),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        title: const Text('Channel Transfer', style: TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

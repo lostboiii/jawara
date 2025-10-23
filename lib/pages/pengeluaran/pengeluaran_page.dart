@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'pengeluaran_detail_page.dart';
 
 class Pengeluaran {
@@ -553,7 +554,16 @@ class _PengeluaranPageState extends State<PengeluaranPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Daftar Pengeluaran')),
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
+        title: const Text('Daftar Pengeluaran', style: TextStyle(fontWeight: FontWeight.w600)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

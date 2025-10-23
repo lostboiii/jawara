@@ -1,5 +1,6 @@
 // lib/screens/rumah/rumah_add_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class RumahAddScreen extends StatefulWidget {
   const RumahAddScreen({super.key});
@@ -27,9 +28,13 @@ class _RumahAddScreenState extends State<RumahAddScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text('Tambah Rumah Baru', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
       ),
       body: Form(
         key: _formKey,

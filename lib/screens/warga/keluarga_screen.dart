@@ -1,5 +1,6 @@
 // lib/screens/warga/keluarga_screen.dart
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class KeluargaScreen extends StatefulWidget {
   const KeluargaScreen({super.key});
@@ -38,9 +39,13 @@ class _KeluargaScreenState extends State<KeluargaScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text('Data Keluarga', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.purple,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
       ),
       body: Column(
         children: [

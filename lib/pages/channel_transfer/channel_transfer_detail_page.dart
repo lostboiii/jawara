@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import 'channel_item.dart';
 
@@ -60,12 +61,20 @@ class _ChannelTransferDetailPageState extends State<ChannelTransferDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           widget.item == null
               ? 'Buat Transfer Channel'
               : 'Edit Transfer Channel',
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

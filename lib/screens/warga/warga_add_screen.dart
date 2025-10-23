@@ -1,6 +1,7 @@
 // lib/screens/warga/warga_add_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 class WargaAddScreen extends StatefulWidget {
   @override
@@ -33,12 +34,16 @@ class _WargaAddScreenState extends State<WargaAddScreen> {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           'Tambah Warga Baru',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blue,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
       ),
       body: Form(
         key: _formKey,

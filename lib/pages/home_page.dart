@@ -15,11 +15,45 @@ class HomePage extends StatelessWidget {
         ),
         backgroundColor: Colors.white,
         elevation: 0.5,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Keluar',
+            onPressed: () {
+              // Show confirmation dialog
+              showDialog(
+                context: context,
+                builder: (BuildContext dialogContext) {
+                  return AlertDialog(
+                    title: const Text('Konfirmasi Keluar'),
+                    content: const Text('Apakah Anda yakin ingin keluar?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(); // Close dialog
+                        },
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(); // Close dialog
+                          context.go('/login'); // Navigate to login
+                        },
+                        child: const Text('Keluar'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Column(
+          child: SingleChildScrollView(
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
@@ -31,65 +65,152 @@ class HomePage extends StatelessWidget {
                   color: Colors.grey[800],
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Pilih menu yang ingin Anda akses',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-              ),
+              // Deskripsi di bawah judul dihilangkan sesuai permintaan
               const SizedBox(height: 32),
 
-              // Menu Cards
-              _buildMenuCard(
-                context,
-                title: 'Log Aktivitas',
-                subtitle: 'Lihat riwayat aktivitas sistem',
-                icon: Icons.history_outlined,
-                color: Colors.indigo,
-                onTap: () => context.go('/activity-log'),
-              ),
-              const SizedBox(height: 16),
-              _buildMenuCard(
-                context,
-                title: 'Daftar Pengguna',
-                subtitle: 'Kelola akun pengguna',
-                icon: Icons.people_outlined,
-                color: Colors.purple,
-                onTap: () => context.go('/user-list'),
-              ),
-              const SizedBox(height: 16),
-              _buildMenuCard(
-                context,
-                title: 'Dashboard',
-                subtitle: 'Ringkasan dan statistik',
-                icon: Icons.dashboard_outlined,
-                color: Colors.blue,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Dashboard akan segera hadir'),
+              // Menu Cards - Row 1
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Log Aktivitas',
+                      subtitle: 'Riwayat aktivitas',
+                      icon: Icons.history_outlined,
+                      color: Colors.indigo,
+                      onTap: () => context.go('/activity-log'),
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Pengguna',
+                      subtitle: 'Kelola akun',
+                      icon: Icons.people_outlined,
+                      color: Colors.purple,
+                      onTap: () => context.go('/user-list'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-              _buildMenuCard(
-                context,
-                title: 'Pengaturan',
-                subtitle: 'Konfigurasi aplikasi',
-                icon: Icons.settings_outlined,
-                color: Colors.teal,
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Pengaturan akan segera hadir'),
+              
+              // Row 2
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Pengeluaran',
+                      subtitle: 'Data pengeluaran',
+                      icon: Icons.payments_outlined,
+                      color: Colors.red,
+                      onTap: () => context.go('/pengeluaran'),
                     ),
-                  );
-                },
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Mutasi Keluarga',
+                      subtitle: 'Perpindahan warga',
+                      icon: Icons.swap_horiz,
+                      color: Colors.orange,
+                      onTap: () => context.go('/mutasi-keluarga'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Row 3
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Channel Transfer',
+                      subtitle: 'Metode pembayaran',
+                      icon: Icons.account_balance_outlined,
+                      color: Colors.teal,
+                      onTap: () => context.go('/channel-transfer'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Penerimaan Warga',
+                      subtitle: 'Permohonan warga baru',
+                      icon: Icons.person_add_outlined,
+                      color: Colors.green,
+                      onTap: () => context.go('/penerimaan'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Row 4
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Data Rumah',
+                      subtitle: 'Kelola data rumah',
+                      icon: Icons.home_outlined,
+                      color: Colors.blue,
+                      onTap: () => context.go('/rumah'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Data Warga',
+                      subtitle: 'Kelola data warga',
+                      icon: Icons.group_outlined,
+                      color: Colors.cyan,
+                      onTap: () => context.go('/warga'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Row 5
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Data Keluarga',
+                      subtitle: 'Informasi keluarga',
+                      icon: Icons.family_restroom_outlined,
+                      color: Colors.pink,
+                      onTap: () => context.go('/keluarga'),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Dashboard',
+                      subtitle: 'Ringkasan data',
+                      icon: Icons.dashboard_outlined,
+                      color: Colors.indigo,
+                      onTap: () {
+                        context.go('/dashboard');
+                      },
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -106,52 +227,43 @@ class HomePage extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: Container
+        (
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
+                color: color.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 32, color: color),
+              child: Icon(icon, size: 28, color: color),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                  ),
-                ],
+            const SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[400]),
           ],
         ),
       ),

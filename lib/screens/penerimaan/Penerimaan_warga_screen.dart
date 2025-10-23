@@ -1,6 +1,7 @@
 // lib/screens/penerimaan/penerimaan_warga_screen.dart
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 
 class PenerimaanWargaScreen extends StatefulWidget {
   const PenerimaanWargaScreen({super.key});
@@ -77,9 +78,13 @@ class _PenerimaanWargaScreenState extends State<PenerimaanWargaScreen>
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/'),
+        ),
         title: Text('Penerimaan Warga', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.orange,
-        elevation: 0,
+        backgroundColor: Colors.white,
+        elevation: 0.5,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
