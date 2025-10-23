@@ -328,7 +328,7 @@ class _WargaAddScreenState extends State<WargaAddScreen> {
             setState(() {
               selectedDate = pickedDate;
               tanggalLahirController.text =
-                  DateFormat('dd/MM/yyyy').format(pickedDate);
+                  DateFormat('dd/MM/yyyy').format(pickedDate!);
             });
                     },
           validator: (value) {

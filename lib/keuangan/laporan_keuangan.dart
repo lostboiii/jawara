@@ -124,7 +124,7 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                                     firstDate: DateTime(2000),
                                     lastDate: DateTime(2101));
                                 String formattedDate =
-                                    "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                                    "${pickedDate?.day}-${pickedDate?.month}-${pickedDate?.year}";
                                 setState(() {
                                   _tanggalMulaiController.text =
                                       formattedDate;
@@ -157,7 +157,7 @@ class _LaporanKeuanganPageState extends State<LaporanKeuanganPage>
                                     firstDate: DateTime(2000),
                                     lastDate: DateTime(2101));
                                 String formattedDate =
-                                    "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                                    "${pickedDate?.day}-${pickedDate?.month}-${pickedDate?.year}";
                                 setState(() {
                                   _tanggalAkhirController.text =
                                       formattedDate;

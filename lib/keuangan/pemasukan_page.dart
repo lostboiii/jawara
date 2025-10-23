@@ -351,7 +351,7 @@ class _PemasukanPageState extends State<PemasukanPage>
                         lastDate: DateTime(2101),
                       );
                       String formattedDate =
-                          "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                          "${pickedDate?.day}-${pickedDate?.month}-${pickedDate?.year}";
                       setState(() {
                         _dateController.text = formattedDate;
                       });
