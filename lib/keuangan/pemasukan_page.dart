@@ -350,14 +350,12 @@ class _PemasukanPageState extends State<PemasukanPage>
                         firstDate: DateTime(2000),
                         lastDate: DateTime(2101),
                       );
-                      if (pickedDate != null) {
-                        String formattedDate =
-                            "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
-                        setState(() {
-                          _dateController.text = formattedDate;
-                        });
-                      }
-                    },
+                      String formattedDate =
+                          "${pickedDate.day}-${pickedDate.month}-${pickedDate.year}";
+                      setState(() {
+                        _dateController.text = formattedDate;
+                      });
+                                        },
                   ),
                   const SizedBox(height: 16),
                   const Text("Kategori pemasukan"),

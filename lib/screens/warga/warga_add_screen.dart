@@ -325,14 +325,12 @@ class _WargaAddScreenState extends State<WargaAddScreen> {
               firstDate: DateTime(1900),
               lastDate: DateTime.now(),
             );
-            if (pickedDate != null) {
-              setState(() {
-                selectedDate = pickedDate;
-                tanggalLahirController.text =
-                    DateFormat('dd/MM/yyyy').format(pickedDate);
-              });
-            }
-          },
+            setState(() {
+              selectedDate = pickedDate;
+              tanggalLahirController.text =
+                  DateFormat('dd/MM/yyyy').format(pickedDate);
+            });
+                    },
           validator: (value) {
             if (value == null || value.isEmpty) {
               return 'Tanggal lahir wajib dipilih';
