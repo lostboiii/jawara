@@ -208,6 +208,70 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 16),
+              
+              // Row 6
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Broadcast Warga',
+                      subtitle: 'Kirim pengumuman',
+                      icon: Icons.campaign_outlined,
+                      color: Colors.deepOrange,
+                      onTap: () {
+                        context.go('/broadcast-warga');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Daftar Event',
+                      subtitle: 'Lihat kegiatan',
+                      icon: Icons.event_outlined,
+                      color: Colors.amber,
+                      onTap: () {
+                        context.go('/event-list');
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              
+              // Row 7
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Buat Broadcast',
+                      subtitle: 'Broadcast baru',
+                      icon: Icons.add_comment_outlined,
+                      color: Colors.deepPurple,
+                      onTap: () {
+                        context.go('/create-broadcast');
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _buildMenuCard(
+                      context,
+                      title: 'Buat Event',
+                      subtitle: 'Kegiatan baru',
+                      icon: Icons.event_note_outlined,
+                      color: Colors.lightGreen,
+                      onTap: () {
+                        context.go('/create-event');
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

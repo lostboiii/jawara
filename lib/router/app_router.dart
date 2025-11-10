@@ -14,6 +14,11 @@ import '../pages/channel_transfer/channel_item.dart';
 import '../pages/auth/login_page.dart';
 import '../pages/auth/register_page.dart';
 import '../pages/dashboard_page.dart';
+import '../pages/broadcast_warga/broadcast_list_page.dart';
+import '../pages/broadcast_warga/create_broadcast_page.dart';
+import '../pages/broadcast_warga/create_event_page.dart';
+import '../pages/event/event_list_page.dart';
+import '../pages/aspirasi/aspirasi_list_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
 import '../screens/penerimaan/Penerimaan_warga_screen.dart';
@@ -46,6 +51,11 @@ class AppRoutes {
   static const keluargaPage = '/keluarga-page';
   static const channelTransferDetail = '/channel-transfer/detail';
   static const dashboard = '/dashboard';
+  static const broadcastWarga = '/broadcast-warga';
+  static const createBroadcast = '/create-broadcast';
+  static const createEvent = '/create-event';
+  static const eventList = '/event-list';
+  static const aspirasiList = '/aspirasi-list';
 }
 
 final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>(
@@ -160,6 +170,31 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.dashboard,
       name: 'dashboard',
       builder: (context, state) => const DashboardPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.broadcastWarga,
+      name: 'broadcast-warga',
+      builder: (context, state) => const BroadcastListPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.createBroadcast,
+      name: 'create-broadcast',
+      builder: (context, state) => const CreateBroadcastPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.createEvent,
+      name: 'create-event',
+      builder: (context, state) => const CreateEventPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.eventList,
+      name: 'event-list',
+      builder: (context, state) => const EventListPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.aspirasiList,
+      name: 'aspirasi-list',
+      builder: (context, state) => const AspirasiListPage(),
     ),
   ],
   errorBuilder: (context, state) => Scaffold(
