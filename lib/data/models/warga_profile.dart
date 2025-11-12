@@ -6,6 +6,9 @@ class WargaProfile {
   final String email;
   final String noHp;
   final String jenisKelamin;
+  final String agama;
+  final String golonganDarah;
+  final String pekerjaan;
   final String? fotoIdentitasUrl;
   final String role;
   final DateTime? createdAt;
@@ -18,6 +21,9 @@ class WargaProfile {
     required this.email,
     required this.noHp,
     required this.jenisKelamin,
+    required this.agama,
+    required this.golonganDarah,
+    required this.pekerjaan,
     this.fotoIdentitasUrl,
     this.role = 'warga',
     this.createdAt,
@@ -33,6 +39,9 @@ class WargaProfile {
       email: json['email'] as String? ?? '',
       noHp: json['no_hp'] as String? ?? '',
       jenisKelamin: json['jenis_kelamin'] as String? ?? '',
+      agama: json['agama'] as String? ?? '',
+      golonganDarah: json['golongan_darah'] as String? ?? '',
+      pekerjaan: json['pekerjaan'] as String? ?? '',
       fotoIdentitasUrl: json['foto_identitas_url'] as String?,
       role: json['role'] as String? ?? 'warga',
       createdAt: json['created_at'] != null
@@ -53,6 +62,9 @@ class WargaProfile {
       'email': email,
       'no_hp': noHp,
       'jenis_kelamin': jenisKelamin,
+      'agama': agama,
+      'golongan_darah': golonganDarah,
+      'pekerjaan': pekerjaan,
       'foto_identitas_url': fotoIdentitasUrl,
       'role': role,
       'created_at': createdAt?.toIso8601String(),
@@ -68,6 +80,9 @@ class WargaProfile {
     String? email,
     String? noHp,
     String? jenisKelamin,
+    String? agama,
+    String? golonganDarah,
+    String? pekerjaan,
     String? fotoIdentitasUrl,
     String? role,
     DateTime? createdAt,
@@ -80,6 +95,9 @@ class WargaProfile {
       email: email ?? this.email,
       noHp: noHp ?? this.noHp,
       jenisKelamin: jenisKelamin ?? this.jenisKelamin,
+      agama: agama ?? this.agama,
+      golonganDarah: golonganDarah ?? this.golonganDarah,
+      pekerjaan: pekerjaan ?? this.pekerjaan,
       fotoIdentitasUrl: fotoIdentitasUrl ?? this.fotoIdentitasUrl,
       role: role ?? this.role,
       createdAt: createdAt ?? this.createdAt,

@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'router/app_router.dart';
 import 'package:jawara/viewmodels/register_viewmodel.dart';
+import 'package:jawara/viewmodels/login_viewmodel.dart';
 import 'package:jawara/core/services/auth_services.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
 
@@ -48,6 +49,11 @@ class MyApp extends StatelessWidget {
           create: (context) => RegisterViewModel(
             authService: context.read<AuthService>(),
             wargaRepository: context.read<WargaRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => LoginViewModel(
+            authService: context.read<AuthService>(),
           ),
         ),
       ],

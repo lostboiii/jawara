@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '/router/app_router.dart';
+import 'package:jawara/viewmodels/login_viewmodel.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -133,20 +135,21 @@ class _LoginPageState extends State<LoginPage> {
                             const SizedBox(height: 18),
                             SizedBox(
                               height: 44,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.indigo[600],
-                                  foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  if (_formKey.currentState!.validate()) {
-                                    context.go(AppRoutes.home);
-                                  }
-                                },
-                                child: const Text('Login'),
+                              child: Consumer<LoginViewModel>(
+                                builder: (context, viewModel, _) => 
+                                  viewModel.isLoading
+                                    ? const Center(child: CircularProgressIndicator())
+                                    : ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.indigo[600],
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                        ),
+                                        onPressed: () => _handleLogin(context),
+                                        child: const Text('Login'),
+                                      ),
                               ),
                             ),
                             const SizedBox(height: 10),
@@ -162,6 +165,22 @@ class _LoginPageState extends State<LoginPage> {
                                 ],
                               ),
                             ),
+                            if (context.watch<LoginViewModel>().hasError)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[50],
+                                    border: Border.all(color: Colors.red[300]!),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    context.read<LoginViewModel>().error ?? '',
+                                    style: TextStyle(color: Colors.red[700]),
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -174,5 +193,27 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleLogin(BuildContext context) async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final viewModel = context.read<LoginViewModel>();
+
+    final success = await viewModel.login(
+      email: _emailCtrl.text.trim(),
+      password: _passCtrl.text.trim(),
+    );
+
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login berhasil')),
+        );
+        context.go(AppRoutes.home);
+      } else {
+        // Error message already shown in UI via Consumer
+      }
+    }
   }
 }

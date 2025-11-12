@@ -22,6 +22,8 @@ dependencies:
   provider: ^6.1.0
 
 dev_dependencies:
+  mockito: ^5.4.4
+  build_runner: ^2.4.6
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

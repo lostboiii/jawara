@@ -12,6 +12,9 @@ abstract class WargaRepository {
     required String email,
     required String noHp,
     required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
     String? fotoIdentitasUrl,
   });
 
@@ -53,6 +56,9 @@ class SupabaseWargaRepository implements WargaRepository {
     required String email,
     required String noHp,
     required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
     String? fotoIdentitasUrl,
   }) async {
     try {
@@ -63,6 +69,9 @@ class SupabaseWargaRepository implements WargaRepository {
         'email': email,
         'no_hp': noHp,
         'jenis_kelamin': jenisKelamin,
+        'agama': agama,
+        'golongan_darah': golonganDarah,
+        'pekerjaan': pekerjaan,
         'foto_identitas_url': fotoIdentitasUrl,
         'role': 'warga',
       };

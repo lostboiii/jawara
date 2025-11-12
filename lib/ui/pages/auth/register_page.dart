@@ -24,8 +24,11 @@ class _RegisterPageState extends State<RegisterPage> {
   final _telpCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  final _pekerjaanCtrl = TextEditingController();
 
   String? _jenisKelamin;
+  String? _agama;
+  String? _golonganDarah;
   File? _fotoIdentitas;
 
   Future<void> pickImage() async {
@@ -48,6 +51,9 @@ class _RegisterPageState extends State<RegisterPage> {
       email: _emailCtrl.text.trim(),
       noHp: _telpCtrl.text.trim(),
       jenisKelamin: _jenisKelamin ?? '',
+      agama: _agama ?? '',
+      golonganDarah: _golonganDarah ?? '',
+      pekerjaan: _pekerjaanCtrl.text.trim(),
       password: _passCtrl.text.trim(),
       confirmPassword: _confirmCtrl.text.trim(),
       fotoIdentitas: _fotoIdentitas,
@@ -77,6 +83,7 @@ class _RegisterPageState extends State<RegisterPage> {
     _telpCtrl.dispose();
     _passCtrl.dispose();
     _confirmCtrl.dispose();
+    _pekerjaanCtrl.dispose();
     super.dispose();
   }
 
@@ -99,7 +106,10 @@ class _RegisterPageState extends State<RegisterPage> {
                   _input("NIK", _nikCtrl),
                   _input("Email", _emailCtrl),
                   _input("No Telepon", _telpCtrl),
+                  _input("Pekerjaan", _pekerjaanCtrl),
                   _jenisKelaminDropdown(),
+                  _agamaDropdown(),
+                  _golonganDarahDropdown(),
                   _password("Password", _passCtrl),
                   _password("Konfirmasi Password", _confirmCtrl,
                       validator: (v) => v == _passCtrl.text ? null : "Password tidak cocok"),
@@ -191,6 +201,54 @@ class _RegisterPageState extends State<RegisterPage> {
         setState(() => _jenisKelamin = value);
       },
       validator: (v) => (v == null || v.isEmpty) ? 'Wajib pilih jenis kelamin' : null,
+    ),
+  );
+
+  Widget _agamaDropdown() => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: DropdownButtonFormField<String>(
+      value: _agama,
+      decoration: InputDecoration(
+        labelText: 'Agama',
+        border: OutlineInputBorder(),
+      ),
+      items: const [
+        DropdownMenuItem(value: 'Islam', child: Text('Islam')),
+        DropdownMenuItem(value: 'Kristen', child: Text('Kristen')),
+        DropdownMenuItem(value: 'Katolik', child: Text('Katolik')),
+        DropdownMenuItem(value: 'Hindu', child: Text('Hindu')),
+        DropdownMenuItem(value: 'Buddha', child: Text('Buddha')),
+        DropdownMenuItem(value: 'Konghucu', child: Text('Konghucu')),
+      ],
+      onChanged: (value) {
+        setState(() => _agama = value);
+      },
+      validator: (v) => (v == null || v.isEmpty) ? 'Wajib pilih agama' : null,
+    ),
+  );
+
+  Widget _golonganDarahDropdown() => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: DropdownButtonFormField<String>(
+      value: _golonganDarah,
+      decoration: InputDecoration(
+        labelText: 'Golongan Darah',
+        border: OutlineInputBorder(),
+      ),
+      items: const [
+        DropdownMenuItem(value: 'O+', child: Text('O+')),
+        DropdownMenuItem(value: 'O-', child: Text('O-')),
+        DropdownMenuItem(value: 'A+', child: Text('A+')),
+        DropdownMenuItem(value: 'A-', child: Text('A-')),
+        DropdownMenuItem(value: 'B+', child: Text('B+')),
+        DropdownMenuItem(value: 'B-', child: Text('B-')),
+        DropdownMenuItem(value: 'AB+', child: Text('AB+')),
+        DropdownMenuItem(value: 'AB-', child: Text('AB-')),
+      ],
+      onChanged: (value) {
+        setState(() => _golonganDarah = value);
+      },
+      validator: (v) => (v == null || v.isEmpty) ? 'Wajib pilih golongan darah' : null,
     ),
   );
 }

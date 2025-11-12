@@ -56,6 +56,9 @@ class RegisterViewModel extends ChangeNotifier {
     required String email,
     required String noHp,
     required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
     required String password,
     required String confirmPassword,
     File? fotoIdentitas,
@@ -80,6 +83,15 @@ class RegisterViewModel extends ChangeNotifier {
       }
       if (jenisKelamin.isEmpty) {
         throw 'Jenis kelamin wajib dipilih';
+      }
+      if (agama.isEmpty) {
+        throw 'Agama wajib dipilih';
+      }
+      if (golonganDarah.isEmpty) {
+        throw 'Golongan darah wajib dipilih';
+      }
+      if (pekerjaan.isEmpty) {
+        throw 'Pekerjaan wajib diisi';
       }
 
       final passwordError = validatePassword(password, confirmPassword);
@@ -127,6 +139,9 @@ class RegisterViewModel extends ChangeNotifier {
         email: email,
         noHp: noHp,
         jenisKelamin: jenisKelamin,
+        agama: agama,
+        golonganDarah: golonganDarah,
+        pekerjaan: pekerjaan,
         fotoIdentitasUrl: fotoUrl,
       );
 
