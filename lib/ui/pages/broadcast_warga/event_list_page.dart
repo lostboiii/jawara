@@ -1,6 +1,6 @@
 // lib/pages/event_list_page.dart
 import 'package:flutter/material.dart';
-import 'package:jawara/widgets/event_list_content.dart';
+import 'package:jawara/ui/widgets/event_list_content.dart';
 
 class EventListPage extends StatefulWidget {
   const EventListPage({super.key});

@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 // Import helper yang berisi ListHeader dan ListPagination
-import 'package:jawara/widgets/list_layout_helpers.dart'; 
+import 'package:jawara/ui/widgets/list_layout_helpers.dart'; 
 
 
 class EventListContent extends StatelessWidget {

@@ -1,33 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../pages/home_page.dart';
-import '../pages/activity_log_page.dart';
-import '../pages/user_list_page.dart';
-import '../pages/pengeluaran/pengeluaran_page.dart';
-import '../pages/pengeluaran/pengeluaran_detail_page.dart';
-import '../pages/mutasi_keluarga/mutasi_keluarga_page.dart';
-import '../pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
-import '../pages/channel_transfer/channel_transfer_page.dart';
-import '../pages/channel_transfer/channel_transfer_detail_page.dart';
-import '../pages/channel_transfer/channel_item.dart';
-import '../pages/auth/login_page.dart';
-import '../pages/auth/register_page.dart';
-import '../pages/dashboard_page.dart';
-import '../pages/broadcast_warga/broadcast_list_page.dart';
-import '../pages/broadcast_warga/create_broadcast_page.dart';
-import '../pages/broadcast_warga/create_event_page.dart';
-import '../pages/event/event_list_page.dart';
-import '../pages/aspirasi/aspirasi_list_page.dart';
+import '../ui/pages/home_page.dart';
+import '../ui/pages/activity_log_page.dart';
+import '../ui/pages/user_list_page.dart';
+import '../ui/pages/pengeluaran/pengeluaran_page.dart';
+import '../ui/pages/pengeluaran/pengeluaran_detail_page.dart';
+import '../ui/pages/mutasi_keluarga/mutasi_keluarga_page.dart';
+import '../ui/pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
+import '../ui/pages/channel_transfer/channel_transfer_page.dart';
+import '../ui/pages/channel_transfer/channel_transfer_detail_page.dart';
+import '../ui/pages/channel_transfer/channel_item.dart';
+import '../ui/pages/auth/login_page.dart';
+import '../ui/pages/auth/register_page.dart';
+import '../ui/pages/dashboard_page.dart';
+import '../ui/pages/broadcast_warga/broadcast_list_page.dart';
+import '../ui/pages/broadcast_warga/create_broadcast_page.dart';
+import '../ui/pages/broadcast_warga/create_event_page.dart';
+import '../ui/pages/event/event_list_page.dart';
+import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
-import '../screens/penerimaan/Penerimaan_warga_screen.dart';
-import '../screens/rumah/rumah_list_screen.dart';
-import '../screens/rumah/rumah_add_screen.dart';
-import '../screens/warga/warga_list_screen.dart';
-import '../screens/warga/warga_add_screen.dart';
-import '../screens/warga/keluarga_screen.dart';
-import '../screens/warga/keluarga_page.dart';
+import '../ui/screens/penerimaan/Penerimaan_warga_screen.dart';
+import '../ui/screens/rumah/rumah_list_screen.dart';
+import '../ui/screens/rumah/rumah_add_screen.dart';
+import '../ui/screens/warga/warga_list_screen.dart';
+import '../ui/screens/warga/warga_add_screen.dart';
+import '../ui/screens/warga/keluarga_screen.dart';
+import '../ui/screens/warga/keluarga_page.dart';
 // (Pengeluaran, MutasiKeluargaItem)
 
 class AppRoutes {

@@ -1,7 +1,7 @@
 // lib/widgets/content/aspirasi_list_content.dart (KODE YANG DIBENAHI)
 import 'package:flutter/material.dart';
 // Ganti import BroadcastListContent dengan ListLayoutHelpers
-import 'package:jawara/widgets/list_layout_helpers.dart'; 
+import 'package:jawara/ui/widgets/list_layout_helpers.dart'; 
 
 class AspirasiListContent extends StatelessWidget {
   const AspirasiListContent({super.key});

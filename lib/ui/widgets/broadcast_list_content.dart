@@ -1,7 +1,7 @@
 // lib/widgets/content/broadcast_list_content.dart (PERUBAHAN DIPERLUKAN)
 import 'package:flutter/material.dart';
 // Import helper baru
-import 'package:jawara/widgets/list_layout_helpers.dart'; 
+import 'package:jawara/ui/widgets/list_layout_helpers.dart'; 
 
 class BroadcastListContent extends StatelessWidget {
   const BroadcastListContent({super.key});
