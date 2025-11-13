@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/warga_profile.dart';
+import '../models/keluarga.dart';
 
 /// Abstract interface untuk Warga Repository
 abstract class WargaRepository {
@@ -9,7 +11,6 @@ abstract class WargaRepository {
     required String userId,
     required String namaLengkap,
     required String nik,
-    required String email,
     required String noHp,
     required String jenisKelamin,
     required String agama,
@@ -38,6 +39,28 @@ abstract class WargaRepository {
 
   /// Get public URL foto
   String getFotoPublicUrl(String filePath);
+
+  /// Check if keluarga exists for user
+  Future<Keluarga?> getKeluargaByKepalakeluargaId(String kepalakeluargaId);
+
+  /// Create keluarga baru
+  Future<Keluarga> createKeluarga({
+    required String kepalakeluargaId,
+    required String nomorKk,
+    String? rumahId,
+  });
+
+  /// Get all keluarga
+  Future<List<Map<String, dynamic>>> getAllKeluarga();
+
+  /// Link warga to existing keluarga
+  Future<void> linkWargaToKeluarga(String wargaId, String keluargaId);
+
+  /// Get all rumah
+  Future<List<Map<String, dynamic>>> getRumahList();
+
+  /// Update rumah status to ditempati
+  Future<void> updateRumahStatusToOccupied(String rumahId);
 }
 
 /// Implementasi Warga Repository menggunakan Supabase
@@ -53,7 +76,6 @@ class SupabaseWargaRepository implements WargaRepository {
     required String userId,
     required String namaLengkap,
     required String nik,
-    required String email,
     required String noHp,
     required String jenisKelamin,
     required String agama,
@@ -66,14 +88,13 @@ class SupabaseWargaRepository implements WargaRepository {
         'id': userId,
         'nama_lengkap': namaLengkap,
         'nik': nik,
-        'email': email,
         'no_hp': noHp,
         'jenis_kelamin': jenisKelamin,
         'agama': agama,
         'golongan_darah': golonganDarah,
         'pekerjaan': pekerjaan,
         'foto_identitas_url': fotoIdentitasUrl,
-        'role': 'warga',
+        'role': 'Warga',
       };
 
       final insertResponse = await client
@@ -184,5 +205,93 @@ class SupabaseWargaRepository implements WargaRepository {
     return client.storage
         .from(_fotoBucket)
         .getPublicUrl(filePath);
+  }
+
+  @override
+  Future<Keluarga?> getKeluargaByKepalakeluargaId(String kepalakeluargaId) async {
+    try {
+      final response = await client
+          .from('keluarga')
+          .select()
+          .eq('kepala_keluarga_id', kepalakeluargaId)
+          .single();
+
+      return Keluarga.fromJson(response);
+    } catch (e) {
+      debugPrint('Error getting keluarga: $e');
+      return null;
+    }
+  }
+
+  @override
+  @override
+  Future<Keluarga> createKeluarga({
+    required String kepalakeluargaId,
+    required String nomorKk,
+    String? rumahId,
+  }) async {
+    try {
+      final response = await client
+          .from('keluarga')
+          .insert({
+            'kepala_keluarga_id': kepalakeluargaId,
+            'nomor_kk': nomorKk,
+            'alamat': rumahId,
+          })
+          .select()
+          .single();
+
+      return Keluarga.fromJson(response);
+    } catch (e) {
+      throw Exception('Gagal menyimpan keluarga: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllKeluarga() async {
+    try {
+      final response = await client
+          .from('keluarga')
+          .select('*, warga_profiles:kepala_keluarga_id(nama_lengkap)')
+          .order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception('Gagal mengambil data keluarga: $e');
+    }
+  }
+
+  @override
+  Future<void> linkWargaToKeluarga(String wargaId, String keluargaId) async {
+    try {
+      // Update warga profile to link to keluarga
+      // Note: This requires a keluarga_id column in warga_profiles table
+      await client.from('warga_profiles').update({'keluarga_id': keluargaId}).eq('id', wargaId);
+    } catch (e) {
+      throw Exception('Gagal menautkan warga ke keluarga: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getRumahList() async {
+    try {
+      final response = await client
+          .from('rumah')
+          .select()
+          .eq('status_rumah', 'kosong');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      throw Exception('Gagal mengambil data rumah: $e');
+    }
+  }
+
+  @override
+  Future<void> updateRumahStatusToOccupied(String rumahId) async {
+    try {
+      await client
+          .from('rumah')
+          .update({'status_rumah': 'ditempati'})
+          .eq('id', rumahId);
+    } catch (e) {
+      throw Exception('Gagal update status rumah: $e');
+    }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
 /// Abstract interface untuk Auth Service
 abstract class AuthService {
@@ -41,15 +42,38 @@ class SupabaseAuthService implements AuthService {
     required String email,
     required String password,
   }) async {
-    try {
-      final response = await client.auth.signUp(
-        email: email,
-        password: password,
-      );
-      return response;
-    } catch (e) {
-      throw 'Gagal sign up: $e';
+    int retries = 3;
+    Duration delay = Duration(seconds: 2);
+    
+    while (retries > 0) {
+      try {
+        final response = await client.auth.signUp(
+          email: email,
+          password: password,
+          data: {
+            'email_verified': true,
+            'skip_email_verification': true,
+          },
+        );
+        return response;
+      } catch (e) {
+        final errorString = e.toString();
+        
+        // If rate limit error, retry with backoff
+        if (errorString.contains('429') || errorString.contains('rate limit') || errorString.contains('over_email_send_rate_limit')) {
+          retries--;
+          if (retries > 0) {
+            await Future.delayed(delay);
+            delay = Duration(seconds: delay.inSeconds * 2); // Exponential backoff
+            continue;
+          }
+        }
+        
+        rethrow;
+      }
     }
+    
+    throw 'Gagal sign up setelah beberapa kali percobaan';
   }
 
   @override

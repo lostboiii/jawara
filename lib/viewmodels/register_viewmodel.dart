@@ -136,7 +136,6 @@ class RegisterViewModel extends ChangeNotifier {
         userId: user.id,
         namaLengkap: namaLengkap,
         nik: nik,
-        email: email,
         noHp: noHp,
         jenisKelamin: jenisKelamin,
         agama: agama,
@@ -153,7 +152,17 @@ class RegisterViewModel extends ChangeNotifier {
       return true;
 
     } catch (e) {
-      _error = e.toString();
+      final errorMessage = e.toString();
+      
+      // Handle rate limit errors
+      if (errorMessage.contains('429') || errorMessage.contains('rate limit') || errorMessage.contains('over_email_send_rate_limit')) {
+        _error = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
+      } else if (errorMessage.contains('email')) {
+        _error = 'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
+      } else {
+        _error = errorMessage;
+      }
+      
       _isLoading = false;
       debugPrint('✗ Register error: $_error');
       notifyListeners();
@@ -167,5 +176,170 @@ class RegisterViewModel extends ChangeNotifier {
     _error = null;
     _currentProfile = null;
     notifyListeners();
+  }
+
+  /// Check if keluarga exists for this user
+  Future<bool> checkKeluargaExists(String userId) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final keluarga = await wargaRepository.getKeluargaByKepalakeluargaId(userId);
+
+      _isLoading = false;
+      notifyListeners();
+
+      return keluarga != null;
+    } catch (e) {
+      _error = 'Gagal memeriksa data keluarga: $e';
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Create keluarga data
+  Future<bool> createKeluarga({
+    required String kepalakeluargaId,
+    required String nomorKk,
+    String? rumahId,
+  }) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      await wargaRepository.createKeluarga(
+        kepalakeluargaId: kepalakeluargaId,
+        nomorKk: nomorKk,
+        rumahId: rumahId,
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Register warga with keluarga (combined single submit)
+  Future<bool> registerWargaWithKeluarga({
+    required String namaLengkap,
+    required String nik,
+    required String email,
+    required String noHp,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String password,
+    required String confirmPassword,
+    File? fotoIdentitas,
+    required String peranKeluarga,
+    required String nomorKk,
+    String? rumahId,
+    String? keluargaId,
+  }) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // First, register warga normally
+      final wargaRegistered = await registerWarga(
+        namaLengkap: namaLengkap,
+        nik: nik,
+        email: email,
+        noHp: noHp,
+        jenisKelamin: jenisKelamin,
+        agama: agama,
+        golonganDarah: golonganDarah,
+        pekerjaan: pekerjaan,
+        password: password,
+        confirmPassword: confirmPassword,
+        fotoIdentitas: fotoIdentitas,
+      );
+
+      if (!wargaRegistered) {
+        return false;
+      }
+
+      final userId = _currentProfile?.id;
+      if (userId == null) throw 'Gagal mendapatkan ID pengguna';
+
+      // Handle keluarga based on peran
+      if (peranKeluarga == 'kepala keluarga') {
+        // Validate rumahId is selected
+        if (rumahId == null || rumahId.isEmpty) {
+          throw 'Alamat/Rumah harus dipilih';
+        }
+
+        // Create new keluarga with this user as kepala keluarga
+        final keluargaCreated = await createKeluarga(
+          kepalakeluargaId: userId,
+          nomorKk: nomorKk,
+          rumahId: rumahId,
+        );
+
+        if (!keluargaCreated) {
+          throw 'Gagal membuat data keluarga';
+        }
+
+        // Update rumah status to ditempati
+        await wargaRepository.updateRumahStatusToOccupied(rumahId);
+      } else {
+        // User is joining existing keluarga
+        if (keluargaId == null || keluargaId.isEmpty) {
+          throw 'Keluarga harus dipilih untuk peran selain kepala keluarga';
+        }
+
+        // Update the warga profile to link to keluarga
+        // For now, we'll need to add this to the repository
+        await wargaRepository.linkWargaToKeluarga(userId, keluargaId);
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      final errorMessage = e.toString();
+      if (errorMessage.contains('429') || errorMessage.contains('rate limit') || errorMessage.contains('over_email_send_rate_limit')) {
+        _error = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
+      } else if (errorMessage.contains('email')) {
+        _error = 'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
+      } else {
+        _error = errorMessage;
+      }
+
+      _isLoading = false;
+      debugPrint('✗ Register with keluarga error: $_error');
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Get list of all keluarga
+  Future<List<Map<String, dynamic>>> getKeluargaList() async {
+    try {
+      return await wargaRepository.getAllKeluarga();
+    } catch (e) {
+      debugPrint('Error fetching keluarga list: $e');
+      return [];
+    }
+  }
+
+  /// Get list of all rumah
+  Future<List<Map<String, dynamic>>> getRumahList() async {
+    try {
+      return await wargaRepository.getRumahList();
+    } catch (e) {
+      debugPrint('Error fetching rumah list: $e');
+      return [];
+    }
   }
 }

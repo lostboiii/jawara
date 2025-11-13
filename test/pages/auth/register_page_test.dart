@@ -6,6 +6,7 @@ import 'package:jawara/viewmodels/register_viewmodel.dart';
 import 'package:jawara/core/services/auth_services.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
 import 'package:jawara/data/models/warga_profile.dart';
+import 'package:jawara/data/models/keluarga.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
@@ -45,7 +46,6 @@ class _FakeWargaRepository implements WargaRepository {
     required String userId,
     required String namaLengkap,
     required String nik,
-    required String email,
     required String noHp,
     required String jenisKelamin,
     required String agama,
@@ -56,14 +56,13 @@ class _FakeWargaRepository implements WargaRepository {
     id: 'test',
     namaLengkap: namaLengkap,
     nik: nik,
-    email: email,
     noHp: noHp,
     jenisKelamin: jenisKelamin,
     agama: agama,
     golonganDarah: golonganDarah,
     pekerjaan: pekerjaan,
     fotoIdentitasUrl: null,
-    role: 'warga',
+    role: 'Warga',
     createdAt: DateTime.now(),
     updatedAt: DateTime.now(),
   );
@@ -88,6 +87,59 @@ class _FakeWargaRepository implements WargaRepository {
 
   @override
   Future<WargaProfile> updateProfile(WargaProfile profile) async => profile;
+
+  @override
+  Future<Keluarga?> getKeluargaByKepalakeluargaId(String kepalakeluargaId) async => null;
+
+  @override
+  Future<Keluarga> createKeluarga({
+    required String kepalakeluargaId,
+    required String nomorKk,
+    String? rumahId,
+  }) async {
+    return Keluarga(
+      id: 'keluarga_123',
+      kepalakeluargaId: kepalakeluargaId,
+      nomorKk: nomorKk,
+      alamat: rumahId ?? 'rumah_default',
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllKeluarga() async {
+    return [
+      {
+        'id': 'keluarga_1',
+        'kepala_keluarga_id': 'warga_1',
+        'nomorKk': '3210123456789001',
+        'alamat': 'rumah_1',
+        'warga_profiles': {
+          'nama_lengkap': 'Budi Santoso',
+        },
+      },
+    ];
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getRumahList() async {
+    return [
+      {
+        'id': 'rumah_1',
+        'alamat': 'Jl. Merdeka No. 1',
+        'status_rumah': 'kosong',
+      },
+    ];
+  }
+
+  @override
+  Future<void> linkWargaToKeluarga(String wargaId, String keluargaId) async {
+    // Mock implementation
+  }
+
+  @override
+  Future<void> updateRumahStatusToOccupied(String rumahId) async {
+    // Mock implementation
+  }
 }
 
 void main() {

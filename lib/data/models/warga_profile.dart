@@ -3,7 +3,6 @@ class WargaProfile {
   final String id;
   final String namaLengkap;
   final String nik;
-  final String email;
   final String noHp;
   final String jenisKelamin;
   final String agama;
@@ -18,14 +17,13 @@ class WargaProfile {
     required this.id,
     required this.namaLengkap,
     required this.nik,
-    required this.email,
     required this.noHp,
     required this.jenisKelamin,
     required this.agama,
     required this.golonganDarah,
     required this.pekerjaan,
     this.fotoIdentitasUrl,
-    this.role = 'warga',
+    this.role = 'Warga',
     this.createdAt,
     this.updatedAt,
   });
@@ -36,14 +34,13 @@ class WargaProfile {
       id: json['id'] as String? ?? '',
       namaLengkap: json['nama_lengkap'] as String? ?? '',
       nik: json['nik'] as String? ?? '',
-      email: json['email'] as String? ?? '',
       noHp: json['no_hp'] as String? ?? '',
       jenisKelamin: json['jenis_kelamin'] as String? ?? '',
       agama: json['agama'] as String? ?? '',
       golonganDarah: json['golongan_darah'] as String? ?? '',
       pekerjaan: json['pekerjaan'] as String? ?? '',
       fotoIdentitasUrl: json['foto_identitas_url'] as String?,
-      role: json['role'] as String? ?? 'warga',
+      role: json['role'] as String? ?? 'Warga',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : null,
@@ -59,7 +56,6 @@ class WargaProfile {
       'id': id,
       'nama_lengkap': namaLengkap,
       'nik': nik,
-      'email': email,
       'no_hp': noHp,
       'jenis_kelamin': jenisKelamin,
       'agama': agama,
@@ -77,7 +73,6 @@ class WargaProfile {
     String? id,
     String? namaLengkap,
     String? nik,
-    String? email,
     String? noHp,
     String? jenisKelamin,
     String? agama,
@@ -92,7 +87,6 @@ class WargaProfile {
       id: id ?? this.id,
       namaLengkap: namaLengkap ?? this.namaLengkap,
       nik: nik ?? this.nik,
-      email: email ?? this.email,
       noHp: noHp ?? this.noHp,
       jenisKelamin: jenisKelamin ?? this.jenisKelamin,
       agama: agama ?? this.agama,
@@ -106,16 +100,15 @@ class WargaProfile {
   }
 
   @override
-  String toString() => 'WargaProfile(id: $id, name: $namaLengkap, email: $email)';
+  String toString() => 'WargaProfile(id: $id, name: $namaLengkap)';
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is WargaProfile &&
           runtimeType == other.runtimeType &&
-          id == other.id &&
-          email == other.email;
+          id == other.id;
 
   @override
-  int get hashCode => id.hashCode ^ email.hashCode;
+  int get hashCode => id.hashCode;
 }
