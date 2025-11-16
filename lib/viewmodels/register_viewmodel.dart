@@ -61,6 +61,7 @@ class RegisterViewModel extends ChangeNotifier {
     required String pekerjaan,
     required String password,
     required String confirmPassword,
+    required String peranKeluarga,
     File? fotoIdentitas,
   }) async {
     try {
@@ -141,6 +142,7 @@ class RegisterViewModel extends ChangeNotifier {
         agama: agama,
         golonganDarah: golonganDarah,
         pekerjaan: pekerjaan,
+        peranKeluarga: peranKeluarga,
         fotoIdentitasUrl: fotoUrl,
       );
 
@@ -262,6 +264,7 @@ class RegisterViewModel extends ChangeNotifier {
         pekerjaan: pekerjaan,
         password: password,
         confirmPassword: confirmPassword,
+        peranKeluarga: peranKeluarga,
         fotoIdentitas: fotoIdentitas,
       );
 
@@ -299,8 +302,15 @@ class RegisterViewModel extends ChangeNotifier {
         }
 
         // Update the warga profile to link to keluarga
-        // For now, we'll need to add this to the repository
-        await wargaRepository.linkWargaToKeluarga(userId, keluargaId);
+        try {
+          await wargaRepository.linkWargaToKeluarga(userId, keluargaId);
+          debugPrint('✓ Warga successfully linked to keluarga');
+        } catch (linkError) {
+          debugPrint('⚠ Error linking warga to keluarga: $linkError');
+          // If linking fails, still consider registration success since warga is created
+          // The linking can be done later through admin panel if needed
+          debugPrint('⚠ Warga registered successfully. Link to keluarga will need manual setup.');
+        }
       }
 
       _isLoading = false;

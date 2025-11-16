@@ -16,6 +16,7 @@ abstract class WargaRepository {
     required String agama,
     required String golonganDarah,
     required String pekerjaan,
+    required String peranKeluarga,
     String? fotoIdentitasUrl,
   });
 
@@ -53,6 +54,9 @@ abstract class WargaRepository {
   /// Get all keluarga
   Future<List<Map<String, dynamic>>> getAllKeluarga();
 
+  /// Get all warga with details
+  Future<List<Map<String, dynamic>>> getAllWarga();
+
   /// Link warga to existing keluarga
   Future<void> linkWargaToKeluarga(String wargaId, String keluargaId);
 
@@ -81,6 +85,7 @@ class SupabaseWargaRepository implements WargaRepository {
     required String agama,
     required String golonganDarah,
     required String pekerjaan,
+    required String peranKeluarga,
     String? fotoIdentitasUrl,
   }) async {
     try {
@@ -93,6 +98,7 @@ class SupabaseWargaRepository implements WargaRepository {
         'agama': agama,
         'golongan_darah': golonganDarah,
         'pekerjaan': pekerjaan,
+        'peran_keluarga': peranKeluarga,
         'foto_identitas_url': fotoIdentitasUrl,
         'role': 'Warga',
       };
@@ -241,7 +247,32 @@ class SupabaseWargaRepository implements WargaRepository {
           .select()
           .single();
 
-      return Keluarga.fromJson(response);
+      final keluarga = Keluarga.fromJson(response);
+      debugPrint('Created keluarga ${keluarga.id} for kepala $kepalakeluargaId');
+
+      try {
+        await client
+            .from('warga_profiles')
+            .update({'keluarga_id': keluarga.id})
+            .eq('id', kepalakeluargaId);
+        debugPrint('Linked kepala keluarga $kepalakeluargaId to keluarga ${keluarga.id}');
+      } catch (e) {
+        debugPrint('Failed to link kepala keluarga $kepalakeluargaId: $e');
+      }
+
+      if (rumahId != null && rumahId.isNotEmpty) {
+        try {
+          await client.from('riwayat_penghuni').insert({
+            'alamat_id': rumahId,
+            'keluarga_id': keluarga.id,
+          });
+          debugPrint('Logged riwayat penghuni for keluarga ${keluarga.id} at rumah $rumahId');
+        } catch (e) {
+          debugPrint('Failed to log riwayat penghuni for keluarga ${keluarga.id}: $e');
+        }
+      }
+
+      return keluarga;
     } catch (e) {
       throw Exception('Gagal menyimpan keluarga: $e');
     }
@@ -252,21 +283,58 @@ class SupabaseWargaRepository implements WargaRepository {
     try {
       final response = await client
           .from('keluarga')
-          .select('*, warga_profiles:kepala_keluarga_id(nama_lengkap)')
+          .select()
           .order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      
+      final keluargaList = List<Map<String, dynamic>>.from(response);
+      
+      // Fetch nama kepala keluarga untuk setiap keluarga
+      for (var keluarga in keluargaList) {
+        if (keluarga['kepala_keluarga_id'] != null) {
+          try {
+            final wargaResponse = await client
+                .from('warga_profiles')
+                .select('nama_lengkap')
+                .eq('id', keluarga['kepala_keluarga_id'])
+                .single();
+            keluarga['warga_profiles'] = wargaResponse;
+          } catch (e) {
+            debugPrint('Gagal fetch nama kepala keluarga: $e');
+            keluarga['warga_profiles'] = {'nama_lengkap': 'Nama tidak diketahui'};
+          }
+        }
+      }
+      
+      debugPrint('getAllKeluarga result: $keluargaList');
+      return keluargaList;
     } catch (e) {
+      debugPrint('Gagal mengambil data keluarga: $e');
       throw Exception('Gagal mengambil data keluarga: $e');
     }
   }
 
   @override
+  @override
   Future<void> linkWargaToKeluarga(String wargaId, String keluargaId) async {
     try {
+      debugPrint('Linking warga $wargaId to keluarga $keluargaId');
+      
       // Update warga profile to link to keluarga
-      // Note: This requires a keluarga_id column in warga_profiles table
-      await client.from('warga_profiles').update({'keluarga_id': keluargaId}).eq('id', wargaId);
+      final result = await client
+          .from('warga_profiles')
+          .update({'keluarga_id': keluargaId})
+          .eq('id', wargaId);
+      
+      debugPrint('Successfully linked warga to keluarga. Result: $result');
     } catch (e) {
+      final errorMsg = e.toString();
+      debugPrint('Error linking warga to keluarga: $errorMsg');
+      
+      // Check if it's a column not found error
+      if (errorMsg.contains('keluarga_id') && errorMsg.contains('column')) {
+        throw Exception('Database belum ter-setup. Kolom keluarga_id tidak ditemukan di tabel warga_profiles. Hubungi administrator.');
+      }
+      
       throw Exception('Gagal menautkan warga ke keluarga: $e');
     }
   }
@@ -292,6 +360,54 @@ class SupabaseWargaRepository implements WargaRepository {
           .eq('id', rumahId);
     } catch (e) {
       throw Exception('Gagal update status rumah: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllWarga() async {
+    try {
+      final response = await client
+          .from('warga_profiles')
+          .select('''
+            id,
+            nama_lengkap,
+            nik,
+            email,
+            nomor_telepon,
+            jenis_kelamin,
+            agama,
+            golongan_darah,
+            pekerjaan,
+            peran_keluarga,
+            keluarga:keluarga_id(
+              id,
+              nomor_kk,
+              kepala_keluarga_id,
+              alamat,
+              kepala:warga_profiles!keluarga(nama_lengkap)
+            )
+          ''');
+      
+      return response.map((item) {
+        final keluargaData = item['keluarga'] is List ? (item['keluarga'] as List).first : item['keluarga'];
+        return {
+          'id': item['id'],
+          'nama_lengkap': item['nama_lengkap'],
+          'nik': item['nik'],
+          'email': item['email'],
+          'nomor_telepon': item['nomor_telepon'],
+          'jenis_kelamin': item['jenis_kelamin'],
+          'agama': item['agama'],
+          'golongan_darah': item['golongan_darah'],
+          'pekerjaan': item['pekerjaan'],
+          'peran_keluarga': item['peran_keluarga'],
+          'nomor_kk': keluargaData?['nomor_kk'],
+          'keluarga_nama': keluargaData?['kepala']?['nama_lengkap'],
+          'alamat_rumah': keluargaData?['alamat'],
+        };
+      }).toList();
+    } catch (e) {
+      throw Exception('Gagal mengambil data warga: $e');
     }
   }
 }

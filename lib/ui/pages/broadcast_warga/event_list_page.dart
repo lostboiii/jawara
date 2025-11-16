@@ -10,16 +10,6 @@ class EventListPage extends StatefulWidget {
 }
 
 class _EventListPageState extends State<EventListPage> {
-  // Menjaga item sidebar yang relevan tetap terpilih
-  String _selectedMenuItem = 'Kegiatan - Daftar';
-
-  void _onMenuItemSelected(String item) {
-    setState(() {
-      _selectedMenuItem = item;
-      // Di sini Anda bisa menambahkan logika GoRouter.go() untuk navigasi penuh
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

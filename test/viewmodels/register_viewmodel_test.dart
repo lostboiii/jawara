@@ -52,6 +52,7 @@ class _MinimalFakeWargaRepository implements WargaRepository {
     required String agama,
     required String golonganDarah,
     required String pekerjaan,
+    required String peranKeluarga,
     String? fotoIdentitasUrl,
   }) async => WargaProfile(
     id: 'test',
@@ -145,6 +146,11 @@ class _MinimalFakeWargaRepository implements WargaRepository {
   @override
   Future<void> updateRumahStatusToOccupied(String rumahId) async {
     // Mock implementation - do nothing
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllWarga() async {
+    return [];
   }
 }
 

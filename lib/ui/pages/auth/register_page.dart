@@ -265,7 +265,7 @@ class _RegisterPageState extends State<RegisterPage> {
                                           final namaKepalakeluarga = (wargaProfiles is Map)
                                               ? wargaProfiles['nama_lengkap'] ?? 'Nama tidak diketahui'
                                               : 'Nama tidak diketahui';
-                                          final nomorKk = keluarga['nomorKk'] as String? ?? '';
+                                          final nomorKk = keluarga['nomor_kk'] as String? ?? '';
                                           return DropdownMenuItem<String>(
                                             value: keluarga['id'] as String,
                                             child: Text('KK $nomorKk - $namaKepalakeluarga'),
