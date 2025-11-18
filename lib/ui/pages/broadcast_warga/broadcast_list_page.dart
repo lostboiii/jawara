@@ -1,73 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-class BroadcastListPage extends StatefulWidget {
+import '../../../data/models/broadcast_model.dart';
+import '../../../viewmodels/broadcast_viewmodel.dart';
+
+class BroadcastListPage extends StatelessWidget {
   const BroadcastListPage({super.key});
 
   @override
-  State<BroadcastListPage> createState() => _BroadcastListPageState();
-}
-
-class _BroadcastListPageState extends State<BroadcastListPage> {
-  final List<BroadcastItem> _broadcasts = [
-    BroadcastItem(
-      id: 1,
-      judul: 'Pengumuman Iuran Bulan November',
-      kategori: 'Keuangan',
-      tanggal: DateTime(2025, 10, 20),
-      penerima: 'Semua Warga',
-      status: 'Terkirim',
-      isi: 'Pengumuman pembayaran iuran RT bulan November 2025.',
-    ),
-    BroadcastItem(
-      id: 2,
-      judul: 'Kerja Bakti Minggu Depan',
-      kategori: 'Kegiatan',
-      tanggal: DateTime(2025, 10, 18),
-      penerima: 'Kepala Keluarga',
-      status: 'Terkirim',
-      isi: 'Akan diadakan kerja bakti pada hari Minggu, 27 Oktober 2025.',
-    ),
-    BroadcastItem(
-      id: 3,
-      judul: 'Rapat RT Bulanan',
-      kategori: 'Rapat',
-      tanggal: DateTime(2025, 10, 15),
-      penerima: 'Semua Warga',
-      status: 'Terkirim',
-      isi: 'Rapat RT akan diadakan pada tanggal 25 Oktober 2025 pukul 19.00 WIB.',
-    ),
-    BroadcastItem(
-      id: 4,
-      judul: 'Pemberitahuan Pemadaman Listrik',
-      kategori: 'Pengumuman',
-      tanggal: DateTime(2025, 10, 12),
-      penerima: 'Semua Warga',
-      status: 'Terkirim',
-      isi: 'Akan ada pemadaman listrik pada tanggal 15 Oktober dari jam 08.00-12.00.',
-    ),
-    BroadcastItem(
-      id: 5,
-      judul: 'Arisan RT Bulan Oktober',
-      kategori: 'Kegiatan',
-      tanggal: DateTime(2025, 10, 10),
-      penerima: 'Peserta Arisan',
-      status: 'Terkirim',
-      isi: 'Arisan RT bulan Oktober akan dilaksanakan pada tanggal 21 Oktober 2025.',
-    ),
-    BroadcastItem(
-      id: 6,
-      judul: 'Posyandu Balita',
-      kategori: 'Kesehatan',
-      tanggal: DateTime(2025, 10, 8),
-      penerima: 'Ibu-Ibu',
-      status: 'Terkirim',
-      isi: 'Posyandu balita akan dilaksanakan pada tanggal 23 Oktober 2025.',
-    ),
-  ];
-
-  @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<BroadcastViewModel>();
+    final items = viewModel.items;
+    final now = DateTime.now();
+    final monthCount = items
+        .where(
+          (item) => item.createdAt != null &&
+              item.createdAt!.month == now.month &&
+              item.createdAt!.year == now.year,
+        )
+        .length;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -75,7 +29,10 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/'),
         ),
-        title: const Text('Broadcast Warga', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Broadcast Warga',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
         actions: [
@@ -95,9 +52,7 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
                 ),
               ),
               tooltip: 'Buat Broadcast Baru',
-              onPressed: () {
-                context.go('/create-broadcast');
-              },
+              onPressed: () => context.go('/create-broadcast'),
             ),
           ),
         ],
@@ -108,43 +63,108 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Stats
               Row(
                 children: [
                   Expanded(
                     child: _buildStatCard(
-                      'Total Broadcast',
-                      _broadcasts.length.toString(),
-                      Icons.campaign,
-                      Colors.blue,
+                      label: 'Total Broadcast',
+                      value: '${items.length}',
+                      icon: Icons.campaign,
+                      color: Colors.blue,
                     ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      'Bulan Ini',
-                      _broadcasts.where((b) => b.tanggal.month == DateTime.now().month).length.toString(),
-                      Icons.calendar_today,
-                      Colors.green,
+                      label: 'Bulan Ini',
+                      value: '$monthCount',
+                      icon: Icons.calendar_today,
+                      color: Colors.green,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
-
-              // Grid View
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.85,
+              if (viewModel.errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Material(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          Icon(Icons.error_outline, color: Colors.red[700], size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              viewModel.errorMessage!,
+                              style: TextStyle(color: Colors.red[700], fontSize: 13),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  itemCount: _broadcasts.length,
-                  itemBuilder: (context, index) {
-                    return _buildBroadcastCard(_broadcasts[index]);
-                  },
+                ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: viewModel.loadBroadcasts,
+                  child: items.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height * 0.3,
+                              child: Center(
+                                child: viewModel.isLoading
+                                    ? const CircularProgressIndicator()
+                                    : Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.mark_email_unread_outlined,
+                                            size: 48,
+                                            color: Colors.indigo[200],
+                                          ),
+                                          const SizedBox(height: 12),
+                                          const Text(
+                                            'Belum ada broadcast',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Tarik ke bawah untuk menyegarkan data.',
+                                            style: TextStyle(color: Colors.grey[600]),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : GridView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 0.85,
+                          ),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) {
+                            final broadcast = items[index];
+                            return _BroadcastCard(
+                              broadcast: broadcast,
+                              onTap: () => _showBroadcastDetail(context, broadcast),
+                              onDelete: () => _confirmDelete(context, broadcast),
+                            );
+                          },
+                        ),
                 ),
               ),
             ],
@@ -154,7 +174,12 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -207,168 +232,57 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
     );
   }
 
-  Widget _buildBroadcastCard(BroadcastItem broadcast) {
-    final categoryColor = _getCategoryColor(broadcast.kategori);
-    
-    return InkWell(
-      onTap: () {
-        _showBroadcastDetail(broadcast);
+  Future<void> _confirmDelete(BuildContext context, BroadcastModel broadcast) async {
+    final viewModel = context.read<BroadcastViewModel>();
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Hapus broadcast?'),
+          content: Text(
+            'Broadcast "${broadcast.judulBroadcast}" akan dihapus secara permanen.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red[600]),
+              child: const Text('Hapus'),
+            ),
+          ],
+        );
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with category badge
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: categoryColor.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(12),
-                  topRight: Radius.circular(12),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: categoryColor,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      broadcast.kategori,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green[600],
-                    size: 16,
-                  ),
-                ],
-              ),
-            ),
-            
-            // Content
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      broadcast.judul,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      broadcast.isi,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const Spacer(),
-                    Divider(color: Colors.grey[200], height: 16),
-                    Row(
-                      children: [
-                        Icon(Icons.people_outline, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            broadcast.penerima,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatDate(broadcast.tanggal),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
-  }
 
-  Color _getCategoryColor(String kategori) {
-    switch (kategori.toLowerCase()) {
-      case 'keuangan':
-        return Colors.green;
-      case 'kegiatan':
-        return Colors.blue;
-      case 'rapat':
-        return Colors.purple;
-      case 'pengumuman':
-        return Colors.orange;
-      case 'kesehatan':
-        return Colors.red;
-      default:
-        return Colors.grey;
+    if (shouldDelete != true) return;
+
+    try {
+      await viewModel.deleteBroadcast(broadcast.id);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Broadcast dihapus')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menghapus broadcast: $e')),
+      );
     }
   }
 
-  String _formatDate(DateTime date) {
-    final months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Oct', 'Nov', 'Des'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  void _showBroadcastDetail(BroadcastItem broadcast) {
-    showModalBottomSheet(
+  void _showBroadcastDetail(BuildContext context, BroadcastModel broadcast) {
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
+        final createdAt = broadcast.createdAt ?? DateTime.now();
+        final updatedAt = broadcast.updatedAt;
         return DraggableScrollableSheet(
           initialChildSize: 0.7,
           minChildSize: 0.5,
@@ -392,118 +306,76 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _getCategoryColor(broadcast.kategori),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          broadcast.kategori,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.green[600], size: 16),
-                            const SizedBox(width: 4),
-                            Text(
-                              broadcast.status,
-                              style: TextStyle(
-                                color: Colors.green[600],
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  
-                  const SizedBox(height: 16),
                   Text(
-                    broadcast.judul,
+                    broadcast.judulBroadcast,
                     style: const TextStyle(
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  
-                  _buildDetailRow(Icons.people, 'Penerima', broadcast.penerima),
-                  const SizedBox(height: 12),
-                  _buildDetailRow(Icons.calendar_today, 'Tanggal', _formatDate(broadcast.tanggal)),
-                  
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(Icons.schedule, size: 16, color: Colors.grey[600]),
+                      const SizedBox(width: 6),
+                      Text(
+                        _formatDate(createdAt),
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ],
+                  ),
+                  if (updatedAt != null) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.edit_calendar, size: 16, color: Colors.grey[600]),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Diperbarui ${_formatDate(updatedAt)}',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 20),
-                  const Divider(),
-                  const SizedBox(height: 20),
-                  
                   const Text(
-                    'Isi Pesan',
+                    'Isi Broadcast',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
-                    broadcast.isi,
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.grey[700],
-                      height: 1.5,
+                    broadcast.isiBroadcast,
+                    style: const TextStyle(fontSize: 15, height: 1.5),
+                  ),
+                  if ((broadcast.fotoBroadcast ?? '').isNotEmpty ||
+                      (broadcast.dokumenBroadcast ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Lampiran',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 30),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          icon: const Icon(Icons.close),
-                          label: const Text('Tutup'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
+                    const SizedBox(height: 8),
+                    if ((broadcast.fotoBroadcast ?? '').isNotEmpty)
+                      ListTile(
+                        leading: const Icon(Icons.photo_library_outlined),
+                        title: const Text('Foto broadcast'),
+                        subtitle: Text(broadcast.fotoBroadcast!),
+                        dense: true,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Fitur kirim ulang akan segera hadir')),
-                            );
-                          },
-                          icon: const Icon(Icons.send),
-                          label: const Text('Kirim Ulang'),
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Colors.indigo[600],
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
+                    if ((broadcast.dokumenBroadcast ?? '').isNotEmpty)
+                      ListTile(
+                        leading: const Icon(Icons.picture_as_pdf_outlined),
+                        title: const Text('Dokumen broadcast'),
+                        subtitle: Text(broadcast.dokumenBroadcast!),
+                        dense: true,
                       ),
-                    ],
-                  ),
+                  ],
                 ],
               ),
             );
@@ -513,52 +385,131 @@ class _BroadcastListPageState extends State<BroadcastListPage> {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.grey[600]),
-        const SizedBox(width: 12),
-        Column(
+  String _formatDate(DateTime date) {
+    return DateFormat('d MMM yyyy • HH:mm', 'id_ID').format(date);
+  }
+}
+
+class _BroadcastCard extends StatelessWidget {
+  const _BroadcastCard({
+    required this.broadcast,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  final BroadcastModel broadcast;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAttachment = (broadcast.fotoBroadcast ?? '').isNotEmpty ||
+        (broadcast.dokumenBroadcast ?? '').isNotEmpty;
+    final createdAt = broadcast.createdAt;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      broadcast.judulBroadcast,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'delete') {
+                        onDelete();
+                      }
+                    },
+                    itemBuilder: (context) {
+                      return const [
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Text('Hapus'),
+                        ),
+                      ];
+                    },
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
+            const Divider(height: 1),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      broadcast.isiBroadcast,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey[600],
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    if (hasAttachment)
+                      Row(
+                        children: [
+                          Icon(Icons.attachment, size: 14, color: Colors.grey[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Lampiran',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.schedule, size: 14, color: Colors.grey[600]),
+                        const SizedBox(width: 4),
+                        Text(
+                          createdAt != null
+                              ? DateFormat('d MMM', 'id_ID').format(createdAt)
+                              : '-',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
-}
-
-class BroadcastItem {
-  final int id;
-  final String judul;
-  final String kategori;
-  final DateTime tanggal;
-  final String penerima;
-  final String status;
-  final String isi;
-
-  BroadcastItem({
-    required this.id,
-    required this.judul,
-    required this.kategori,
-    required this.tanggal,
-    required this.penerima,
-    required this.status,
-    required this.isi,
-  });
 }

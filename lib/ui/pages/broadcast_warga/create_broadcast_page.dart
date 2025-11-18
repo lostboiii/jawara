@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+
+import '../../../viewmodels/broadcast_viewmodel.dart';
 
 class CreateBroadcastPage extends StatefulWidget {
   const CreateBroadcastPage({super.key});
@@ -22,6 +25,9 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
 
   @override
   Widget build(BuildContext context) {
+    final broadcastViewModel = context.watch<BroadcastViewModel>();
+    final isLoading = broadcastViewModel.isLoading;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -105,32 +111,59 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
                   children: [
                     Expanded(
                       child: FilledButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // Handle submit
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Broadcast berhasil dikirim'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                            context.go('/broadcast-warga');
-                          }
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () async {
+                                if (!_formKey.currentState!.validate()) {
+                                  return;
+                                }
+
+                                try {
+                                  await broadcastViewModel.addBroadcast(
+                                    judul: _judulController.text.trim(),
+                                    isi: _isiController.text.trim(),
+                                  );
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Broadcast berhasil disimpan'),
+                                    ),
+                                  );
+                                  context.go('/broadcast-warga');
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Gagal menyimpan broadcast: $e'),
+                                    ),
+                                  );
+                                }
+                              },
                         style: FilledButton.styleFrom(
                           backgroundColor: Colors.indigo[600],
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text('Submit', style: TextStyle(fontSize: 16)),
+                        child: isLoading
+                            ? const SizedBox(
+                                height: 18,
+                                width: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text('Submit', style: TextStyle(fontSize: 16)),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {
-                          _judulController.clear();
-                          _isiController.clear();
-                        },
+                        onPressed: isLoading
+                            ? null
+                            : () {
+                                _judulController.clear();
+                                _isiController.clear();
+                              },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../router/app_router.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -141,11 +143,11 @@ class HomePage extends StatelessWidget {
                   Expanded(
                     child: _buildMenuCard(
                       context,
-                      title: 'Penerimaan Warga',
-                      subtitle: 'Permohonan warga baru',
-                      icon: Icons.person_add_outlined,
+                      title: 'Daftar Pemasukan',
+                      subtitle: 'Catatan pemasukan kas',
+                      icon: Icons.trending_up_outlined,
                       color: Colors.green,
-                      onTap: () => context.go('/penerimaan'),
+                      onTap: () => context.go(AppRoutes.pemasukan),
                     ),
                   ),
                 ],
@@ -229,12 +231,12 @@ class HomePage extends StatelessWidget {
                   Expanded(
                     child: _buildMenuCard(
                       context,
-                      title: 'Daftar Event',
+                      title: 'Daftar Kegiatan',
                       subtitle: 'Lihat kegiatan',
                       icon: Icons.event_outlined,
                       color: Colors.amber,
                       onTap: () {
-                        context.go('/event-list');
+                        context.go('/kegiatan');
                       },
                     ),
                   ),
@@ -261,12 +263,12 @@ class HomePage extends StatelessWidget {
                   Expanded(
                     child: _buildMenuCard(
                       context,
-                      title: 'Buat Event',
+                      title: 'Buat Kegiatan',
                       subtitle: 'Kegiatan baru',
                       icon: Icons.event_note_outlined,
                       color: Colors.lightGreen,
                       onTap: () {
-                        context.go('/create-event');
+                        context.go('/kegiatan/create');
                       },
                     ),
                   ),

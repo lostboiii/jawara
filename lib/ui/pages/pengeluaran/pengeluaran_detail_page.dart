@@ -2,23 +2,61 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-import 'pengeluaran_page.dart' show Pengeluaran; // reuse model
+import '../../../data/models/pengeluaran_model.dart';
 
 class PengeluaranDetailPage extends StatelessWidget {
-  final Pengeluaran item;
+  final PengeluaranModel item;
   const PengeluaranDetailPage({super.key, required this.item});
 
   String _formatDate(DateTime date) =>
       DateFormat('d MMMM y', 'id_ID').format(date);
-
-  String _formatDateTime(DateTime dateTime) =>
-      DateFormat('d MMM y HH:mm', 'id_ID').format(dateTime);
 
   String _formatCurrency(double value) => NumberFormat.currency(
     locale: 'id_ID',
     symbol: 'Rp ',
     decimalDigits: 2,
   ).format(value);
+
+  static const Map<String, String> _kategoriLabels = {
+    'Operasional': 'Operasional',
+    'Kegiatan Sosial': 'Kegiatan Sosial',
+    'Pemeliharaan Fasilitas': 'Pemeliharaan Fasilitas',
+    'Pembangunan': 'Pembangunan',
+    'Kegiatan Warga': 'Kegiatan Warga',
+    'Keamanan dan Kebersihan': 'Keamanan dan Kebersihan',
+    'Lain-lain': 'Lain-lain',
+  };
+
+  static const Map<String, String> _legacyKategoriMap = {
+    'operasional rt/rw': 'Operasional',
+    'operasional_rt_rw': 'Operasional',
+    'operasional': 'Operasional',
+    'kegiatan warga': 'Kegiatan Warga',
+    'kegiatan_warga': 'Kegiatan Warga',
+    'kegiatan sosial': 'Kegiatan Sosial',
+    'pemeliharaan fasilitas': 'Pemeliharaan Fasilitas',
+    'pemeliharaan_fasilitas': 'Pemeliharaan Fasilitas',
+    'pembangunan': 'Pembangunan',
+    'keamanan': 'Keamanan dan Kebersihan',
+    'keamanan dan kebersihan': 'Keamanan dan Kebersihan',
+    'lainnya': 'Lain-lain',
+    'lain lain': 'Lain-lain',
+    'lain-lain': 'Lain-lain',
+  };
+
+  String _resolveKategoriValue(String value) {
+    final trimmed = value.trim();
+    if (_kategoriLabels.containsKey(trimmed)) return trimmed;
+    final lower = trimmed.toLowerCase();
+    final legacyMatch = _legacyKategoriMap[lower];
+    if (legacyMatch != null) return legacyMatch;
+    return trimmed;
+  }
+
+  String _kategoriLabel(String value) {
+    final resolved = _resolveKategoriValue(value);
+    return _kategoriLabels[resolved] ?? resolved;
+  }
 
   Widget _kv(
     BuildContext context,
@@ -47,7 +85,7 @@ class PengeluaranDetailPage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.pop(),
         ),
         title: const Text('Detail Pengeluaran', style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
@@ -64,31 +102,22 @@ class PengeluaranDetailPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
 
-              _kv(context, 'Nama Pengeluaran', item.nama),
-              _kv(context, 'Kategori', item.jenis),
-              _kv(context, 'Tanggal Transaksi', _formatDate(item.tanggal)),
+              _kv(context, 'Nama Pengeluaran', item.namaPengeluaran),
+              _kv(context, 'Kategori', _kategoriLabel(item.kategoriPengeluaran)),
+              _kv(context, 'Tanggal Transaksi', _formatDate(item.tanggalPengeluaran)),
               _kv(
                 context,
                 'Nominal',
-                _formatCurrency(item.nominal),
+                _formatCurrency(item.jumlah),
                 valueColor: Colors.red[700],
               ),
-              if (item.verifiedAt != null)
-                _kv(
-                  context,
-                  'Tanggal Terverifikasi',
-                  _formatDateTime(item.verifiedAt!),
-                ),
-              if (item.verifier != null)
-                _kv(context, 'Verifikator', item.verifier!),
 
               const SizedBox(height: 12),
-              if (item.buktiPath != null)
+              if (item.buktiPengeluaran != null && item.buktiPengeluaran!.isNotEmpty)
                 OutlinedButton.icon(
                   onPressed: () {
-                    // Untuk demo: hanya menampilkan snackbar path
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Bukti: ${item.buktiPath}')),
+                      SnackBar(content: Text('Bukti: ${item.buktiPengeluaran}')),
                     );
                   },
                   icon: const Icon(Icons.insert_drive_file_outlined),

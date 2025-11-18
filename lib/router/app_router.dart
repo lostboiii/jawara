@@ -6,28 +6,30 @@ import '../ui/pages/activity_log_page.dart';
 import '../ui/pages/user_list_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_detail_page.dart';
+import '../ui/pages/pemasukan/pemasukan_page.dart';
+import '../ui/pages/pemasukan/pemasukan_detail_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_detail_page.dart';
-import '../ui/pages/channel_transfer/channel_item.dart';
 import '../ui/pages/auth/login_page.dart';
 import '../ui/pages/auth/register_page.dart';
 import '../ui/pages/dashboard_page.dart';
 import '../ui/pages/broadcast_warga/broadcast_list_page.dart';
 import '../ui/pages/broadcast_warga/create_broadcast_page.dart';
-import '../ui/pages/broadcast_warga/create_event_page.dart';
-import '../ui/pages/event/event_list_page.dart';
+import '../ui/pages/kegiatan/create_kegiatan_page.dart';
+import '../ui/pages/kegiatan/kegiatan_list_page.dart';
 import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
-import '../ui/screens/penerimaan/Penerimaan_warga_screen.dart';
 import '../ui/screens/rumah/rumah_list_screen.dart';
 import '../ui/screens/rumah/rumah_add_screen.dart';
 import '../ui/screens/warga/warga_list_screen.dart';
 import '../ui/screens/warga/warga_add_screen.dart';
 import '../ui/screens/warga/keluarga_screen.dart';
 import '../ui/screens/warga/keluarga_page.dart';
+import '../data/models/pengeluaran_model.dart';
+import '../data/models/metode_pembayaran_model.dart';
 // (Pengeluaran, MutasiKeluargaItem)
 
 class AppRoutes {
@@ -38,11 +40,12 @@ class AppRoutes {
   static const userList = '/user-list';
   static const pengeluaran = '/pengeluaran';
   static const pengeluaranDetail = '/pengeluaran/detail';
+  static const pemasukan = '/pemasukan';
+  static const pemasukanDetail = '/pemasukan/detail';
   static const mutasiKeluarga = '/mutasi-keluarga';
   static const mutasiKeluargaDetail = '/mutasi-keluarga/detail';
   static const channelTransfer = '/channel-transfer';
   // Screens module routes
-  static const penerimaan = '/penerimaan';
   static const rumahList = '/rumah';
   static const rumahAdd = '/rumah/add';
   static const wargaList = '/warga';
@@ -53,8 +56,8 @@ class AppRoutes {
   static const dashboard = '/dashboard';
   static const broadcastWarga = '/broadcast-warga';
   static const createBroadcast = '/create-broadcast';
-  static const createEvent = '/create-event';
-  static const eventList = '/event-list';
+  static const kegiatan = '/kegiatan';
+  static const createKegiatan = '/kegiatan/create';
   static const aspirasiList = '/aspirasi-list';
 }
 
@@ -100,8 +103,21 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.pengeluaranDetail,
       name: 'pengeluaran-detail',
       builder: (context, state) {
-        final item = state.extra as Pengeluaran;
+        final item = state.extra as PengeluaranModel;
         return PengeluaranDetailPage(item: item);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.pemasukan,
+      name: 'pemasukan',
+      builder: (context, state) => const PemasukanPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.pemasukanDetail,
+      name: 'pemasukan-detail',
+      builder: (context, state) {
+        final item = state.extra as Pemasukan;
+        return PemasukanDetailPage(item: item);
       },
     ),
     GoRoute(
@@ -126,16 +142,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.channelTransferDetail,
       name: 'channel-transfer-detail',
       builder: (context, state) {
-        final item = state.extra as ChannelItem?; // nullable for create flow
+        final item = state.extra as MetodePembayaranModel?;
         return ChannelTransferDetailPage(item: item);
       },
     ),
     // --- Screens module routes ---
-    GoRoute(
-      path: AppRoutes.penerimaan,
-      name: 'penerimaan',
-      builder: (context, state) => const PenerimaanWargaScreen(),
-    ),
     GoRoute(
       path: AppRoutes.rumahList,
       name: 'rumah-list',
@@ -182,14 +193,24 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const CreateBroadcastPage(),
     ),
     GoRoute(
-      path: AppRoutes.createEvent,
-      name: 'create-event',
-      builder: (context, state) => const CreateEventPage(),
+      path: AppRoutes.kegiatan,
+      name: 'kegiatan',
+      builder: (context, state) => const KegiatanListPage(),
     ),
     GoRoute(
-      path: AppRoutes.eventList,
-      name: 'event-list',
-      builder: (context, state) => const EventListPage(),
+      path: AppRoutes.createKegiatan,
+      name: 'create-kegiatan',
+      builder: (context, state) => const CreateKegiatanPage(),
+    ),
+    GoRoute(
+      path: '/event-list',
+      name: 'event-list-legacy',
+      builder: (context, state) => const KegiatanListPage(),
+    ),
+    GoRoute(
+      path: '/create-event',
+      name: 'create-event-legacy',
+      builder: (context, state) => const CreateKegiatanPage(),
     ),
     GoRoute(
       path: AppRoutes.aspirasiList,
