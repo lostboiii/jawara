@@ -8,6 +8,14 @@ import 'package:jawara/viewmodels/register_viewmodel.dart';
 import 'package:jawara/viewmodels/login_viewmodel.dart';
 import 'package:jawara/core/services/auth_services.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
+import 'package:jawara/data/repositories/pengeluaran_repository.dart';
+import 'package:jawara/viewmodels/pengeluaran_viewmodel.dart';
+import 'package:jawara/data/repositories/metode_pembayaran_repository.dart';
+import 'package:jawara/viewmodels/metode_pembayaran_viewmodel.dart';
+import 'package:jawara/data/repositories/broadcast_repository.dart';
+import 'package:jawara/viewmodels/broadcast_viewmodel.dart';
+import 'package:jawara/data/repositories/kegiatan_repository.dart';
+import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,6 +53,19 @@ class MyApp extends StatelessWidget {
         Provider<WargaRepository>(
           create: (_) => SupabaseWargaRepository(client: supabaseClient),
         ),
+        Provider<PengeluaranRepository>(
+          create: (_) => SupabasePengeluaranRepository(client: supabaseClient),
+        ),
+        Provider<MetodePembayaranRepository>(
+          create: (_) =>
+              SupabaseMetodePembayaranRepository(client: supabaseClient),
+        ),
+        Provider<BroadcastRepository>(
+          create: (_) => SupabaseBroadcastRepository(client: supabaseClient),
+        ),
+        Provider<KegiatanRepository>(
+          create: (_) => SupabaseKegiatanRepository(client: supabaseClient),
+        ),
         ChangeNotifierProvider(
           create: (context) => RegisterViewModel(
             authService: context.read<AuthService>(),
@@ -55,6 +76,26 @@ class MyApp extends StatelessWidget {
           create: (context) => LoginViewModel(
             authService: context.read<AuthService>(),
           ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => PengeluaranViewModel(
+            repository: context.read<PengeluaranRepository>(),
+          )..loadPengeluaran(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => MetodePembayaranViewModel(
+            repository: context.read<MetodePembayaranRepository>(),
+          )..loadMetodePembayaran(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => BroadcastViewModel(
+            repository: context.read<BroadcastRepository>(),
+          )..loadBroadcasts(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => KegiatanViewModel(
+            repository: context.read<KegiatanRepository>(),
+          )..loadKegiatan(),
         ),
       ],
       child: MaterialApp.router(
