@@ -1,337 +1,427 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-import '../../router/app_router.dart';
-
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xff5067e9);
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text(
-          'Jawara',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Keluar',
-            onPressed: () {
-              // Show confirmation dialog
-              showDialog(
-                context: context,
-                builder: (BuildContext dialogContext) {
-                  return AlertDialog(
-                    title: const Text('Konfirmasi Keluar'),
-                    content: const Text('Apakah Anda yakin ingin keluar?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(); // Close dialog
-                        },
-                        child: const Text('Batal'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop(); // Close dialog
-                          context.go('/login'); // Navigate to login
-                        },
-                        child: const Text('Keluar'),
+      backgroundColor: const Color(0xfff5f7ff),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Halo, Necha!',
+                    style: GoogleFonts.inter(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: primaryColor,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/images/wallet-icon.png',
+                      width: 50,
+                      height: 50,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Icon(
+                          Icons.account_balance_wallet,
+                          size: 50,
+                          color: Color(0xff5067e9),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              
+              // Statistics Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      title: 'Pemasukan',
+                      value: '50',
+                      unit: 'juta',
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      title: 'Pengeluaran',
+                      value: '152',
+                      unit: 'ribu',
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      title: 'Transaksi',
+                      value: '7',
+                      unit: 'kali',
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Lihat Statistik Button
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: OutlinedButton(
+                  onPressed: () => context.go('/dashboard'),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: primaryColor, width: 2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.pie_chart, color: primaryColor),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Lihat Statistik',
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: primaryColor,
+                        ),
                       ),
                     ],
-                  );
-                },
-              );
-            },
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: SingleChildScrollView(
-            child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 20),
-              // Welcome text
-              Text(
-                'Selamat Datang',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  ),
                 ),
               ),
-              // Deskripsi di bawah judul dihilangkan sesuai permintaan
               const SizedBox(height: 32),
-
-              // Menu Cards - Row 1
-              Row(
+              
+              // Menu Grid
+              GridView.count(
+                crossAxisCount: 4,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                mainAxisSpacing: 20,
+                crossAxisSpacing: 16,
                 children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Log Aktivitas',
-                      subtitle: 'Riwayat aktivitas',
-                      icon: Icons.history_outlined,
-                      color: Colors.indigo,
-                      onTap: () => context.go('/activity-log'),
-                    ),
+                  _buildMenuIcon(
+                    icon: Icons.category,
+                    label: 'Kategori\nIuran',
+                    onTap: () {},
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Pengguna',
-                      subtitle: 'Kelola akun',
-                      icon: Icons.people_outlined,
-                      color: Colors.purple,
-                      onTap: () => context.go('/user-list'),
-                    ),
+                  _buildMenuIcon(
+                    icon: Icons.account_balance_wallet,
+                    label: 'Tagih Iuran',
+                    onTap: () {},
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.receipt_long,
+                    label: 'Tagihan',
+                    onTap: () {},
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.download,
+                    label: 'Pemasukan Lain',
+                    onTap: () {},
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.add_circle,
+                    label: 'Tambah\nPemasukan',
+                    onTap: () {},
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.arrow_circle_up,
+                    label: 'Daftar\nPengeluaran',
+                    onTap: () => context.go('/pengeluaran'),
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.add_circle,
+                    label: 'Tambah\nPengeluaran',
+                    onTap: () {},
+                  ),
+                  _buildMenuIcon(
+                    icon: Icons.more_horiz,
+                    label: 'Daftar Channel',
+                    onTap: () => context.go('/channel-transfer'),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
               
-              // Row 2
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Pengeluaran',
-                      subtitle: 'Data pengeluaran',
-                      icon: Icons.payments_outlined,
-                      color: Colors.red,
-                      onTap: () => context.go('/pengeluaran'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Mutasi Keluarga',
-                      subtitle: 'Perpindahan warga',
-                      icon: Icons.swap_horiz,
-                      color: Colors.orange,
-                      onTap: () => context.go('/mutasi-keluarga'),
-                    ),
-                  ),
-                ],
+              // Riwayat Transaksi
+              Text(
+                'Riwayat Transaksi',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
               ),
               const SizedBox(height: 16),
               
-              // Row 3
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Channel Transfer',
-                      subtitle: 'Metode pembayaran',
-                      icon: Icons.account_balance_outlined,
-                      color: Colors.teal,
-                      onTap: () => context.go('/channel-transfer'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Daftar Pemasukan',
-                      subtitle: 'Catatan pemasukan kas',
-                      icon: Icons.trending_up_outlined,
-                      color: Colors.green,
-                      onTap: () => context.go(AppRoutes.pemasukan),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Row 4
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Data Rumah',
-                      subtitle: 'Kelola data rumah',
-                      icon: Icons.home_outlined,
-                      color: Colors.blue,
-                      onTap: () => context.go('/rumah'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Data Warga',
-                      subtitle: 'Kelola data warga',
-                      icon: Icons.group_outlined,
-                      color: Colors.cyan,
-                      onTap: () => context.go('/warga'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Row 5
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Data Keluarga',
-                      subtitle: 'Informasi keluarga',
-                      icon: Icons.family_restroom_outlined,
-                      color: Colors.pink,
-                      onTap: () => context.go('/keluarga'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Dashboard',
-                      subtitle: 'Ringkasan data',
-                      icon: Icons.dashboard_outlined,
-                      color: Colors.indigo,
-                      onTap: () {
-                        context.go('/dashboard');
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Row 6
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Broadcast Warga',
-                      subtitle: 'Kirim pengumuman',
-                      icon: Icons.campaign_outlined,
-                      color: Colors.deepOrange,
-                      onTap: () {
-                        context.go('/broadcast-warga');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Daftar Kegiatan',
-                      subtitle: 'Lihat kegiatan',
-                      icon: Icons.event_outlined,
-                      color: Colors.amber,
-                      onTap: () {
-                        context.go('/kegiatan');
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Row 7
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Buat Broadcast',
-                      subtitle: 'Broadcast baru',
-                      icon: Icons.add_comment_outlined,
-                      color: Colors.deepPurple,
-                      onTap: () {
-                        context.go('/create-broadcast');
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildMenuCard(
-                      context,
-                      title: 'Buat Kegiatan',
-                      subtitle: 'Kegiatan baru',
-                      icon: Icons.event_note_outlined,
-                      color: Colors.lightGreen,
-                      onTap: () {
-                        context.go('/kegiatan/create');
-                      },
-                    ),
-                  ),
-                ],
+              // Transaction List
+              _buildTransactionItem(
+                title: 'Dafa',
+                subtitle: 'Pemeliharaan Fasilitas',
+                amount: 'Rp 10.000',
               ),
             ],
           ),
         ),
-        ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: (index) {
+          setState(() => _selectedIndex = index);
+          switch (index) {
+            case 0:
+              // Already on home
+              break;
+            case 1:
+              context.go('/channel-transfer');
+              break;
+            case 2:
+              context.go('/user-list');
+              break;
+            case 3:
+              context.go('/dashboard');
+              break;
+            case 4:
+              // Profile/Settings
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Keluar'),
+                  content: const Text('Apakah Anda yakin ingin keluar?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.go('/login');
+                      },
+                      child: const Text('Keluar'),
+                    ),
+                  ],
+                ),
+              );
+              break;
+          }
+        },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
+          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'Wallet'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Warga'),
+          BottomNavigationBarItem(icon: Icon(Icons.show_chart), label: 'Statistik'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profil'),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuCard(
-    BuildContext context, {
+  Widget _buildStatCard({
     required String title,
-    required String subtitle,
-    required IconData icon,
+    required String value,
+    required String unit,
     required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  unit,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: color,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuIcon({
+    required IconData icon,
+    required String label,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container
-        (
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xff5067e9),
+              borderRadius: BorderRadius.circular(16),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 28, color: color),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+              height: 1.2,
             ),
-            const SizedBox(height: 12),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem({
+    required String title,
+    required String subtitle,
+    required String amount,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: const Color(0xff5067e9).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
             ),
-          ],
-        ),
+            child: const Icon(
+              Icons.add_circle,
+              color: Color(0xff5067e9),
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -25,7 +25,8 @@ Future<void> main() async {
   try {
     await Supabase.initialize(
       url: 'https://fbyriwzdgdihwqxvbzmy.supabase.co',
-      anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZieXJpd3pkZ2RpaHdxeHZiem15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NDk2MTgsImV4cCI6MjA3ODMyNTYxOH0.ZcTM8gFTsCfKMm1qDlo5aHRphtuH6Y9UhFWBHu2nuvA',
+      anonKey:
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZieXJpd3pkZ2RpaHdxeHZiem15Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3NDk2MTgsImV4cCI6MjA3ODMyNTYxOH0.ZcTM8gFTsCfKMm1qDlo5aHRphtuH6Y9UhFWBHu2nuvA',
     );
     debugPrint('✓ Supabase initialized');
   } catch (e) {
@@ -44,7 +45,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final supabaseClient = Supabase.instance.client;
-    
+
     return MultiProvider(
       providers: [
         Provider<AuthService>(
@@ -98,19 +99,46 @@ class MyApp extends StatelessWidget {
           )..loadKegiatan(),
         ),
       ],
-      child: MaterialApp.router(
-        title: 'Jawara',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        ),
-        routerConfig: appRouter,
-        locale: const Locale('id', 'ID'),
-        supportedLocales: const [Locale('id', 'ID'), Locale('en', '')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
+      child: Builder(
+        builder: (context) {
+          return WillPopScope(
+            onWillPop: () async {
+              // Tampilkan dialog konfirmasi keluar aplikasi
+              final shouldPop = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Keluar Aplikasi'),
+                  content: const Text('Apakah Anda yakin ingin keluar?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Batal'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Keluar'),
+                    ),
+                  ],
+                ),
+              );
+              return shouldPop ?? false;
+            },
+            child: MaterialApp.router(
+              title: 'Jawara',
+              theme: ThemeData(
+                colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+              ),
+              routerConfig: appRouter,
+              locale: const Locale('id', 'ID'),
+              supportedLocales: const [Locale('id', 'ID'), Locale('en', '')],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+            ),
+          );
+        },
       ),
     );
   }
