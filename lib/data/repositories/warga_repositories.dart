@@ -170,10 +170,7 @@ class SupabaseWargaRepository implements WargaRepository {
   @override
   Future<void> deleteProfile(String userId) async {
     try {
-      await client
-          .from('warga_profiles')
-          .delete()
-          .eq('id', userId);
+      await client.from('warga_profiles').delete().eq('id', userId);
     } catch (e) {
       throw 'Gagal delete profile: $e';
     }
@@ -188,9 +185,7 @@ class SupabaseWargaRepository implements WargaRepository {
       final filePath = '$_fotoFolder/$userId';
 
       // Upload file directly
-      await client.storage
-          .from(_fotoBucket)
-          .upload(
+      await client.storage.from(_fotoBucket).upload(
             filePath,
             fotoFile,
             fileOptions: const FileOptions(
@@ -208,13 +203,12 @@ class SupabaseWargaRepository implements WargaRepository {
 
   @override
   String getFotoPublicUrl(String filePath) {
-    return client.storage
-        .from(_fotoBucket)
-        .getPublicUrl(filePath);
+    return client.storage.from(_fotoBucket).getPublicUrl(filePath);
   }
 
   @override
-  Future<Keluarga?> getKeluargaByKepalakeluargaId(String kepalakeluargaId) async {
+  Future<Keluarga?> getKeluargaByKepalakeluargaId(
+      String kepalakeluargaId) async {
     try {
       final response = await client
           .from('keluarga')
@@ -248,14 +242,15 @@ class SupabaseWargaRepository implements WargaRepository {
           .single();
 
       final keluarga = Keluarga.fromJson(response);
-      debugPrint('Created keluarga ${keluarga.id} for kepala $kepalakeluargaId');
+      debugPrint(
+          'Created keluarga ${keluarga.id} for kepala $kepalakeluargaId');
 
       try {
         await client
             .from('warga_profiles')
-            .update({'keluarga_id': keluarga.id})
-            .eq('id', kepalakeluargaId);
-        debugPrint('Linked kepala keluarga $kepalakeluargaId to keluarga ${keluarga.id}');
+            .update({'keluarga_id': keluarga.id}).eq('id', kepalakeluargaId);
+        debugPrint(
+            'Linked kepala keluarga $kepalakeluargaId to keluarga ${keluarga.id}');
       } catch (e) {
         debugPrint('Failed to link kepala keluarga $kepalakeluargaId: $e');
       }
@@ -266,9 +261,11 @@ class SupabaseWargaRepository implements WargaRepository {
             'alamat_id': rumahId,
             'keluarga_id': keluarga.id,
           });
-          debugPrint('Logged riwayat penghuni for keluarga ${keluarga.id} at rumah $rumahId');
+          debugPrint(
+              'Logged riwayat penghuni for keluarga ${keluarga.id} at rumah $rumahId');
         } catch (e) {
-          debugPrint('Failed to log riwayat penghuni for keluarga ${keluarga.id}: $e');
+          debugPrint(
+              'Failed to log riwayat penghuni for keluarga ${keluarga.id}: $e');
         }
       }
 
@@ -285,9 +282,9 @@ class SupabaseWargaRepository implements WargaRepository {
           .from('keluarga')
           .select()
           .order('created_at', ascending: false);
-      
+
       final keluargaList = List<Map<String, dynamic>>.from(response);
-      
+
       // Fetch nama kepala keluarga untuk setiap keluarga
       for (var keluarga in keluargaList) {
         if (keluarga['kepala_keluarga_id'] != null) {
@@ -300,11 +297,13 @@ class SupabaseWargaRepository implements WargaRepository {
             keluarga['warga_profiles'] = wargaResponse;
           } catch (e) {
             debugPrint('Gagal fetch nama kepala keluarga: $e');
-            keluarga['warga_profiles'] = {'nama_lengkap': 'Nama tidak diketahui'};
+            keluarga['warga_profiles'] = {
+              'nama_lengkap': 'Nama tidak diketahui'
+            };
           }
         }
       }
-      
+
       debugPrint('getAllKeluarga result: $keluargaList');
       return keluargaList;
     } catch (e) {
@@ -318,33 +317,31 @@ class SupabaseWargaRepository implements WargaRepository {
   Future<void> linkWargaToKeluarga(String wargaId, String keluargaId) async {
     try {
       debugPrint('Linking warga $wargaId to keluarga $keluargaId');
-      
+
       // Update warga profile to link to keluarga
       final result = await client
           .from('warga_profiles')
-          .update({'keluarga_id': keluargaId})
-          .eq('id', wargaId);
-      
+          .update({'keluarga_id': keluargaId}).eq('id', wargaId);
+
       debugPrint('Successfully linked warga to keluarga. Result: $result');
     } catch (e) {
       final errorMsg = e.toString();
       debugPrint('Error linking warga to keluarga: $errorMsg');
-      
+
       // Check if it's a column not found error
       if (errorMsg.contains('keluarga_id') && errorMsg.contains('column')) {
-        throw Exception('Database belum ter-setup. Kolom keluarga_id tidak ditemukan di tabel warga_profiles. Hubungi administrator.');
+        throw Exception(
+            'Database belum ter-setup. Kolom keluarga_id tidak ditemukan di tabel warga_profiles. Hubungi administrator.');
       }
-      
+
       throw Exception('Gagal menautkan warga ke keluarga: $e');
     }
   }
 
   Future<List<Map<String, dynamic>>> getRumahList() async {
     try {
-      final response = await client
-          .from('rumah')
-          .select()
-          .eq('status_rumah', 'kosong');
+      final response =
+          await client.from('rumah').select().eq('status_rumah', 'kosong');
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw Exception('Gagal mengambil data rumah: $e');
@@ -356,8 +353,7 @@ class SupabaseWargaRepository implements WargaRepository {
     try {
       await client
           .from('rumah')
-          .update({'status_rumah': 'ditempati'})
-          .eq('id', rumahId);
+          .update({'status_rumah': 'ditempati'}).eq('id', rumahId);
     } catch (e) {
       throw Exception('Gagal update status rumah: $e');
     }
@@ -366,46 +362,56 @@ class SupabaseWargaRepository implements WargaRepository {
   @override
   Future<List<Map<String, dynamic>>> getAllWarga() async {
     try {
-      final response = await client
-          .from('warga_profiles')
-          .select('''
+      // Ambil semua warga
+      final response = await client.from('warga_profiles').select('''
             id,
             nama_lengkap,
             nik,
-            email,
-            nomor_telepon,
+            no_telepon,
             jenis_kelamin,
             agama,
             golongan_darah,
             pekerjaan,
             peran_keluarga,
-            keluarga:keluarga_id(
-              id,
-              nomor_kk,
-              kepala_keluarga_id,
-              alamat,
-              kepala:warga_profiles!keluarga(nama_lengkap)
-            )
+            keluarga_id
           ''');
-      
-      return response.map((item) {
-        final keluargaData = item['keluarga'] is List ? (item['keluarga'] as List).first : item['keluarga'];
-        return {
-          'id': item['id'],
-          'nama_lengkap': item['nama_lengkap'],
-          'nik': item['nik'],
-          'email': item['email'],
-          'nomor_telepon': item['nomor_telepon'],
-          'jenis_kelamin': item['jenis_kelamin'],
-          'agama': item['agama'],
-          'golongan_darah': item['golongan_darah'],
-          'pekerjaan': item['pekerjaan'],
-          'peran_keluarga': item['peran_keluarga'],
-          'nomor_kk': keluargaData?['nomor_kk'],
-          'keluarga_nama': keluargaData?['kepala']?['nama_lengkap'],
-          'alamat_rumah': keluargaData?['alamat'],
-        };
-      }).toList();
+
+      final wargaList = List<Map<String, dynamic>>.from(response);
+
+      // Fetch nama kepala keluarga untuk setiap warga yang punya keluarga
+      for (var warga in wargaList) {
+        if (warga['keluarga_id'] != null) {
+          try {
+            // Ambil data keluarga
+            final keluargaResponse = await client
+                .from('keluarga')
+                .select('kepala_keluarga_id')
+                .eq('id', warga['keluarga_id'])
+                .single();
+
+            if (keluargaResponse['kepala_keluarga_id'] != null) {
+              // Ambil nama kepala keluarga
+              final kepalaKeluargaResponse = await client
+                  .from('warga_profiles')
+                  .select('nama_lengkap')
+                  .eq('id', keluargaResponse['kepala_keluarga_id'])
+                  .single();
+
+              warga['keluarga'] = {
+                'warga_profiles': {
+                  'nama_lengkap': kepalaKeluargaResponse['nama_lengkap']
+                }
+              };
+            }
+          } catch (e) {
+            debugPrint(
+                'Gagal fetch nama kepala keluarga untuk warga ${warga['id']}: $e');
+            // Jika gagal, biarkan keluarga null
+          }
+        }
+      }
+
+      return wargaList;
     } catch (e) {
       throw Exception('Gagal mengambil data warga: $e');
     }

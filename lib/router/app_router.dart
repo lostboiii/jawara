@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jawara/ui/pages/warga/daftar_warga_page.dart';
 
 import '../ui/pages/home_page.dart';
+import '../ui/pages/home_keuangan_page.dart';
+import '../ui/pages/home_warga_page.dart';
+import '../ui/pages/home_kegiatan_page.dart';
 import '../ui/pages/activity_log_page.dart';
 import '../ui/pages/user_list_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_page.dart';
@@ -11,8 +15,10 @@ import '../ui/pages/pemasukan/pemasukan_detail_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_page.dart';
+import '../ui/pages/warga/daftar_keluarga_page.dart';
+import '../ui/pages/warga/detail_keluarga_page.dart';
+import '../ui/pages/warga/detail_warga_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_detail_page.dart';
-import '../ui/pages/channel_transfer/channel_item.dart';
 import '../ui/pages/auth/onboarding_page.dart';
 import '../ui/pages/auth/login_page.dart';
 import '../ui/pages/auth/register_step1_page.dart';
@@ -29,7 +35,7 @@ import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 import '../ui/screens/rumah/rumah_list_screen.dart';
 import '../ui/screens/rumah/rumah_add_screen.dart';
 import '../ui/screens/warga/warga_list_screen.dart';
-import '../ui/screens/warga/warga_add_screen.dart';
+import '../ui/pages/warga/tambah_warga_page.dart';
 import '../ui/screens/warga/keluarga_screen.dart';
 import '../ui/screens/warga/keluarga_page.dart';
 import '../data/models/pengeluaran_model.dart';
@@ -44,6 +50,9 @@ class AppRoutes {
   static const registerStep2 = '/register-step2';
   static const registerStep3 = '/register-step3';
   static const home = '/home';
+  static const homeKeuangan = '/home-keuangan';
+  static const homeWarga = '/home-warga';
+  static const homeKegiatan = '/home-kegiatan';
   static const activityLog = '/activity-log';
   static const userList = '/user-list';
   static const pengeluaran = '/pengeluaran';
@@ -60,6 +69,10 @@ class AppRoutes {
   static const wargaAdd = '/warga/add';
   static const keluarga = '/keluarga';
   static const keluargaPage = '/keluarga-page';
+  static const wargaDaftarKeluarga = '/warga/keluarga';
+  static const wargaDaftarWarga = '/warga/warga';
+  static const wargaDetailKeluarga = '/warga/keluarga/detail';
+  static const wargaDetail = '/warga/detail';
   static const channelTransferDetail = '/channel-transfer/detail';
   static const dashboard = '/dashboard';
   static const broadcastWarga = '/broadcast-warga';
@@ -110,7 +123,54 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.home,
       name: 'home',
-      builder: (context, state) =>  HomePage(),
+      builder: (context, state) => const HomePage(),
+    ),
+    GoRoute(
+      path: AppRoutes.homeKeuangan,
+      name: 'home-keuangan',
+      builder: (context, state) => const HomeKeuanganPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.homeWarga,
+      name: 'home-warga',
+      builder: (context, state) => const HomeWargaPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.homeKegiatan,
+      name: 'home-kegiatan',
+      builder: (context, state) => const HomeKegiatanPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.wargaDaftarKeluarga,
+      name: 'warga-daftar-keluarga',
+      builder: (context, state) => const DaftarKeluargaPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.wargaDaftarWarga,
+      name: 'warga-daftar-warga',
+      builder: (context, state) => const DaftarWargaPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.wargaDetailKeluarga,
+      name: 'warga-keluarga-detail',
+      builder: (context, state) {
+        final family = state.extra as KeluargaListItem?;
+        if (family == null) {
+          return const DaftarKeluargaPage();
+        }
+        return DetailKeluargaPage(family: family);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.wargaDetail,
+      name: 'warga-detail',
+      builder: (context, state) {
+        final warga = state.extra as WargaListItem?;
+        if (warga == null) {
+          return const DaftarWargaPage();
+        }
+        return DetailWargaPage(warga: warga);
+      },
     ),
     GoRoute(
       path: AppRoutes.activityLog,
@@ -193,7 +253,7 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.wargaAdd,
       name: 'warga-add',
-      builder: (context, state) => WargaAddScreen(),
+      builder: (context, state) => const TambahWargaPage(),
     ),
     GoRoute(
       path: AppRoutes.keluarga,
