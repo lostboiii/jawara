@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jawara/ui/pages/kegiatan/detail_broadcast_page.dart';
+import 'package:jawara/ui/pages/kegiatan/detail_kegiatan_page.dart';
 import 'package:jawara/ui/pages/warga/daftar_warga_page.dart';
 
 import '../ui/pages/home_page.dart';
@@ -25,10 +27,11 @@ import '../ui/pages/auth/register_step1_page.dart';
 import '../ui/pages/auth/register_step2_page.dart';
 import '../ui/pages/auth/register_step3_page.dart';
 import '../ui/pages/dashboard_page.dart';
-import '../ui/pages/broadcast_warga/broadcast_list_page.dart';
-import '../ui/pages/broadcast_warga/create_broadcast_page.dart';
+import '../ui/pages/kegiatan/broadcast_list_page.dart';
+import '../ui/pages/kegiatan/create_broadcast_page.dart';
 import '../ui/pages/kegiatan/create_kegiatan_page.dart';
 import '../ui/pages/kegiatan/kegiatan_list_page.dart';
+import '../ui/pages/kegiatan/edit_kegiatan_page.dart';
 import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
@@ -75,10 +78,13 @@ class AppRoutes {
   static const wargaDetail = '/warga/detail';
   static const channelTransferDetail = '/channel-transfer/detail';
   static const dashboard = '/dashboard';
-  static const broadcastWarga = '/broadcast-warga';
+  static const ListBroadcast = '/list-broadcast';
   static const createBroadcast = '/create-broadcast';
   static const kegiatan = '/kegiatan';
   static const createKegiatan = '/kegiatan/create';
+  static const listKegiatan = '/kegiatan/list';
+  static const detailKegiatan = '/kegiatan/detail';
+  static String get editKegiatan => '/kegiatan/edit';
   static const aspirasiList = '/aspirasi-list';
 }
 
@@ -271,8 +277,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const DashboardPage(),
     ),
     GoRoute(
-      path: AppRoutes.broadcastWarga,
-      name: 'broadcast-warga',
+      path: AppRoutes.ListBroadcast,
+      name: 'list-broadcast',
       builder: (context, state) => const BroadcastListPage(),
     ),
     GoRoute(
@@ -280,6 +286,13 @@ final GoRouter appRouter = GoRouter(
       name: 'create-broadcast',
       builder: (context, state) => const CreateBroadcastPage(),
     ),
+    GoRoute(
+      path: '/detail-broadcast',
+      name: 'detail-broadcast',
+      builder: (context, state) => DetailBroadcastPage(
+        broadcast: state.extra as BroadcastListItem,
+  ),
+),
     GoRoute(
       path: AppRoutes.kegiatan,
       name: 'kegiatan',
@@ -289,6 +302,33 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.createKegiatan,
       name: 'create-kegiatan',
       builder: (context, state) => const CreateKegiatanPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.listKegiatan,
+      name: 'list-kegiatan',
+      builder: (context, state) => const KegiatanListPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.detailKegiatan,
+      name: 'detail-kegiatan',
+      builder: (context, state) {
+        final kegiatan = state.extra as KegiatanListItem?;
+        if (kegiatan == null) {
+          return const KegiatanListPage();
+        }
+        return DetailKegiatanPage(kegiatan: kegiatan);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.editKegiatan,
+      name: 'edit-kegiatan',
+      builder: (context, state) {
+        final kegiatan = state.extra as KegiatanListItem?;
+        if (kegiatan == null) {
+          return const KegiatanListPage();
+        }
+        return EditKegiatanPage(kegiatan: kegiatan);
+      },
     ),
     GoRoute(
       path: '/event-list',

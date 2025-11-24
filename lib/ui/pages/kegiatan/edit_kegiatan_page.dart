@@ -3,25 +3,26 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class CreateKegiatanPage extends StatefulWidget {
-  const CreateKegiatanPage({super.key});
+import 'kegiatan_list_page.dart'; 
+
+class EditKegiatanPage extends StatefulWidget {
+  const EditKegiatanPage({super.key, required this.kegiatan});
+
+  final KegiatanListItem kegiatan;
 
   @override
-  State<CreateKegiatanPage> createState() => _CreateKegiatanPageState();
+  State<EditKegiatanPage> createState() => _EditKegiatanPageState();
 }
 
-class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
+class _EditKegiatanPageState extends State<EditKegiatanPage> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
-  final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _lokasiController = TextEditingController();
-  final TextEditingController _penanggungJawabController =
-      TextEditingController();
-  final TextEditingController _deskripsiController = TextEditingController();
-  final TextEditingController _tanggalController = TextEditingController();
+  late TextEditingController _namaController;
+  late TextEditingController _lokasiController;
+  late TextEditingController _penanggungJawabController;
+  late TextEditingController _deskripsiController;
+  late TextEditingController _tanggalController;
 
-  // Dropdown values
   String? _selectedKategori;
   DateTime? _selectedTanggal;
 
@@ -32,6 +33,28 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     'Pendidikan',
     'Kesehatan & Olahraga',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _namaController = TextEditingController(text: widget.kegiatan.namaKegiatan);
+    _lokasiController = TextEditingController(text: widget.kegiatan.lokasiKegiatan);
+    _penanggungJawabController = TextEditingController(text: widget.kegiatan.penanggungJawab);
+    _deskripsiController = TextEditingController(text: widget.kegiatan.deskripsi);
+    
+    if (widget.kegiatan.tanggalKegiatan != null) {
+      _selectedTanggal = widget.kegiatan.tanggalKegiatan;
+      _tanggalController = TextEditingController(
+        text: DateFormat('dd/MM/yyyy').format(_selectedTanggal!)
+      );
+    } else {
+      _tanggalController = TextEditingController();
+    }
+
+    if (_kategoriOptions.contains(widget.kegiatan.kategoriKegiatan)) {
+      _selectedKategori = widget.kegiatan.kategoriKegiatan;
+    }
+  }
 
   @override
   void dispose() {
@@ -58,7 +81,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.goNamed('home-kegiatan'),
+                    onPressed: () => context.goNamed('list-kegiatan'),
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       color: primaryColor,
@@ -66,7 +89,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Tambah Kegiatan',
+                    'Edit Kegiatan',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -115,7 +138,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _handleSimpan,
+                  onPressed: _handleUpdate,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     shape: RoundedRectangleBorder(
@@ -124,7 +147,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Simpan',
+                    'Perbarui Data',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -186,14 +209,6 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               borderSide:
                   const BorderSide(color: Color(0xff5067e9), width: 1.5),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -250,14 +265,6 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               borderSide:
                   const BorderSide(color: Color(0xff5067e9), width: 1.5),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
           ),
         ),
       ],
@@ -306,20 +313,12 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               borderSide:
                   const BorderSide(color: Color(0xff5067e9), width: 1.5),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
           ),
           onTap: () async {
             final DateTime? pickedDate = await showDatePicker(
               context: context,
               initialDate: _selectedTanggal ?? DateTime.now(),
-              firstDate: DateTime.now(),
+              firstDate: DateTime(2000),
               lastDate: DateTime(2100),
             );
             if (pickedDate != null) {
@@ -385,14 +384,6 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               borderSide:
                   const BorderSide(color: Color(0xff5067e9), width: 1.5),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.red, width: 1.5),
-            ),
           ),
           items: options.map((String option) {
             return DropdownMenuItem<String>(
@@ -412,12 +403,11 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     );
   }
 
-  void _handleSimpan() {
+  void _handleUpdate() {
     if (_formKey.currentState!.validate()) {
-      // TODO: Implement save logic
       showDialog(
         context: context,
-        builder: (BuildContext context) {
+        builder: (BuildContext dialogContext) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -440,7 +430,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               ],
             ),
             content: Text(
-              'Data kegiatan berhasil disimpan',
+              'Data kegiatan berhasil diperbarui',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 14),
             ),
@@ -449,8 +439,8 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    context.pop(); // Close dialog
-                    context.goNamed('home-kegiatan'); // Go back to previous page
+                    Navigator.of(dialogContext).pop();
+                    context.pop();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xff5067e9),
