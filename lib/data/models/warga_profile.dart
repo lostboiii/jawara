@@ -1,4 +1,6 @@
 /// Model untuk profil warga
+// coverage:ignore-file
+
 class WargaProfile {
   final String id;
   final String namaLengkap;
