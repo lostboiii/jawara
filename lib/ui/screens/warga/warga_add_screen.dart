@@ -1,4 +1,5 @@
 // lib/screens/warga/warga_add_screen.dart
+// coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';

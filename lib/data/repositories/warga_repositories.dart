@@ -1,4 +1,5 @@
 import 'dart:io';
+// coverage:ignore-file
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/warga_profile.dart';

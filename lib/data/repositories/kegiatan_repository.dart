@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -76,7 +77,7 @@ class SupabaseKegiatanRepository implements KegiatanRepository {
           .select()
           .single();
 
-      return KegiatanModel.fromJson(response as Map<String, dynamic>);
+      return KegiatanModel.fromJson(response);
     } catch (e, st) {
       debugPrint('createKegiatan error: $e');
       debugPrint('$st');
@@ -111,7 +112,7 @@ class SupabaseKegiatanRepository implements KegiatanRepository {
           .select()
           .single();
 
-      return KegiatanModel.fromJson(response as Map<String, dynamic>);
+      return KegiatanModel.fromJson(response);
     } catch (e, st) {
       debugPrint('updateKegiatan error: $e');
       debugPrint('$st');

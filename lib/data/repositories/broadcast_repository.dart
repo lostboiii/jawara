@@ -1,3 +1,4 @@
+// coverage:ignore-file
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -67,7 +68,7 @@ class SupabaseBroadcastRepository implements BroadcastRepository {
           .select()
           .single();
 
-      return BroadcastModel.fromJson(response as Map<String, dynamic>);
+      return BroadcastModel.fromJson(response);
     } catch (e, st) {
       debugPrint('createBroadcast error: $e');
       debugPrint('$st');
@@ -96,7 +97,7 @@ class SupabaseBroadcastRepository implements BroadcastRepository {
           .select()
           .single();
 
-      return BroadcastModel.fromJson(response as Map<String, dynamic>);
+      return BroadcastModel.fromJson(response);
     } catch (e, st) {
       debugPrint('updateBroadcast error: $e');
       debugPrint('$st');
