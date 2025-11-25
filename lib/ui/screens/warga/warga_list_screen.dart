@@ -2,7 +2,7 @@
 // coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'warga_add_screen.dart'; // pastikan file ini ada di folder yang sama
+import '../../pages/warga/tambah_warga_page.dart';
 
 class WargaListScreen extends StatefulWidget {
   const WargaListScreen({super.key});
@@ -105,13 +105,11 @@ class _WargaListScreenState extends State<WargaListScreen> {
                   children: [
                     Text(
                       '${filteredList.length} Warga Terdaftar',
-                      style:
-                          const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
                     ),
                     const Text(
                       'Update: Hari ini',
-                      style:
-                          TextStyle(color: Colors.white70, fontSize: 12),
+                      style: TextStyle(color: Colors.white70, fontSize: 12),
                     ),
                   ],
                 ),
@@ -165,20 +163,20 @@ class _WargaListScreenState extends State<WargaListScreen> {
                                     width: 60,
                                     height: 60,
                                     decoration: BoxDecoration(
-                                      color: warga['jenisKelamin'] ==
-                                              'Laki-laki'
-                                          ? Colors.blue[100]
-                                          : Colors.pink[100],
+                                      color:
+                                          warga['jenisKelamin'] == 'Laki-laki'
+                                              ? Colors.blue[100]
+                                              : Colors.pink[100],
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
                                       warga['jenisKelamin'] == 'Laki-laki'
                                           ? Icons.person
                                           : Icons.person_outline,
-                                      color: warga['jenisKelamin'] ==
-                                              'Laki-laki'
-                                          ? Colors.blue
-                                          : Colors.pink,
+                                      color:
+                                          warga['jenisKelamin'] == 'Laki-laki'
+                                              ? Colors.blue
+                                              : Colors.pink,
                                       size: 32,
                                     ),
                                   ),
@@ -202,8 +200,7 @@ class _WargaListScreenState extends State<WargaListScreen> {
                                         Row(
                                           children: [
                                             const Icon(Icons.credit_card,
-                                                size: 14,
-                                                color: Colors.grey),
+                                                size: 14, color: Colors.grey),
                                             const SizedBox(width: 4),
                                             Text(
                                               warga['nik'],
@@ -218,8 +215,7 @@ class _WargaListScreenState extends State<WargaListScreen> {
                                         Row(
                                           children: [
                                             const Icon(Icons.location_on,
-                                                size: 14,
-                                                color: Colors.grey),
+                                                size: 14, color: Colors.grey),
                                             const SizedBox(width: 4),
                                             Expanded(
                                               child: Text(
@@ -229,8 +225,7 @@ class _WargaListScreenState extends State<WargaListScreen> {
                                                   color: Colors.grey[600],
                                                 ),
                                                 maxLines: 1,
-                                                overflow:
-                                                    TextOverflow.ellipsis,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -276,7 +271,7 @@ class _WargaListScreenState extends State<WargaListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => WargaAddScreen(),
+              builder: (context) => const TambahWargaPage(),
             ),
           );
         },

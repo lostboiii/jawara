@@ -19,11 +19,116 @@ class RegisterViewModel extends ChangeNotifier {
   String? _error;
   WargaProfile? _currentProfile;
 
+  // Cached form fields (multi-step registration)
+  String _cacheNamaLengkap = '';
+  String _cacheNik = '';
+  String _cacheEmail = '';
+  String _cacheNoHp = '';
+  String _cacheJenisKelamin = '';
+  String _cacheAgama = '';
+  String _cacheGolonganDarah = '';
+  String _cacheRumahId = '';
+  String _cacheAlamatRumahManual = '';
+  String _cacheStatus = '';
+  String _cachePassword = '';
+  String _cacheConfirmPassword = '';
+
   // Getters
   bool get isLoading => _isLoading;
   String? get error => _error;
   WargaProfile? get currentProfile => _currentProfile;
   bool get hasError => _error != null;
+
+  // Cache getters
+  String get cacheNamaLengkap => _cacheNamaLengkap;
+  String get cacheNik => _cacheNik;
+  String get cacheEmail => _cacheEmail;
+  String get cacheNoHp => _cacheNoHp;
+  String get cacheJenisKelamin => _cacheJenisKelamin;
+  String get cacheAgama => _cacheAgama;
+  String get cacheGolonganDarah => _cacheGolonganDarah;
+  String get cacheRumahId => _cacheRumahId;
+  String get cacheAlamatRumahManual => _cacheAlamatRumahManual;
+  String get cacheStatus => _cacheStatus;
+  String get cachePassword => _cachePassword;
+  String get cacheConfirmPassword => _cacheConfirmPassword;
+
+  // Cache setters (update & notify for listeners that depend on values)
+  void setNamaLengkap(String v) {
+    _cacheNamaLengkap = v;
+    notifyListeners();
+  }
+
+  void setNik(String v) {
+    _cacheNik = v;
+    notifyListeners();
+  }
+
+  void setEmail(String v) {
+    _cacheEmail = v;
+    notifyListeners();
+  }
+
+  void setNoHp(String v) {
+    _cacheNoHp = v;
+    notifyListeners();
+  }
+
+  void setJenisKelamin(String v) {
+    _cacheJenisKelamin = v;
+    notifyListeners();
+  }
+
+  void setAgama(String v) {
+    _cacheAgama = v;
+    notifyListeners();
+  }
+
+  void setGolonganDarah(String v) {
+    _cacheGolonganDarah = v;
+    notifyListeners();
+  }
+
+  void setRumahId(String v) {
+    _cacheRumahId = v;
+    notifyListeners();
+  }
+
+  void setAlamatRumahManual(String v) {
+    _cacheAlamatRumahManual = v;
+    notifyListeners();
+  }
+
+  void setStatus(String v) {
+    _cacheStatus = v;
+    notifyListeners();
+  }
+
+  void setPassword(String v) {
+    _cachePassword = v;
+    notifyListeners();
+  }
+
+  void setConfirmPassword(String v) {
+    _cacheConfirmPassword = v;
+    notifyListeners();
+  }
+
+  void clearRegistrationCache() {
+    _cacheNamaLengkap = '';
+    _cacheNik = '';
+    _cacheEmail = '';
+    _cacheNoHp = '';
+    _cacheJenisKelamin = '';
+    _cacheAgama = '';
+    _cacheGolonganDarah = '';
+    _cacheRumahId = '';
+    _cacheAlamatRumahManual = '';
+    _cacheStatus = '';
+    _cachePassword = '';
+    _cacheConfirmPassword = '';
+    notifyListeners();
+  }
 
   /// Clear error message
   void clearError() {
@@ -152,19 +257,27 @@ class RegisterViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
       return true;
-
     } catch (e) {
       final errorMessage = e.toString();
-      
+
       // Handle rate limit errors
-      if (errorMessage.contains('429') || errorMessage.contains('rate limit') || errorMessage.contains('over_email_send_rate_limit')) {
-        _error = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
+      if (errorMessage.contains('429') ||
+          errorMessage.contains('rate limit') ||
+          errorMessage.contains('over_email_send_rate_limit')) {
+        _error =
+            'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
+      } else if (errorMessage.contains('user_already_exists') ||
+          errorMessage.contains('User already registered') ||
+          errorMessage.contains('422')) {
+        _error =
+            'Email sudah terdaftar sebelumnya. Silakan gunakan email lain atau login dengan email tersebut.';
       } else if (errorMessage.contains('email')) {
-        _error = 'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
+        _error =
+            'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
       } else {
         _error = errorMessage;
       }
-      
+
       _isLoading = false;
       debugPrint('✗ Register error: $_error');
       notifyListeners();
@@ -187,7 +300,8 @@ class RegisterViewModel extends ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final keluarga = await wargaRepository.getKeluargaByKepalakeluargaId(userId);
+      final keluarga =
+          await wargaRepository.getKeluargaByKepalakeluargaId(userId);
 
       _isLoading = false;
       notifyListeners();
@@ -318,10 +432,14 @@ class RegisterViewModel extends ChangeNotifier {
       return true;
     } catch (e) {
       final errorMessage = e.toString();
-      if (errorMessage.contains('429') || errorMessage.contains('rate limit') || errorMessage.contains('over_email_send_rate_limit')) {
-        _error = 'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
+      if (errorMessage.contains('429') ||
+          errorMessage.contains('rate limit') ||
+          errorMessage.contains('over_email_send_rate_limit')) {
+        _error =
+            'Terlalu banyak percobaan. Silakan tunggu beberapa menit sebelum mencoba lagi.';
       } else if (errorMessage.contains('email')) {
-        _error = 'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
+        _error =
+            'Email sudah terdaftar atau terjadi kesalahan. Gunakan email lain.';
       } else {
         _error = errorMessage;
       }

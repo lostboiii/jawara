@@ -1,46 +1,79 @@
-// coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
-class CreateKegiatanPage extends StatefulWidget {
-  const CreateKegiatanPage({super.key});
+class TambahWargaPage extends StatefulWidget {
+  const TambahWargaPage({super.key});
 
   @override
-  State<CreateKegiatanPage> createState() => _CreateKegiatanPageState();
+  State<TambahWargaPage> createState() => _TambahWargaPageState();
 }
 
-class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
+class _TambahWargaPageState extends State<TambahWargaPage> {
   final _formKey = GlobalKey<FormState>();
 
   // Controllers
   final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _lokasiController = TextEditingController();
-  final TextEditingController _penanggungJawabController =
-      TextEditingController();
-  final TextEditingController _deskripsiController = TextEditingController();
-  final TextEditingController _tanggalController = TextEditingController();
+  final TextEditingController _nikController = TextEditingController();
+  final TextEditingController _noTeleponController = TextEditingController();
+  final TextEditingController _tempatLahirController = TextEditingController();
+  final TextEditingController _tanggalLahirController = TextEditingController();
+  final TextEditingController _pekerjaanController = TextEditingController();
+  final TextEditingController _statusController = TextEditingController();
 
   // Dropdown values
-  String? _selectedKategori;
-  DateTime? _selectedTanggal;
+  String? _selectedKeluarga;
+  String? _selectedGolonganDarah;
+  String? _selectedPeranKeluarga;
+  String? _selectedPendidikan;
 
-  final List<String> _kategoriOptions = [
-    'Komunitas & Sosial',
-    'Kebersihan & Keamanan',
-    'Keagamaan',
-    'Pendidikan',
-    'Kesehatan & Olahraga',
+  DateTime? _selectedDate;
+
+  final List<String> _keluargaOptions = [
+    'Pilih Keluarga',
+    'Keluarga A',
+    'Keluarga B',
+    'Keluarga C',
+  ];
+
+  final List<String> _golonganDarahOptions = [
+    'A',
+    'B',
+    'AB',
+    'O',
+  ];
+
+  final List<String> _peranKeluargaOptions = [
+    'Kepala Keluarga',
+    'Istri',
+    'Anak',
+    'Menantu',
+    'Cucu',
+    'Orang Tua',
+    'Lainnya',
+  ];
+
+  final List<String> _pendidikanOptions = [
+    'Tidak Sekolah',
+    'SD',
+    'SMP',
+    'SMA',
+    'D3',
+    'S1',
+    'S2',
+    'S3',
   ];
 
   @override
   void dispose() {
     _namaController.dispose();
-    _lokasiController.dispose();
-    _penanggungJawabController.dispose();
-    _deskripsiController.dispose();
-    _tanggalController.dispose();
+    _nikController.dispose();
+    _noTeleponController.dispose();
+    _tempatLahirController.dispose();
+    _tanggalLahirController.dispose();
+    _pekerjaanController.dispose();
+    _statusController.dispose();
     super.dispose();
   }
 
@@ -59,7 +92,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.goNamed('home-kegiatan'),
+                    onPressed: () => context.goNamed('home-warga'),
                     icon: Icon(
                       Icons.arrow_back_ios_new_rounded,
                       color: primaryColor,
@@ -67,7 +100,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Tambah Kegiatan',
+                    'Tambah Warga',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
@@ -77,40 +110,44 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                 ],
               ),
               const SizedBox(height: 24),
-              _buildTextField(
-                'Nama Kegiatan',
-                'Masukan Nama Kegiatan',
-                _namaController,
-              ),
-              const SizedBox(height: 16),
               _buildDropdownField(
-                'Kategori Kegiatan',
-                _selectedKategori,
-                _kategoriOptions,
-                (value) {
-                  setState(() => _selectedKategori = value);
-                },
-              ),
+                  'Pilih Keluarga', _selectedKeluarga, _keluargaOptions,
+                  (value) {
+                setState(() => _selectedKeluarga = value);
+              }),
               const SizedBox(height: 16),
-              _buildDateField('Tanggal Kegiatan', _tanggalController),
+              _buildTextField('Nama', 'Masukan Nama Lengkap', _namaController),
+              const SizedBox(height: 16),
+              _buildTextField('NIK', 'Masukan NIK sesuai KTP', _nikController,
+                  keyboardType: TextInputType.number),
+              const SizedBox(height: 16),
+              _buildPhoneField(
+                  'Nomor Telepon', '+62 Nomor Telepon', _noTeleponController),
+              const SizedBox(height: 16),
+              _buildTextField('Tempat Lahir', 'Masukan Tempat Lahir',
+                  _tempatLahirController),
+              const SizedBox(height: 16),
+              _buildDateField('Tanggal Lahir', _tanggalLahirController),
+              const SizedBox(height: 16),
+              _buildDropdownField('Golongan Darah', _selectedGolonganDarah,
+                  _golonganDarahOptions, (value) {
+                setState(() => _selectedGolonganDarah = value);
+              }),
+              const SizedBox(height: 16),
+              _buildDropdownField('Peran Keluarga', _selectedPeranKeluarga,
+                  _peranKeluargaOptions, (value) {
+                setState(() => _selectedPeranKeluarga = value);
+              }),
+              const SizedBox(height: 16),
+              _buildDropdownField('Pendidikan Terakhir', _selectedPendidikan,
+                  _pendidikanOptions, (value) {
+                setState(() => _selectedPendidikan = value);
+              }),
               const SizedBox(height: 16),
               _buildTextField(
-                'Lokasi Kegiatan',
-                'Masukan Lokasi Kegiatan',
-                _lokasiController,
-              ),
+                  'Pekerjaan', 'Masukan Pekerjaan', _pekerjaanController),
               const SizedBox(height: 16),
-              _buildTextField(
-                'Penanggung Jawab',
-                'Masukan Nama Penanggung Jawab',
-                _penanggungJawabController,
-              ),
-              const SizedBox(height: 16),
-              _buildTextAreaField(
-                'Deskripsi',
-                'Masukan Deskripsi Kegiatan',
-                _deskripsiController,
-              ),
+              _buildTextField('Status', 'Masukan Status', _statusController),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -207,11 +244,8 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     );
   }
 
-  Widget _buildTextAreaField(
-    String label,
-    String hint,
-    TextEditingController controller,
-  ) {
+  Widget _buildPhoneField(
+      String label, String hint, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,13 +260,40 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
         const SizedBox(height: 8),
         TextFormField(
           controller: controller,
-          maxLines: 6,
+          keyboardType: TextInputType.phone,
           style: GoogleFonts.inter(fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: GoogleFonts.inter(
               fontSize: 14,
               color: const Color(0xffC7C7CD),
+            ),
+            prefixIcon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '🇮🇩',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: Color(0xffE5E5EA),
+                  ),
+                ],
+              ),
             ),
             filled: true,
             fillColor: Colors.white,
@@ -260,6 +321,12 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label tidak boleh kosong';
+            }
+            return null;
+          },
         ),
       ],
     );
@@ -319,13 +386,13 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
           onTap: () async {
             final DateTime? pickedDate = await showDatePicker(
               context: context,
-              initialDate: _selectedTanggal ?? DateTime.now(),
-              firstDate: DateTime.now(),
-              lastDate: DateTime(2100),
+              initialDate: _selectedDate ?? DateTime.now(),
+              firstDate: DateTime(1900),
+              lastDate: DateTime.now(),
             );
             if (pickedDate != null) {
               setState(() {
-                _selectedTanggal = pickedDate;
+                _selectedDate = pickedDate;
                 controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
               });
             }
@@ -441,7 +508,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
               ],
             ),
             content: Text(
-              'Data kegiatan berhasil disimpan',
+              'Data warga berhasil disimpan',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(fontSize: 14),
             ),
@@ -451,7 +518,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                 child: ElevatedButton(
                   onPressed: () {
                     context.pop(); // Close dialog
-                    context.goNamed('home-kegiatan'); // Go back to previous page
+                    context.goNamed('home-warga'); // Go back to previous page
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xff5067e9),
