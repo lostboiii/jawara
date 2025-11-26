@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../home_page.dart';
-import 'daftar_warga_page.dart';
+import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
 
 class DetailWargaPage extends StatelessWidget {
   const DetailWargaPage({super.key, required this.warga});

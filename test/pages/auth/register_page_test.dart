@@ -53,6 +53,9 @@ class _FakeWargaRepository implements WargaRepository {
     required String pekerjaan,
     required String peranKeluarga,
     String? fotoIdentitasUrl,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
   }) async => WargaProfile(
     id: 'test',
     namaLengkap: namaLengkap,

@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../home_page.dart';
-import 'daftar_keluarga_page.dart';
+import 'package:jawara/viewmodels/daftar_keluarga_viewmodel.dart';
 
 class DetailKeluargaPage extends StatelessWidget {
   const DetailKeluargaPage({super.key, required this.family});

@@ -3,194 +3,27 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'package:jawara/data/models/keluarga.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
+import 'package:jawara/viewmodels/daftar_keluarga_viewmodel.dart';
 
 import '../home_page.dart';
 
-class KeluargaListItem {
-  KeluargaListItem({
-    required this.keluarga,
-    required this.kepalaNama,
-    required this.kepalaRole,
-    required this.alamat,
-    required List<KeluargaMember> members,
-  }) : members = List<KeluargaMember>.unmodifiable(members);
-
-  final Keluarga keluarga;
-  final String kepalaNama;
-  final String kepalaRole;
-  final String? alamat;
-  final List<KeluargaMember> members;
-
-  bool get isActive => members.isNotEmpty;
-
-  String get statusLabel => isActive ? 'Aktif' : 'Tidak Aktif';
-
-  String get displayName {
-    if (kepalaNama.isNotEmpty) {
-      return 'Keluarga $kepalaNama';
-    }
-    if (keluarga.nomorKk.isNotEmpty) {
-      return 'Keluarga ${keluarga.nomorKk}';
-    }
-    return 'Keluarga';
-  }
-
-  String get hunianLabel =>
-      kepalaRole.isNotEmpty ? kepalaRole : 'Belum ditetapkan';
-
-  String get alamatDisplay => (alamat != null && alamat!.isNotEmpty)
-      ? alamat!
-      : 'Alamat belum tersedia';
-}
-
-class KeluargaMember {
-  KeluargaMember({
-    required this.id,
-    required this.relation,
-    required this.name,
-    required this.nik,
-    required this.gender,
-    this.phone,
-  });
-
-  final String id;
-  final String relation;
-  final String name;
-  final String nik;
-  final String gender;
-  final String? phone;
-
-  String get genderLabel => gender.isNotEmpty ? gender : 'Tidak diketahui';
-
-  String get relationLabel => relation.isNotEmpty ? relation : 'Anggota';
-}
-
-class DaftarKeluargaPage extends StatefulWidget {
+class DaftarKeluargaPage extends StatelessWidget {
   const DaftarKeluargaPage({super.key});
 
   @override
-  State<DaftarKeluargaPage> createState() => _DaftarKeluargaPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => DaftarKeluargaViewModel(
+        repository: context.read<WargaRepository>(),
+      )..loadFamilies(),
+      child: const _DaftarKeluargaPageContent(),
+    );
+  }
 }
 
-class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
-  final TextEditingController _searchController = TextEditingController();
-  final List<KeluargaListItem> _families = <KeluargaListItem>[];
-  bool _isLoading = true;
-  String? _errorMessage;
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadFamilies();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadFamilies() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final repository = context.read<WargaRepository>();
-      final keluargaRaw = await repository.getAllKeluarga();
-      final wargaRaw = await repository.getAllWarga();
-
-      final Map<String, List<KeluargaMember>> membersByKeluarga = {};
-
-      for (final warga in wargaRaw) {
-        final keluargaId = warga['keluarga_id'] as String?;
-        if (keluargaId == null) continue;
-
-        final member = KeluargaMember(
-          id: (warga['id'] as String?) ?? '',
-          relation: (warga['peran_keluarga'] as String?) ?? '',
-          name: (warga['nama_lengkap'] as String?) ?? '-',
-          nik: (warga['nik'] as String?) ?? '-',
-          gender: (warga['jenis_kelamin'] as String?) ?? '',
-          phone: (warga['no_telepon'] as String?)?.trim(),
-        );
-
-        membersByKeluarga
-            .putIfAbsent(keluargaId, () => <KeluargaMember>[])
-            .add(member);
-      }
-
-      final List<KeluargaListItem> fetchedFamilies = keluargaRaw.map((data) {
-        final keluarga = Keluarga.fromJson(data);
-        final members =
-            membersByKeluarga[keluarga.id ?? ''] ?? <KeluargaMember>[];
-
-        String kepalaRole = '';
-        for (final member in members) {
-          if (member.id == keluarga.kepalakeluargaId) {
-            kepalaRole = member.relationLabel;
-            break;
-          }
-        }
-
-        final kepalaNama = (data['warga_profiles'] is Map<String, dynamic>)
-            ? ((data['warga_profiles'] as Map<String, dynamic>)['nama_lengkap']
-                    as String? ??
-                '')
-            : '';
-
-        return KeluargaListItem(
-          keluarga: keluarga,
-          kepalaNama: kepalaNama,
-          kepalaRole: kepalaRole,
-          alamat: data['alamat'] as String?,
-          members: members,
-        );
-      }).toList();
-
-      fetchedFamilies.sort((a, b) {
-        final createdA =
-            a.keluarga.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final createdB =
-            b.keluarga.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-        return createdB.compareTo(createdA);
-      });
-
-      if (!mounted) return;
-      setState(() {
-        _families
-          ..clear()
-          ..addAll(fetchedFamilies);
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  List<KeluargaListItem> get _filteredFamilies {
-    if (_searchQuery.isEmpty) {
-      return List<KeluargaListItem>.from(_families);
-    }
-
-    final query = _searchQuery.toLowerCase();
-    return _families.where((family) {
-      final nameMatch = family.displayName.toLowerCase().contains(query);
-      final kkMatch = family.keluarga.nomorKk.toLowerCase().contains(query);
-      final alamatMatch = family.alamatDisplay.toLowerCase().contains(query);
-      return nameMatch || kkMatch || alamatMatch;
-    }).toList();
-  }
-
-  Future<void> _onRefresh() => _loadFamilies();
+class _DaftarKeluargaPageContent extends StatelessWidget {
+  const _DaftarKeluargaPageContent();
 
   @override
   Widget build(BuildContext context) {
@@ -204,10 +37,11 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
 
   Widget _buildSection(BuildContext context, HomePageScope scope) {
     final primaryColor = scope.primaryColor;
+    final viewModel = context.watch<DaftarKeluargaViewModel>();
 
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: _onRefresh,
+        onRefresh: viewModel.loadFamilies,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -237,10 +71,8 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() => _searchQuery = value);
-                    },
+                    controller: viewModel.searchController,
+                    onChanged: viewModel.setSearchQuery,
                     decoration: InputDecoration(
                       hintText: 'Cari nama, nomor KK, atau alamat',
                       hintStyle: GoogleFonts.inter(fontSize: 14),
@@ -278,12 +110,12 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
               ],
             ),
             const SizedBox(height: 24),
-            if (_isLoading)
+            if (viewModel.isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 80),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_errorMessage != null)
+            else if (viewModel.errorMessage != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
@@ -299,7 +131,7 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _errorMessage!,
+                      viewModel.errorMessage!,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 12,
@@ -308,13 +140,13 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                      onPressed: _loadFamilies,
+                      onPressed: viewModel.loadFamilies,
                       child: const Text('Coba lagi'),
                     ),
                   ],
                 ),
               )
-            else if (_filteredFamilies.isEmpty)
+            else if (viewModel.filteredFamilies.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 60),
                 child: Column(
@@ -340,7 +172,7 @@ class _DaftarKeluargaPageState extends State<DaftarKeluargaPage> {
                 ),
               )
             else
-              ..._filteredFamilies.map(
+              ...viewModel.filteredFamilies.map(
                 (family) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _FamilyCard(family: family),

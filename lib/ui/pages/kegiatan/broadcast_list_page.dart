@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../data/models/broadcast_model.dart';
 import '../../../viewmodels/broadcast_viewmodel.dart';
 import '../home_page.dart';
+import 'edit_broadcast_page.dart';
 
 class BroadcastListItem {
   BroadcastListItem({
@@ -527,6 +528,34 @@ class _BroadcastCard extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 44,
+                width: 44,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditBroadcastPage(broadcast: broadcast),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    color: Colors.orange.shade600,
+                    size: 20,
                   ),
                 ),
               ),

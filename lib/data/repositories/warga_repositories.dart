@@ -19,6 +19,9 @@ abstract class WargaRepository {
     required String pekerjaan,
     required String peranKeluarga,
     String? fotoIdentitasUrl,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
   });
 
   /// Get profile berdasarkan user ID
@@ -88,13 +91,16 @@ class SupabaseWargaRepository implements WargaRepository {
     required String pekerjaan,
     required String peranKeluarga,
     String? fotoIdentitasUrl,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
   }) async {
     try {
       final wargaData = {
         'id': userId,
         'nama_lengkap': namaLengkap,
         'nik': nik,
-        'no_hp': noHp,
+        'no_telepon': noHp,
         'jenis_kelamin': jenisKelamin,
         'agama': agama,
         'golongan_darah': golonganDarah,
@@ -102,6 +108,9 @@ class SupabaseWargaRepository implements WargaRepository {
         'peran_keluarga': peranKeluarga,
         'foto_identitas_url': fotoIdentitasUrl,
         'role': 'Warga',
+        if (tempatLahir != null) 'tempat_lahir': tempatLahir,
+        if (tanggalLahir != null) 'tanggal_lahir': tanggalLahir,
+        if (pendidikan != null) 'pendidikan': pendidikan,
       };
 
       final insertResponse = await client
@@ -281,13 +290,21 @@ class SupabaseWargaRepository implements WargaRepository {
     try {
       final response = await client
           .from('keluarga')
-          .select()
+          .select('*, rumah:alamat(alamat)')
           .order('created_at', ascending: false);
 
       final keluargaList = List<Map<String, dynamic>>.from(response);
 
       // Fetch nama kepala keluarga untuk setiap keluarga
       for (var keluarga in keluargaList) {
+        // Extract nama rumah from rumah object
+        if (keluarga['rumah'] != null) {
+          final rumahData = keluarga['rumah'];
+          keluarga['nama_rumah'] = rumahData['alamat'] ?? '';
+        } else {
+          keluarga['nama_rumah'] = '';
+        }
+        
         if (keluarga['kepala_keluarga_id'] != null) {
           try {
             final wargaResponse = await client
@@ -296,12 +313,17 @@ class SupabaseWargaRepository implements WargaRepository {
                 .eq('id', keluarga['kepala_keluarga_id'])
                 .single();
             keluarga['warga_profiles'] = wargaResponse;
+            // Add nama_kepala_keluarga for easy access in dropdown
+            keluarga['nama_kepala_keluarga'] = wargaResponse['nama_lengkap'];
           } catch (e) {
             debugPrint('Gagal fetch nama kepala keluarga: $e');
             keluarga['warga_profiles'] = {
               'nama_lengkap': 'Nama tidak diketahui'
             };
+            keluarga['nama_kepala_keluarga'] = 'Nama tidak diketahui';
           }
+        } else {
+          keluarga['nama_kepala_keluarga'] = 'Tidak ada kepala keluarga';
         }
       }
 

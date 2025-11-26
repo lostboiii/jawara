@@ -4,166 +4,26 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:jawara/data/repositories/warga_repositories.dart';
+import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
 
 import '../home_page.dart';
 
-class WargaListItem {
-  WargaListItem({
-    required this.id,
-    required this.namaLengkap,
-    required this.nik,
-    required this.jenisKelamin,
-    required this.agama,
-    required this.pekerjaan,
-    required this.peranKeluarga,
-    required this.golonganDarah,
-    this.noTelepon,
-    this.keluargaId,
-    this.namaKeluarga,
-    this.tempatLahir,
-    this.tanggalLahir,
-    this.pendidikan,
-  });
-
-  final String id;
-  final String namaLengkap;
-  final String nik;
-  final String jenisKelamin;
-  final String agama;
-  final String pekerjaan;
-  final String peranKeluarga;
-  final String golonganDarah;
-  final String? noTelepon;
-  final String? keluargaId;
-  final String? namaKeluarga;
-  final String? tempatLahir;
-  final DateTime? tanggalLahir;
-  final String? pendidikan;
-
-  bool get isActive => keluargaId != null && keluargaId!.isNotEmpty;
-
-  String get statusLabel => isActive ? 'Aktif' : 'Tidak Aktif';
-
-  String get keluargaLabel => namaKeluarga ?? 'Tidak Berkeluarga';
-
-  String get displayName =>
-      namaLengkap.isNotEmpty ? namaLengkap : 'Nama tidak tersedia';
-
-  String get peranLabel =>
-      peranKeluarga.isNotEmpty ? peranKeluarga : 'Belum ditetapkan';
-
-  String get nikDisplay => nik.isNotEmpty ? nik : 'NIK belum tersedia';
-}
-
-class DaftarWargaPage extends StatefulWidget {
+class DaftarWargaPage extends StatelessWidget {
   const DaftarWargaPage({super.key});
 
   @override
-  State<DaftarWargaPage> createState() => _DaftarWargaPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => DaftarWargaViewModel(
+        repository: context.read<WargaRepository>(),
+      )..loadWarga(),
+      child: const _DaftarWargaPageContent(),
+    );
+  }
 }
 
-class _DaftarWargaPageState extends State<DaftarWargaPage> {
-  final TextEditingController _searchController = TextEditingController();
-  final List<WargaListItem> _wargaList = <WargaListItem>[];
-  bool _isLoading = true;
-  String? _errorMessage;
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadWarga();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadWarga() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    try {
-      final repository = context.read<WargaRepository>();
-      final wargaRaw = await repository.getAllWarga();
-
-      final List<WargaListItem> fetchedWarga = wargaRaw.map((data) {
-        DateTime? parsedTanggalLahir;
-        if (data['tanggal_lahir'] != null) {
-          try {
-            parsedTanggalLahir =
-                DateTime.parse(data['tanggal_lahir'] as String);
-          } catch (e) {
-            parsedTanggalLahir = null;
-          }
-        }
-
-        // Extract nama keluarga dari data yang di-join
-        String? namaKeluarga;
-        if (data['keluarga'] != null && data['keluarga'] is Map) {
-          final keluargaData = data['keluarga'] as Map<String, dynamic>;
-          if (keluargaData['warga_profiles'] != null) {
-            final kepalaKeluargaData =
-                keluargaData['warga_profiles'] as Map<String, dynamic>;
-            namaKeluarga = kepalaKeluargaData['nama_lengkap'] as String?;
-          }
-        }
-
-        return WargaListItem(
-          id: (data['id'] as String?) ?? '',
-          namaLengkap: (data['nama_lengkap'] as String?) ?? '',
-          nik: (data['nik'] as String?) ?? '',
-          jenisKelamin: (data['jenis_kelamin'] as String?) ?? '',
-          agama: (data['agama'] as String?) ?? '',
-          pekerjaan: (data['pekerjaan'] as String?) ?? '',
-          peranKeluarga: (data['peran_keluarga'] as String?) ?? '',
-          golonganDarah: (data['golongan_darah'] as String?) ?? '',
-          noTelepon: (data['no_telepon'] as String?)?.trim(),
-          keluargaId: data['keluarga_id'] as String?,
-          namaKeluarga: namaKeluarga,
-          tempatLahir: (data['tempat_lahir'] as String?)?.trim(),
-          tanggalLahir: parsedTanggalLahir,
-          pendidikan: (data['pendidikan'] as String?)?.trim(),
-        );
-      }).toList();
-
-      fetchedWarga.sort((a, b) => a.namaLengkap.compareTo(b.namaLengkap));
-
-      if (!mounted) return;
-      setState(() {
-        _wargaList
-          ..clear()
-          ..addAll(fetchedWarga);
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = e.toString();
-        _isLoading = false;
-      });
-    }
-  }
-
-  List<WargaListItem> get _filteredWarga {
-    if (_searchQuery.isEmpty) {
-      return List<WargaListItem>.from(_wargaList);
-    }
-
-    final query = _searchQuery.toLowerCase();
-    return _wargaList.where((warga) {
-      final nameMatch = warga.displayName.toLowerCase().contains(query);
-      final nikMatch = warga.nikDisplay.toLowerCase().contains(query);
-      final peranMatch = warga.peranLabel.toLowerCase().contains(query);
-      return nameMatch || nikMatch || peranMatch;
-    }).toList();
-  }
-
-  Future<void> _onRefresh() => _loadWarga();
+class _DaftarWargaPageContent extends StatelessWidget {
+  const _DaftarWargaPageContent();
 
   @override
   Widget build(BuildContext context) {
@@ -177,10 +37,11 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
 
   Widget _buildSection(BuildContext context, HomePageScope scope) {
     final primaryColor = scope.primaryColor;
+    final viewModel = context.watch<DaftarWargaViewModel>();
 
     return SafeArea(
       child: RefreshIndicator(
-        onRefresh: _onRefresh,
+        onRefresh: viewModel.loadWarga,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(20),
@@ -210,10 +71,8 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() => _searchQuery = value);
-                    },
+                    controller: viewModel.searchController,
+                    onChanged: viewModel.setSearchQuery,
                     decoration: InputDecoration(
                       hintText: 'Cari nama, NIK, atau peran',
                       hintStyle: GoogleFonts.inter(fontSize: 14),
@@ -251,12 +110,12 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
               ],
             ),
             const SizedBox(height: 24),
-            if (_isLoading)
+            if (viewModel.isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 80),
                 child: Center(child: CircularProgressIndicator()),
               )
-            else if (_errorMessage != null)
+            else if (viewModel.errorMessage != null)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
@@ -272,7 +131,7 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      _errorMessage!,
+                      viewModel.errorMessage!,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 12,
@@ -281,13 +140,13 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                      onPressed: _loadWarga,
+                      onPressed: viewModel.loadWarga,
                       child: const Text('Coba lagi'),
                     ),
                   ],
                 ),
               )
-            else if (_filteredWarga.isEmpty)
+            else if (viewModel.filteredWarga.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 60),
                 child: Column(
@@ -313,7 +172,7 @@ class _DaftarWargaPageState extends State<DaftarWargaPage> {
                 ),
               )
             else
-              ..._filteredWarga.map(
+              ...viewModel.filteredWarga.map(
                 (warga) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: _WargaCard(warga: warga),

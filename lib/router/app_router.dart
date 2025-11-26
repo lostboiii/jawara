@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:jawara/ui/pages/kegiatan/detail_broadcast_page.dart';
 import 'package:jawara/ui/pages/kegiatan/detail_kegiatan_page.dart';
 import 'package:jawara/ui/pages/warga/daftar_warga_page.dart';
+import 'package:jawara/viewmodels/daftar_keluarga_viewmodel.dart';
+import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
 
 import '../ui/pages/home_page.dart';
 import '../ui/pages/home_keuangan_page.dart';

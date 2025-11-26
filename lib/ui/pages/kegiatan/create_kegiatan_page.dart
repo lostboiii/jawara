@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
 
 class CreateKegiatanPage extends StatefulWidget {
   const CreateKegiatanPage({super.key});
@@ -27,11 +29,11 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
   DateTime? _selectedTanggal;
 
   final List<String> _kategoriOptions = [
-    'Komunitas & Sosial',
-    'Kebersihan & Keamanan',
-    'Keagamaan',
-    'Pendidikan',
-    'Kesehatan & Olahraga',
+    'komunitas & sosial',
+    'kebersihan & keamanan',
+    'keagamaan',
+    'pendidikan',
+    'kesehatan & olahraga',
   ];
 
   @override
@@ -413,10 +415,49 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     );
   }
 
-  void _handleSimpan() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Implement save logic
-      showDialog(
+  Future<void> _handleSimpan() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (_selectedKategori == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kategori harus dipilih')),
+      );
+      return;
+    }
+
+    try {
+      final viewModel = context.read<KegiatanViewModel>();
+      
+      // Convert tanggal dari dd/MM/yyyy ke DateTime
+      DateTime? tanggalKegiatan;
+      if (_tanggalController.text.isNotEmpty) {
+        try {
+          final dateFormat = DateFormat('dd/MM/yyyy');
+          tanggalKegiatan = dateFormat.parse(_tanggalController.text);
+        } catch (e) {
+          debugPrint('Error parsing date: $e');
+        }
+      }
+
+      await viewModel.addKegiatan(
+        nama: _namaController.text,
+        kategori: _selectedKategori!,
+        tanggal: tanggalKegiatan,
+        lokasi: _lokasiController.text.isNotEmpty ? _lokasiController.text : null,
+        penanggungJawab: _penanggungJawabController.text.isNotEmpty 
+            ? _penanggungJawabController.text 
+            : null,
+        deskripsi: _deskripsiController.text.isNotEmpty 
+            ? _deskripsiController.text 
+            : null,
+      );
+
+      if (!mounted) return;
+
+      // Show success dialog
+      await showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
@@ -472,6 +513,15 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
             ],
           );
         },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan data: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
