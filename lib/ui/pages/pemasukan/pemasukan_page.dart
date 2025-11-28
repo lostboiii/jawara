@@ -2,29 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../../router/app_router.dart';
-import 'pemasukan_detail_page.dart';
-
-class Pemasukan {
-  final String sumber;
-  final String kategori;
-  final DateTime tanggal;
-  final double nominal;
-  final String? buktiPath;
-  final DateTime? verifiedAt;
-  final String? verifier;
-
-  Pemasukan({
-    required this.sumber,
-    required this.kategori,
-    required this.tanggal,
-    required this.nominal,
-    this.buktiPath,
-    this.verifiedAt,
-    this.verifier,
-  });
-}
+import '../../../data/models/pemasukan_model.dart';
+import '../../../viewmodels/pemasukan_viewmodel.dart';
 
 class _ChipColor {
   final Color bg;
@@ -40,50 +22,44 @@ class PemasukanPage extends StatefulWidget {
 }
 
 class _PemasukanPageState extends State<PemasukanPage> {
-  final List<Pemasukan> _items = [
-    Pemasukan(
-      sumber: 'Iuran Warga',
-      kategori: 'Iuran Bulanan',
-      tanggal: DateTime(2025, 10, 19),
-      nominal: 250000,
-    ),
-    Pemasukan(
-      sumber: 'Sumbangan RW',
-      kategori: 'Donasi',
-      tanggal: DateTime(2025, 10, 18),
-      nominal: 150000,
-    ),
-    Pemasukan(
-      sumber: 'Kerja Bakti',
-      kategori: 'Kegiatan Warga',
-      tanggal: DateTime(2025, 10, 17),
-      nominal: 60000,
-    ),
-    Pemasukan(
-      sumber: 'Sponsorship',
-      kategori: 'Eksternal',
-      tanggal: DateTime(2025, 10, 2),
-      nominal: 200000,
-    ),
-  ];
-
   final _formKey = GlobalKey<FormState>();
-  final _sumberCtrl = TextEditingController();
+  final _namaPemasukanCtrl = TextEditingController();
   final _kategoriCtrl = TextEditingController();
-  final _nominalCtrl = TextEditingController();
+  String? _selectedKategori;
+  final List<String> _kategoriOptions = [
+    'Unnest',
+    'Donasi',
+    'Dana Bantuan Pemerintah',
+    'Sumbangan Swadaya',
+    'Hasil Uang Kampung',
+    'Lain-lain',
+  ];
+  final _jumlahCtrl = TextEditingController();
   DateTime? _pickedDate;
-  String? _buktiPath;
+  PlatformFile? _selectedFile;
 
-  final _fSumberCtrl = TextEditingController();
+  final _fNamaPemasukanCtrl = TextEditingController();
   String? _fKategori;
   DateTime? _fromDate;
   DateTime? _toDate;
-  List<Pemasukan> _filtered = const [];
 
   @override
   void initState() {
     super.initState();
-    _filtered = List<Pemasukan>.from(_items);
+
+    // Load data when page opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<PemasukanViewModel>().loadPemasukan();
+    });
+  }
+
+  @override
+  void dispose() {
+    _namaPemasukanCtrl.dispose();
+    _kategoriCtrl.dispose();
+    _jumlahCtrl.dispose();
+    _fNamaPemasukanCtrl.dispose();
+    super.dispose();
   }
 
   String _formatDate(DateTime date) {
@@ -98,43 +74,24 @@ class _PemasukanPageState extends State<PemasukanPage> {
     ).format(value);
   }
 
-  bool _withinRange(DateTime d) {
-    if (_fromDate == null && _toDate == null) return true;
-    final date = DateTime(d.year, d.month, d.day);
-    var ok = true;
-    if (_fromDate != null) {
-      final f = DateTime(_fromDate!.year, _fromDate!.month, _fromDate!.day);
-      ok &= !date.isBefore(f);
-    }
-    if (_toDate != null) {
-      final t = DateTime(_toDate!.year, _toDate!.month, _toDate!.day)
-          .add(const Duration(days: 1));
-      ok &= date.isBefore(t);
-    }
-    return ok;
-  }
-
-  void _applyFilter() {
-    final qNama = _fSumberCtrl.text.trim().toLowerCase();
-    final qKat = (_fKategori ?? '').trim().toLowerCase();
-    setState(() {
-      _filtered = _items.where((e) {
-        final byNama = qNama.isEmpty || e.sumber.toLowerCase().contains(qNama);
-        final byKat = qKat.isEmpty || e.kategori.toLowerCase().contains(qKat);
-        final byDate = _withinRange(e.tanggal);
-        return byNama && byKat && byDate;
-      }).toList();
-    });
+  Future<void> _applyFilter() async {
+    final viewModel = context.read<PemasukanViewModel>();
+    await viewModel.filterPemasukan(
+      nama: _fNamaPemasukanCtrl.text.trim(),
+      kategori: _fKategori?.isEmpty ?? true ? null : _fKategori,
+      fromDate: _fromDate,
+      toDate: _toDate,
+    );
   }
 
   void _resetFilter() {
     setState(() {
-      _fSumberCtrl.clear();
+      _fNamaPemasukanCtrl.clear();
       _fKategori = null;
       _fromDate = null;
       _toDate = null;
-      _filtered = List<Pemasukan>.from(_items);
     });
+    context.read<PemasukanViewModel>().loadPemasukan();
   }
 
   Future<void> _showFilterSheet() async {
@@ -155,7 +112,6 @@ class _PemasukanPageState extends State<PemasukanPage> {
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Filter Pemasukan',
@@ -163,23 +119,25 @@ class _PemasukanPageState extends State<PemasukanPage> {
                 ),
                 const SizedBox(height: 12),
                 TextField(
-                  controller: _fSumberCtrl,
-                  decoration: const InputDecoration(labelText: 'Sumber'),
+                  controller: _fNamaPemasukanCtrl,
+                  decoration: const InputDecoration(labelText: 'Nama Pemasukan'),
                 ),
                 const SizedBox(height: 8),
-                Builder(
-                  builder: (context) {
-                    final categories =
-                        _items.map((e) => e.kategori).toSet().toList()
-                          ..sort((a, b) =>
-                              a.toLowerCase().compareTo(b.toLowerCase()));
+                Consumer<PemasukanViewModel>(
+                  builder: (context, viewModel, _) {
+                    final categories = viewModel.items
+                        .map((e) => e.kategori_pemasukan)
+                        .toSet()
+                        .toList()
+                      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
                     return DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: 'Kategori'),
                       isExpanded: true,
                       value: _fKategori,
                       items: [
                         const DropdownMenuItem<String>(
-                          value: null,
+                          value: '',
                           child: Text('Semua'),
                         ),
                         ...categories.map(
@@ -197,64 +155,40 @@ class _PemasukanPageState extends State<PemasukanPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Dari Tanggal'),
-                          const SizedBox(height: 4),
-                          Text(
-                            _fromDate == null
-                                ? '-'
-                                : _formatDate(_fromDate!),
-                          ),
-                        ],
-                      ),
+                      child: Text(_fromDate == null ? '-' : _formatDate(_fromDate!)),
                     ),
                     TextButton.icon(
                       onPressed: () async {
-                        final now = DateTime.now();
                         final d = await showDatePicker(
                           context: ctx,
-                          initialDate: _fromDate ?? now,
+                          initialDate: _fromDate ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                         );
                         if (d != null) setState(() => _fromDate = d);
                       },
                       icon: const Icon(Icons.calendar_month),
-                      label: const Text('Pilih'),
+                      label: const Text('Dari'),
                     ),
                   ],
                 ),
                 Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Sampai Tanggal'),
-                          const SizedBox(height: 4),
-                          Text(
-                            _toDate == null
-                                ? '-'
-                                : _formatDate(_toDate!),
-                          ),
-                        ],
-                      ),
+                      child: Text(_toDate == null ? '-' : _formatDate(_toDate!)),
                     ),
                     TextButton.icon(
                       onPressed: () async {
-                        final now = DateTime.now();
                         final d = await showDatePicker(
                           context: ctx,
-                          initialDate: _toDate ?? now,
+                          initialDate: _toDate ?? DateTime.now(),
                           firstDate: DateTime(2000),
                           lastDate: DateTime(2100),
                         );
                         if (d != null) setState(() => _toDate = d);
                       },
                       icon: const Icon(Icons.calendar_month),
-                      label: const Text('Pilih'),
+                      label: const Text('Sampai'),
                     ),
                   ],
                 ),
@@ -273,9 +207,9 @@ class _PemasukanPageState extends State<PemasukanPage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () {
-                          _applyFilter();
-                          Navigator.pop(ctx);
+                        onPressed: () async {
+                          await _applyFilter();
+                          if (ctx.mounted) Navigator.pop(ctx);
                         },
                         child: const Text('Terapkan'),
                       ),
@@ -310,7 +244,6 @@ class _PemasukanPageState extends State<PemasukanPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             flex: 6,
@@ -326,8 +259,6 @@ class _PemasukanPageState extends State<PemasukanPage> {
               child: Text(
                 value,
                 textAlign: TextAlign.right,
-                overflow: TextOverflow.ellipsis,
-                maxLines: 2,
                 style: textTheme.bodyMedium,
               ),
             ),
@@ -337,9 +268,11 @@ class _PemasukanPageState extends State<PemasukanPage> {
     );
   }
 
-  Widget _pemasukanCard(Pemasukan item, int index) {
-    final colors = _chipColors(item.kategori);
+  Widget _pemasukanCard(PemasukanModel item, int index) {
+    final kategori = item.kategori_pemasukan;
+    final colors = _chipColors(kategori);
     final theme = Theme.of(context);
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
@@ -351,7 +284,6 @@ class _PemasukanPageState extends State<PemasukanPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
@@ -359,13 +291,12 @@ class _PemasukanPageState extends State<PemasukanPage> {
                     children: [
                       Text(
                         'Nominal',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: Colors.grey[700],
-                        ),
+                        style: theme.textTheme.labelLarge
+                            ?.copyWith(color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _formatCurrency(item.nominal),
+                        _formatCurrency(item.jumlah),
                         style: theme.textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Colors.green[700],
@@ -374,24 +305,20 @@ class _PemasukanPageState extends State<PemasukanPage> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
                 Chip(
-                  label: Text(item.kategori),
+                  label: Text(kategori),
                   backgroundColor: colors.bg,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(
-                    color: colors.fg,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                ),
+                  labelStyle: theme.textTheme.labelMedium?.copyWith(color: colors.fg),
+                )
               ],
             ),
             const SizedBox(height: 12),
             const Divider(height: 1),
             _kvRow('No', '${index + 1}'),
             const Divider(height: 1),
-            _kvRow('Sumber', item.sumber),
+            _kvRow('Nama', item.nama_pemasukan),
             const Divider(height: 1),
-            _kvRow('Tanggal', _formatDate(item.tanggal)),
+            _kvRow('Tanggal', _formatDate(item.tanggal_pemasukan)),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
@@ -412,131 +339,153 @@ class _PemasukanPageState extends State<PemasukanPage> {
 
   void _showAddDialog() async {
     _pickedDate = DateTime.now();
-    _sumberCtrl.clear();
+    _namaPemasukanCtrl.clear();
     _kategoriCtrl.clear();
-    _nominalCtrl.clear();
-    _buktiPath = null;
+    _jumlahCtrl.clear();
+    _selectedFile = null;
+    _selectedKategori = null;
 
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Tambah Pemasukan'),
-          content: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: _sumberCtrl,
-                    decoration: const InputDecoration(labelText: 'Sumber'),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  TextFormField(
-                    controller: _kategoriCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategori Pemasukan',
-                    ),
-                    validator: (v) =>
-                        v == null || v.isEmpty ? 'Wajib diisi' : null,
-                  ),
-                  TextFormField(
-                    controller: _nominalCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Nominal (Rp)',
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (v) => (v == null || double.tryParse(v) == null)
-                        ? 'Masukkan angka'
-                        : null,
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Tambah Pemasukan'),
+              content: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Expanded(
-                        child: Text(
-                          _buktiPath != null
-                              ? 'Bukti: '
-                                  '${_buktiPath!.split(RegExp(r"[\\\\/]+")).last}'
-                              : 'Belum ada bukti',
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      TextFormField(
+                        controller: _namaPemasukanCtrl,
+                        decoration: const InputDecoration(labelText: 'Nama Pemasukan'),
+                        validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
                       ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final result = await FilePicker.platform.pickFiles();
-                          if (result != null &&
-                              result.files.single.path != null) {
-                            setState(() {
-                              _buktiPath = result.files.single.path;
-                            });
-                          }
+                      DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(labelText: 'Kategori Pemasukan'),
+                        value: _selectedKategori,
+                        items: _kategoriOptions
+                            .map((category) => DropdownMenuItem<String>(
+                                  value: category,
+                                  child: Text(category),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setDialogState(() => _selectedKategori = value);
                         },
-                        icon: const Icon(Icons.upload_file),
-                        label: const Text('Upload Bukti'),
+                        validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                      ),
+                      TextFormField(
+                        controller: _jumlahCtrl,
+                        decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
+                        keyboardType: TextInputType.number,
+                        validator: (v) =>
+                            (v == null || double.tryParse(v) == null) ? 'Masukkan angka' : null,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _selectedFile != null
+                                  ? 'Bukti: ${_selectedFile!.name}'
+                                  : 'Belum ada bukti',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final result = await FilePicker.platform.pickFiles();
+                              if (result != null) {
+                                setDialogState(() => _selectedFile = result.files.first);
+                              }
+                            },
+                            icon: const Icon(Icons.upload),
+                            label: const Text('Upload'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _pickedDate != null
+                                  ? 'Tanggal: ${_formatDate(_pickedDate!)}'
+                                  : 'Pilih Tanggal',
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final d = await showDatePicker(
+                                context: context,
+                                initialDate: _pickedDate ?? DateTime.now(),
+                                firstDate: DateTime(2000),
+                                lastDate: DateTime(2100),
+                              );
+                              if (d != null) {
+                                setDialogState(() => _pickedDate = d);
+                              }
+                            },
+                            icon: const Icon(Icons.calendar_today),
+                            label: const Text('Pilih'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _pickedDate != null
-                              ? 'Tanggal: ${_formatDate(_pickedDate!)}'
-                              : 'Pilih tanggal',
-                        ),
-                      ),
-                      TextButton.icon(
-                        onPressed: () async {
-                          final now = DateTime.now();
-                          final d = await showDatePicker(
-                            context: context,
-                            initialDate: _pickedDate ?? now,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                          );
-                          if (d != null) {
-                            setState(() => _pickedDate = d);
-                          }
-                        },
-                        icon: const Icon(Icons.calendar_today),
-                        label: const Text('Pilih'),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Batal'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                if (_formKey.currentState!.validate() && _pickedDate != null) {
-                  setState(() {
-                    _items.add(
-                      Pemasukan(
-                        sumber: _sumberCtrl.text,
-                        kategori: _kategoriCtrl.text,
-                        tanggal: _pickedDate!,
-                        nominal: double.parse(_nominalCtrl.text),
-                        buktiPath: _buktiPath,
-                      ),
-                    );
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              icon: const Icon(Icons.save),
-              label: const Text('Simpan'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Batal'),
+                ),
+                FilledButton.icon(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate() && _pickedDate != null) {
+                      try {
+                        final viewModel = context.read<PemasukanViewModel>();
+
+                        String? buktiUrl;
+                        if (_selectedFile != null && _selectedFile!.bytes != null) {
+                          buktiUrl = await viewModel.repository.uploadBukti(
+                            _selectedFile!.name,
+                            _selectedFile!.bytes!,
+                          );
+                        }
+
+                        await viewModel.addPemasukan(
+                          nama_pemasukan: _namaPemasukanCtrl.text,
+                          tanggal_pemasukan: _pickedDate!,
+                          kategori_pemasukan: _selectedKategori ?? '',
+                          jumlah: double.parse(_jumlahCtrl.text),
+                          bukti_pemasukan: buktiUrl,
+                        );
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Pemasukan berhasil ditambahkan')),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e')),
+                          );
+                        }
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.save),
+                  label: const Text('Simpan'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -549,41 +498,73 @@ class _PemasukanPageState extends State<PemasukanPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.go('/home'),
         ),
-        title: const Text('Daftar Pemasukan', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Daftar Pemasukan',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+      body: Consumer<PemasukanViewModel>(
+        builder: (context, viewModel, _) {
+          if (viewModel.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (viewModel.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('Error: ${viewModel.errorMessage}'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => viewModel.loadPemasukan(),
+                    child: const Text('Coba Lagi'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
               children: [
-                FilledButton.icon(
-                  onPressed: _showAddDialog,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Tambah Data'),
+                Row(
+                  children: [
+                    FilledButton.icon(
+                      onPressed: _showAddDialog,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Tambah Data'),
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(
+                      onPressed: _showFilterSheet,
+                      icon: const Icon(Icons.filter_list),
+                      label: const Text('Filter'),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                OutlinedButton.icon(
-                  onPressed: _showFilterSheet,
-                  icon: const Icon(Icons.filter_list),
-                  label: const Text('Filter'),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: viewModel.items.isEmpty
+                      ? const Center(child: Text('Belum ada data pemasukan'))
+                      : RefreshIndicator(
+                          onRefresh: () => viewModel.loadPemasukan(),
+                          child: ListView.builder(
+                            itemCount: viewModel.items.length,
+                            itemBuilder: (context, i) =>
+                                _pemasukanCard(viewModel.items[i], i),
+                          ),
+                        ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _filtered.length,
-                itemBuilder: (context, i) => _pemasukanCard(_filtered[i], i),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

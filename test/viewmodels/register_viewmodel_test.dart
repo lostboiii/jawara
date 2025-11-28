@@ -155,6 +155,37 @@ class _MinimalFakeWargaRepository implements WargaRepository {
   Future<List<Map<String, dynamic>>> getAllWarga() async {
     return [];
   }
+
+  @override
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluargaId,
+    required String rumahId,
+    required DateTime tanggalMutasi,
+    required String alasanMutasi,
+  }) async {
+    return {
+      'id': 'mutasi_123',
+      'keluarga_id': keluargaId,
+      'rumah_id': rumahId,
+      'tanggal_mutasi': tanggalMutasi.toIso8601String(),
+      'alasan_mutasi': alasanMutasi,
+    };
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMutasiList() async {
+    return [
+      {
+        'id': 'mutasi_1',
+        'keluarga_id': 'keluarga_1',
+        'rumah_id': 'rumah_1',
+        'tanggal_mutasi': DateTime.now().toIso8601String(),
+        'alasan_mutasi': 'Alasan test',
+        'keluarga_nomor_kk': '3210123456789001',
+        'rumah_alamat': 'Jl. Merdeka No. 1',
+      },
+    ];
+  }
 }
 
 void main() {

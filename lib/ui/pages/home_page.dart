@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/repositories/pengeluaran_repository.dart';
+import '../../data/repositories/pemasukan_repository.dart';
+import '../../data/models/pengeluaran_model.dart';
+import '../../data/models/pemasukan_model.dart';
 import '../../core/services/supabase_service.dart';
 
 typedef HomeSectionBuilder = Widget Function(
@@ -92,8 +95,11 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
   late int _selectedIndex;
   double _totalPengeluaran = 0;
   bool _isLoadingPengeluaran = true;
+  List<dynamic> _recentTransactions = [];
+  bool _isLoadingTransactions = true;
 
   late final PengeluaranRepository _pengeluaranRepo;
+  late final PemasukanRepository _pemasukanRepo;
   late final Map<int, HomeSectionBuilder> _builders;
 
   @override
@@ -112,6 +118,9 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     _pengeluaranRepo = SupabasePengeluaranRepository(
       client: SupabaseService.client,
     );
+    _pemasukanRepo = SupabasePemasukanRepository(
+      client: SupabaseService.client,
+    );
     _builders = {
       0: widget.sectionBuilders[0] ??
           (ctx, scope) => _buildDefaultHomeContent(ctx),
@@ -123,6 +132,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
           (ctx, scope) => _buildPlaceholderContent(ctx, 'Kegiatan'),
     };
     _loadPengeluaran();
+    _loadTransactions();
   }
 
   Future<void> _loadPengeluaran() async {
@@ -148,6 +158,49 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
 
       setState(() {
         _isLoadingPengeluaran = false;
+      });
+    }
+  }
+
+  Future<void> _loadTransactions() async {
+    try {
+      final pengeluaranList = await _pengeluaranRepo.fetchAll();
+      final pemasukanList = await _pemasukanRepo.fetchAll();
+
+      // Combine and sort by date (most recent first)
+      final allTransactions = [
+        ...pengeluaranList.map((p) => {'type': 'pengeluaran', 'data': p}),
+        ...pemasukanList.map((p) => {'type': 'pemasukan', 'data': p}),
+      ];
+
+      allTransactions.sort((a, b) {
+        final aDate = a['type'] == 'pengeluaran'
+            ? (a['data'] as PengeluaranModel).tanggalPengeluaran
+            : (a['data'] as PemasukanModel).tanggal_pemasukan;
+        final bDate = b['type'] == 'pengeluaran'
+            ? (b['data'] as PengeluaranModel).tanggalPengeluaran
+            : (b['data'] as PemasukanModel).tanggal_pemasukan;
+        return bDate.compareTo(aDate);
+      });
+
+      // Load all recent transactions
+      final recentTransactions = allTransactions;
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _recentTransactions = recentTransactions;
+        _isLoadingTransactions = false;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingTransactions = false;
       });
     }
   }
@@ -364,7 +417,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                 buildMenuIcon(
                   icon: Icons.download,
                   label: 'Pemasukan Lain',
-                  onTap: () {},
+                  onTap: () => context.go('/pemasukan'),
                 ),
                 buildMenuIcon(
                   icon: Icons.add_circle,
@@ -379,7 +432,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                 buildMenuIcon(
                   icon: Icons.add_circle,
                   label: 'Tambah\nPengeluaran',
-                  onTap: () {},
+                  onTap: () => context.go('/pengeluaran_add'),
                 ),
                 buildMenuIcon(
                   icon: Icons.more_horiz,
@@ -398,11 +451,51 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               ),
             ),
             const SizedBox(height: 16),
-            buildTransactionItem(
-              title: 'Dafa',
-              subtitle: 'Pemeliharaan Fasilitas',
-              amount: 'Rp 10.000',
-            ),
+            _isLoadingTransactions
+                ? const Center(child: CircularProgressIndicator())
+                : _recentTransactions.isEmpty
+                    ? Center(
+                        child: Text(
+                          'Tidak ada transaksi',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      )
+                    : SizedBox(
+                        height: 200, // Adjust height to show approximately 3 items
+                        child: ListView.builder(
+                          itemCount: _recentTransactions.length,
+                          itemBuilder: (context, index) {
+                            final transaction = _recentTransactions[index];
+                            final type = transaction['type'] as String;
+                            final data = transaction['data'];
+
+                            String title;
+                            String subtitle;
+                            String amount;
+
+                            if (type == 'pengeluaran') {
+                              final pengeluaran = data as PengeluaranModel;
+                              title = pengeluaran.namaPengeluaran;
+                              subtitle = pengeluaran.kategoriPengeluaran;
+                              amount = '-Rp ${formatCurrency(pengeluaran.jumlah)}';
+                            } else {
+                              final pemasukan = data as PemasukanModel;
+                              title = pemasukan.nama_pemasukan;
+                              subtitle = pemasukan.kategori_pemasukan;
+                              amount = '+Rp ${formatCurrency(pemasukan.jumlah)}';
+                            }
+
+                            return buildTransactionItem(
+                              title: title,
+                              subtitle: subtitle,
+                              amount: amount,
+                            );
+                          },
+                        ),
+                      ),
           ],
         ),
       ),

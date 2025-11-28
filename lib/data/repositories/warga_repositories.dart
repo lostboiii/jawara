@@ -69,6 +69,17 @@ abstract class WargaRepository {
 
   /// Update rumah status to ditempati
   Future<void> updateRumahStatusToOccupied(String rumahId);
+
+  /// Create mutasi keluarga
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluargaId,
+    required String rumahId,
+    required DateTime tanggalMutasi,
+    required String alasanMutasi,
+  });
+
+  /// Get all mutasi list
+  Future<List<Map<String, dynamic>>> getMutasiList();
 }
 
 /// Implementasi Warga Repository menggunakan Supabase
@@ -437,6 +448,74 @@ class SupabaseWargaRepository implements WargaRepository {
       return wargaList;
     } catch (e) {
       throw Exception('Gagal mengambil data warga: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluargaId,
+    required String rumahId,
+    required DateTime tanggalMutasi,
+    required String alasanMutasi,
+  }) async {
+    try {
+      final mutasiData = {
+        'keluarga_id': keluargaId,
+        'rumah_id': rumahId,
+        'tanggal_mutasi': tanggalMutasi.toIso8601String(),
+        'alasan_mutasi': alasanMutasi,
+      };
+
+      final response = await client
+          .from('mutasi_keluarga')
+          .insert(mutasiData)
+          .select()
+          .single();
+
+      debugPrint('Created mutasi for keluarga $keluargaId to rumah $rumahId');
+      return response;
+    } catch (e) {
+      debugPrint('Error creating mutasi: $e');
+      throw Exception('Gagal membuat mutasi keluarga: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getMutasiList() async {
+    try {
+      final response = await client
+          .from('mutasi_keluarga')
+          .select('''
+            *,
+            keluarga:keluarga_id(nomor_kk),
+            rumah:rumah_id(alamat)
+          ''')
+          .order('tanggal_mutasi', ascending: false);
+
+      final mutasiList = List<Map<String, dynamic>>.from(response);
+
+      // Process the joined data
+      for (var mutasi in mutasiList) {
+        // Extract keluarga data
+        if (mutasi['keluarga'] != null) {
+          mutasi['keluarga_nomor_kk'] = mutasi['keluarga']['nomor_kk'] ?? '';
+        } else {
+          mutasi['keluarga_nomor_kk'] = '';
+        }
+
+        // Extract rumah data
+        if (mutasi['rumah'] != null) {
+          mutasi['rumah_alamat'] = mutasi['rumah']['alamat'] ?? '';
+        } else {
+          mutasi['rumah_alamat'] = '';
+        }
+      }
+
+      debugPrint('getMutasiList result: $mutasiList');
+      return mutasiList;
+    } catch (e) {
+      debugPrint('Error getting mutasi list: $e');
+      throw Exception('Gagal mengambil data mutasi keluarga: $e');
     }
   }
 }

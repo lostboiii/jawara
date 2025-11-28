@@ -69,61 +69,83 @@ class Warga {
 
 // lib/models/rumah_model.dart
 class Rumah {
-  final String id;
+  final String? id;
   final String nomorRumah;
-  final String alamatLengkap;
+  final String alamat;
   final String rt;
   final String rw;
-  final String kelurahan;
-  final String kecamatan;
-  final String statusKepemilikan; // Milik Sendiri, Sewa, Kontrak
+  final String statusKepemilikan;
+  final int jumlahPenghuni;
   final double luasTanah;
   final double luasBangunan;
-  final int jumlahPenghuni;
+  final String statusRumah;
 
   Rumah({
-    required this.id,
+    this.id,
     required this.nomorRumah,
-    required this.alamatLengkap,
+    required this.alamat,
     required this.rt,
     required this.rw,
-    required this.kelurahan,
-    required this.kecamatan,
     required this.statusKepemilikan,
+    required this.jumlahPenghuni,
     required this.luasTanah,
     required this.luasBangunan,
-    required this.jumlahPenghuni,
+    required this.statusRumah,
   });
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'nomorRumah': nomorRumah,
-      'alamatLengkap': alamatLengkap,
+      if (id != null) 'id': id,
+      'nomor_rumah': nomorRumah,
+      'alamat': alamat,
       'rt': rt,
       'rw': rw,
-      'kelurahan': kelurahan,
-      'kecamatan': kecamatan,
-      'statusKepemilikan': statusKepemilikan,
-      'luasTanah': luasTanah,
-      'luasBangunan': luasBangunan,
-      'jumlahPenghuni': jumlahPenghuni,
+      'status_kepemilikan': statusKepemilikan,
+      'jumlah_penghuni': jumlahPenghuni,
+      'luas_tanah': luasTanah,
+      'luas_bangunan': luasBangunan,
+      'status_rumah': statusRumah,
     };
   }
 
   factory Rumah.fromJson(Map<String, dynamic> json) {
     return Rumah(
-      id: json['id'],
-      nomorRumah: json['nomorRumah'],
-      alamatLengkap: json['alamatLengkap'],
-      rt: json['rt'],
-      rw: json['rw'],
-      kelurahan: json['kelurahan'],
-      kecamatan: json['kecamatan'],
-      statusKepemilikan: json['statusKepemilikan'],
-      luasTanah: json['luasTanah'].toDouble(),
-      luasBangunan: json['luasBangunan'].toDouble(),
-      jumlahPenghuni: json['jumlahPenghuni'],
+      id: json['id'] as String?,
+      nomorRumah: json['nomor_rumah'] as String? ?? '',
+      alamat: json['alamat'] as String? ?? '',
+      rt: json['rt'] as String? ?? '',
+      rw: json['rw'] as String? ?? '',
+      statusKepemilikan: json['status_kepemilikan'] as String? ?? '',
+      jumlahPenghuni: json['jumlah_penghuni'] as int? ?? 0,
+      luasTanah: (json['luas_tanah'] as num?)?.toDouble() ?? 0.0,
+      luasBangunan: (json['luas_bangunan'] as num?)?.toDouble() ?? 0.0,
+      statusRumah: json['status_rumah'] as String? ?? 'kosong',
+    );
+  }
+
+  Rumah copyWith({
+    String? id,
+    String? nomorRumah,
+    String? alamat,
+    String? rt,
+    String? rw,
+    String? statusKepemilikan,
+    int? jumlahPenghuni,
+    double? luasTanah,
+    double? luasBangunan,
+    String? statusRumah,
+  }) {
+    return Rumah(
+      id: id ?? this.id,
+      nomorRumah: nomorRumah ?? this.nomorRumah,
+      alamat: alamat ?? this.alamat,
+      rt: rt ?? this.rt,
+      rw: rw ?? this.rw,
+      statusKepemilikan: statusKepemilikan ?? this.statusKepemilikan,
+      jumlahPenghuni: jumlahPenghuni ?? this.jumlahPenghuni,
+      luasTanah: luasTanah ?? this.luasTanah,
+      luasBangunan: luasBangunan ?? this.luasBangunan,
+      statusRumah: statusRumah ?? this.statusRumah,
     );
   }
 }

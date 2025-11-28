@@ -10,12 +10,15 @@ import 'package:jawara/core/services/auth_services.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
 import 'package:jawara/data/repositories/pengeluaran_repository.dart';
 import 'package:jawara/viewmodels/pengeluaran_viewmodel.dart';
+import 'package:jawara/data/repositories/pemasukan_repository.dart';
+import 'package:jawara/viewmodels/pemasukan_viewmodel.dart';
 import 'package:jawara/data/repositories/metode_pembayaran_repository.dart';
 import 'package:jawara/viewmodels/metode_pembayaran_viewmodel.dart';
 import 'package:jawara/data/repositories/broadcast_repository.dart';
 import 'package:jawara/viewmodels/broadcast_viewmodel.dart';
 import 'package:jawara/data/repositories/kegiatan_repository.dart';
 import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
+import 'package:jawara/viewmodels/rumah_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -57,6 +60,9 @@ class MyApp extends StatelessWidget {
         Provider<PengeluaranRepository>(
           create: (_) => SupabasePengeluaranRepository(client: supabaseClient),
         ),
+        Provider<PemasukanRepository>(
+          create: (_) => SupabasePemasukanRepository(client: supabaseClient),
+        ),
         Provider<MetodePembayaranRepository>(
           create: (_) =>
               SupabaseMetodePembayaranRepository(client: supabaseClient),
@@ -84,6 +90,11 @@ class MyApp extends StatelessWidget {
           )..loadPengeluaran(),
         ),
         ChangeNotifierProvider(
+          create: (context) => PemasukanViewModel(
+            repository: context.read<PemasukanRepository>(),
+          )..loadPemasukan(),
+        ),
+        ChangeNotifierProvider(
           create: (context) => MetodePembayaranViewModel(
             repository: context.read<MetodePembayaranRepository>(),
           )..loadMetodePembayaran(),
@@ -97,6 +108,9 @@ class MyApp extends StatelessWidget {
           create: (context) => KegiatanViewModel(
             repository: context.read<KegiatanRepository>(),
           )..loadKegiatan(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => RumahViewModel(),
         ),
       ],
       child: Builder(

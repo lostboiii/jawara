@@ -31,6 +31,7 @@ import '../ui/pages/auth/register_step3_page.dart';
 import '../ui/pages/dashboard_page.dart';
 import '../ui/pages/kegiatan/broadcast_list_page.dart';
 import '../ui/pages/kegiatan/create_broadcast_page.dart';
+import '../ui/pages/kegiatan/edit_broadcast_page.dart';
 import '../ui/pages/kegiatan/create_kegiatan_page.dart';
 import '../ui/pages/kegiatan/kegiatan_list_page.dart';
 import '../ui/pages/kegiatan/edit_kegiatan_page.dart';
@@ -44,6 +45,7 @@ import '../ui/pages/warga/tambah_warga_page.dart';
 import '../ui/screens/warga/keluarga_screen.dart';
 import '../ui/screens/warga/keluarga_page.dart';
 import '../data/models/pengeluaran_model.dart';
+import '../data/models/pemasukan_model.dart';
 import '../data/models/metode_pembayaran_model.dart';
 // (Pengeluaran, MutasiKeluargaItem)
 
@@ -82,6 +84,7 @@ class AppRoutes {
   static const dashboard = '/dashboard';
   static const ListBroadcast = '/list-broadcast';
   static const createBroadcast = '/create-broadcast';
+  static const editBroadcast = '/edit-broadcast';
   static const kegiatan = '/kegiatan';
   static const createKegiatan = '/kegiatan/create';
   static const listKegiatan = '/kegiatan/list';
@@ -212,7 +215,7 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.pemasukanDetail,
       name: 'pemasukan-detail',
       builder: (context, state) {
-        final item = state.extra as Pemasukan;
+        final item = state.extra as PemasukanModel;
         return PemasukanDetailPage(item: item);
       },
     ),
@@ -287,6 +290,17 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.createBroadcast,
       name: 'create-broadcast',
       builder: (context, state) => const CreateBroadcastPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.editBroadcast,
+      name: 'edit-broadcast',
+      builder: (context, state) {
+        final broadcast = state.extra as BroadcastListItem?;
+        if (broadcast == null) {
+          return const BroadcastListPage();
+        }
+        return EditBroadcastPage(broadcast: broadcast);
+      },
     ),
     GoRoute(
       path: '/detail-broadcast',
