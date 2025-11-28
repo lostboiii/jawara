@@ -13,12 +13,15 @@ import '../ui/pages/home_kegiatan_page.dart';
 import '../ui/pages/activity_log_page.dart';
 import '../ui/pages/user_list_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_page.dart';
+import '../ui/pages/pengeluaran/pengeluaran_add_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_detail_page.dart';
 import '../ui/pages/pemasukan/pemasukan_page.dart';
 import '../ui/pages/pemasukan/pemasukan_detail_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_page.dart';
+import '../ui/pages/channel_transfer/channel_transfer_add_page.dart';
+import '../ui/pages/channel_transfer/channel_transfer_view_page.dart';
 import '../ui/pages/warga/daftar_keluarga_page.dart';
 import '../ui/pages/warga/detail_keluarga_page.dart';
 import '../ui/pages/warga/detail_warga_page.dart';
@@ -63,12 +66,15 @@ class AppRoutes {
   static const activityLog = '/activity-log';
   static const userList = '/user-list';
   static const pengeluaran = '/pengeluaran';
+  static const pengeluaranAdd = '/pengeluaran/add';
   static const pengeluaranDetail = '/pengeluaran/detail';
   static const pemasukan = '/pemasukan';
   static const pemasukanDetail = '/pemasukan/detail';
   static const mutasiKeluarga = '/mutasi-keluarga';
   static const mutasiKeluargaDetail = '/mutasi-keluarga/detail';
   static const channelTransfer = '/channel-transfer';
+  static const channelTransferAdd = '/channel-transfer/add';
+  static const channelTransferView = '/channel-transfer/view';
   // Screens module routes
   static const rumahList = '/rumah';
   static const rumahAdd = '/rumah/add';
@@ -199,6 +205,14 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PengeluaranPage(),
     ),
     GoRoute(
+      path: AppRoutes.pengeluaranAdd,
+      name: 'pengeluaran-add',
+      builder: (context, state) {
+        final item = state.extra as PengeluaranModel?;
+        return PengeluaranAddPage(item: item);
+      },
+    ),
+    GoRoute(
       path: AppRoutes.pengeluaranDetail,
       name: 'pengeluaran-detail',
       builder: (context, state) {
@@ -238,11 +252,19 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const ChannelTransferPage(),
     ),
     GoRoute(
-      path: AppRoutes.channelTransferDetail,
-      name: 'channel-transfer-detail',
+      path: AppRoutes.channelTransferAdd,
+      name: 'channel-transfer-add',
       builder: (context, state) {
         final item = state.extra as MetodePembayaranModel?;
-        return ChannelTransferDetailPage(item: item);
+        return ChannelTransferAddPage(item: item);
+      },
+    ),
+    GoRoute(
+      path: AppRoutes.channelTransferView,
+      name: 'channel-transfer-view',
+      builder: (context, state) {
+        final item = state.extra as MetodePembayaranModel;
+        return ChannelTransferViewPage(item: item);
       },
     ),
     // --- Screens module routes ---
