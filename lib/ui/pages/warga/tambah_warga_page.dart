@@ -899,7 +899,7 @@ class _TambahWargaPageContentState extends State<_TambahWargaPageContent> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.pop(); // Close dialog
+                      Navigator.of(context).pop(); // Close dialog
                       context.goNamed('home-warga'); // Go back to previous page
                     },
                     style: ElevatedButton.styleFrom(

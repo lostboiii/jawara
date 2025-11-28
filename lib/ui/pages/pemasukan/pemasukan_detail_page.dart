@@ -1,12 +1,11 @@
-// coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 
-import 'pemasukan_page.dart' show Pemasukan;
+import '/data/models/pemasukan_model.dart';
 
 class PemasukanDetailPage extends StatelessWidget {
-  final Pemasukan item;
+  final PemasukanModel item;
   const PemasukanDetailPage({super.key, required this.item});
 
   String _formatDate(DateTime date) =>
@@ -50,8 +49,10 @@ class PemasukanDetailPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
-        title: const Text('Detail Pemasukan',
-            style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Detail Pengeluaran',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
@@ -62,32 +63,40 @@ class PemasukanDetailPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Detail Pemasukan',
+                'Detail Pengeluaran',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
-              _kv(context, 'Sumber Pemasukan', item.sumber),
-              _kv(context, 'Kategori', item.kategori),
-              _kv(context, 'Tanggal Transaksi', _formatDate(item.tanggal)),
+
+              // Perubahan label di sini
+              _kv(context, 'Nama Pengeluaran', item.nama_pemasukan),
+              _kv(context, 'Kategori', item.kategori_pemasukan),
+              _kv(context, 'Tanggal Transaksi', _formatDate(item.tanggal_pemasukan)),
+
+              // Nominal → Jumlah
               _kv(
                 context,
-                'Nominal',
-                _formatCurrency(item.nominal),
-                valueColor: Colors.green[700],
+                'Jumlah',
+                _formatCurrency(item.jumlah),
+                valueColor: Colors.red[700],
               ),
+
               if (item.verifiedAt != null)
                 _kv(
                   context,
                   'Tanggal Terverifikasi',
                   _formatDateTime(item.verifiedAt!),
                 ),
+
               if (item.verifier != null)
                 _kv(context, 'Verifikator', item.verifier!),
+
               const SizedBox(height: 12),
-              if (item.buktiPath != null)
+
+              if (item.bukti_pemasukan != null)
                 OutlinedButton.icon(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Bukti: ${item.buktiPath}')),
+                      SnackBar(content: Text('Bukti: ${item.bukti_pemasukan}')),
                     );
                   },
                   icon: const Icon(Icons.insert_drive_file_outlined),

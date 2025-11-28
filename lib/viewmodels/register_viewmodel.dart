@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:jawara/core/services/auth_services.dart';
+import 'package:jawara/core/services/supabase_service.dart';
 import 'package:jawara/data/repositories/warga_repositories.dart';
 import 'package:jawara/data/models/warga_profile.dart';
 
@@ -468,6 +469,84 @@ class RegisterViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error fetching rumah list: $e');
       return [];
+    }
+  }
+
+  /// Create new rumah
+  Future<String?> createRumah({
+    required String alamat,
+    required String statusRumah,
+  }) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      // Generate nomor rumah (simple implementation)
+      final rumahList = await getRumahList();
+      final nextNumber = (rumahList.length + 1).toString().padLeft(3, '0');
+
+      final rumahData = {
+        'alamat': alamat,
+        'status_rumah': statusRumah,
+      };
+
+      final response = await SupabaseService.client
+          .from('rumah')
+          .insert(rumahData)
+          .select()
+          .single();
+
+      _isLoading = false;
+      notifyListeners();
+
+      return response['id'] as String;
+    } catch (e) {
+      _error = 'Gagal membuat rumah: $e';
+      _isLoading = false;
+      notifyListeners();
+      return null;
+    }
+  }
+
+  /// Get list of all mutasi
+  Future<List<Map<String, dynamic>>> getMutasiList() async {
+    try {
+      return await wargaRepository.getMutasiList();
+    } catch (e) {
+      debugPrint('Error fetching mutasi list: $e');
+      return [];
+    }
+  }
+
+  /// Create new mutasi
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluarga_id,
+    required String rumah_id,
+    required DateTime tanggal_mutasi,
+    required String alasan_mutasi,
+  }) async {
+    try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+
+      final response = await wargaRepository.createMutasi(
+        keluargaId: keluarga_id,
+        rumahId: rumah_id,
+        tanggalMutasi: tanggal_mutasi,
+        alasanMutasi: alasan_mutasi,
+      );
+
+      _isLoading = false;
+      notifyListeners();
+
+      return response;
+    } catch (e) {
+      _error = 'Gagal membuat mutasi: $e';
+      _isLoading = false;
+      notifyListeners();
+      rethrow;
     }
   }
 }

@@ -10,7 +10,6 @@ void main() {
     expect(AppRoutes.pengeluaran, '/pengeluaran');
     expect(AppRoutes.kegiatan, '/kegiatan');
     expect(AppRoutes.createKegiatan, '/kegiatan/create');
-    expect(AppRoutes.broadcastWarga, '/broadcast-warga');
   });
 
   test('appRouter exposes delegate and named routes', () {

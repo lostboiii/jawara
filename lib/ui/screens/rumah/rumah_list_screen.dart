@@ -1,7 +1,9 @@
-// lib/screens/rumah/rumah_list_screen.dart
 // coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:jawara/viewmodels/rumah_viewmodel.dart';
+import 'package:jawara/ui/screens/rumah/rumah_add_screen.dart';
 
 class RumahListScreen extends StatefulWidget {
   const RumahListScreen({super.key});
@@ -12,110 +14,88 @@ class RumahListScreen extends StatefulWidget {
 
 class _RumahListScreenState extends State<RumahListScreen> {
   TextEditingController searchController = TextEditingController();
-  
-  List<Map<String, dynamic>> rumahList = [
-    {
-      'nomorRumah': '123',
-      'alamat': 'Jl. Raya Surabaya No. 123',
-      'rt': '01',
-      'rw': '02',
-      'statusKepemilikan': 'Milik Sendiri',
-      'jumlahPenghuni': 4,
-      'luasTanah': 200.0,
-      'luasBangunan': 150.0,
-    },
-    {
-      'nomorRumah': '45',
-      'alamat': 'Jl. Merdeka No. 45',
-      'rt': '03',
-      'rw': '01',
-      'statusKepemilikan': 'Sewa',
-      'jumlahPenghuni': 3,
-      'luasTanah': 150.0,
-      'luasBangunan': 120.0,
-    },
-    {
-      'nomorRumah': '78',
-      'alamat': 'Jl. Pahlawan No. 78',
-      'rt': '02',
-      'rw': '03',
-      'statusKepemilikan': 'Milik Sendiri',
-      'jumlahPenghuni': 5,
-      'luasTanah': 250.0,
-      'luasBangunan': 180.0,
-    },
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RumahViewModel>().fetchRumahList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        title: Text('Data Rumah', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.green,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
-              ),
+    return Consumer<RumahViewModel>(
+      builder: (context, viewModel, child) {
+        final rumahList = viewModel.rumahList;
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: AppBar(
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => context.go('/home-warga'),
             ),
-            child: Column(
-              children: [
-                TextField(
-                  controller: searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Cari alamat atau nomor rumah...',
-                    prefixIcon: Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            title: Text('Data Rumah', style: TextStyle(fontWeight: FontWeight.bold)),
+            backgroundColor: Colors.white,
+            elevation: 0.5,
+            actions: [
+              IconButton(
+                icon: Icon(Icons.filter_list),
+                onPressed: () {},
+              ),
+            ],
+          ),
+          body: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
                   ),
                 ),
-                SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
-                    Text(
-                      '${rumahList.length} Rumah Terdaftar',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+                    TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Cari alamat atau nomor rumah...',
+                        prefixIcon: Icon(Icons.search),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      ),
                     ),
-                    Text(
-                      'Total Penghuni: ${rumahList.fold(0, (sum, item) => sum + (item['jumlahPenghuni'] as int))}',
-                      style: TextStyle(color: Colors.white70, fontSize: 12),
+                    SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${rumahList.length} Rumah Terdaftar',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                        Text(
+                          'Total: ${rumahList.length}',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8),
-          Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              itemCount: rumahList.length,
-              itemBuilder: (context, index) {
-                final rumah = rumahList[index];
+              ),
+              SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  itemCount: rumahList.length,
+                  itemBuilder: (context, index) {
+                    final rumah = rumahList[index];
                 return Container(
                   margin: EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   decoration: BoxDecoration(
@@ -159,30 +139,30 @@ class _RumahListScreenState extends State<RumahListScreen> {
                                     children: [
                                       Row(
                                         children: [
-                                          Text(
-                                            'Rumah No. ${rumah['nomorRumah']}',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.grey[800],
+                                          Expanded(
+                                            child: Text(
+                                              rumah['alamat'],
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey[800],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                          SizedBox(width: 8),
+                                          const SizedBox(width: 8),
                                           Container(
-                                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: rumah['statusKepemilikan'] == 'Milik Sendiri'
-                                                  ? Colors.blue[50]
-                                                  : Colors.orange[50],
+                                              color: rumah['status_rumah'] == 'ditempati' ? Colors.green[50] : (rumah['status_rumah'] == 'kosong' ? Colors.orange[50] : Colors.grey[200]),
                                               borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Text(
-                                              rumah['statusKepemilikan'],
+                                              (rumah['status_rumah'] as String?)?.toUpperCase() ?? '-',
                                               style: TextStyle(
                                                 fontSize: 10,
-                                                color: rumah['statusKepemilikan'] == 'Milik Sendiri'
-                                                    ? Colors.blue[700]
-                                                    : Colors.orange[700],
+                                                color: rumah['status_rumah'] == 'ditempati' ? Colors.green[700] : (rumah['status_rumah'] == 'kosong' ? Colors.orange[700] : Colors.grey[700]),
                                                 fontWeight: FontWeight.w600,
                                               ),
                                             ),
@@ -212,38 +192,14 @@ class _RumahListScreenState extends State<RumahListScreen> {
                                 ),
                               ],
                             ),
-                            SizedBox(height: 12),
-                            Divider(height: 1),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
+                            const Divider(height: 1),
+                            const SizedBox(height: 12),
                             Row(
                               children: [
-                                _buildInfoChip(
-                                  Icons.people,
-                                  '${rumah['jumlahPenghuni']} Penghuni',
-                                  Colors.purple,
-                                ),
-                                SizedBox(width: 12),
-                                _buildInfoChip(
-                                  Icons.grid_3x3,
-                                  'RT ${rumah['rt']}/RW ${rumah['rw']}',
-                                  Colors.blue,
-                                ),
-                              ],
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              children: [
-                                _buildInfoChip(
-                                  Icons.square_foot,
-                                  '${rumah['luasTanah']} m²',
-                                  Colors.green,
-                                ),
-                                SizedBox(width: 12),
-                                _buildInfoChip(
-                                  Icons.home_work,
-                                  '${rumah['luasBangunan']} m²',
-                                  Colors.orange,
-                                ),
+                                _buildInfoChip(Icons.location_on, rumah['alamat'], Colors.blue),
+                                const SizedBox(width: 12),
+                                _buildInfoChip(Icons.info, rumah['status_rumah'] ?? '-', Colors.green),
                               ],
                             ),
                           ],
@@ -258,13 +214,13 @@ class _RumahListScreenState extends State<RumahListScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigate to add rumah
-        },
+        onPressed: () => context.goNamed('rumah-add'),
         backgroundColor: Colors.green,
         icon: Icon(Icons.add_home),
         label: Text('Tambah Rumah'),
       ),
+    );
+      },
     );
   }
 
@@ -303,7 +259,7 @@ class _RumahListScreenState extends State<RumahListScreen> {
             children: [
               Icon(Icons.home, color: Colors.green),
               SizedBox(width: 8),
-              Text('Detail Rumah No. ${rumah['nomorRumah']}'),
+              Text('Detail Rumah No. ${rumah['nomor_rumah']}'),
             ],
           ),
           content: SingleChildScrollView(
@@ -311,12 +267,12 @@ class _RumahListScreenState extends State<RumahListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildDetailRow('Alamat', rumah['alamat']),
-                _buildDetailRow('RT/RW', 'RT ${rumah['rt']}/RW ${rumah['rw']}'),
-                _buildDetailRow('Status', rumah['statusKepemilikan']),
-                _buildDetailRow('Penghuni', '${rumah['jumlahPenghuni']} orang'),
-                _buildDetailRow('Luas Tanah', '${rumah['luasTanah']} m²'),
-                _buildDetailRow('Luas Bangunan', '${rumah['luasBangunan']} m²'),
+                _buildDetailRow('Alamat', rumah['alamat'] ?? ''),
+                _buildDetailRow('RT/RW', 'RT ${rumah['rt'] ?? ''}/RW ${rumah['rw'] ?? ''}'),
+                _buildDetailRow('Status', rumah['status_kepemilikan'] ?? ''),
+                _buildDetailRow('Penghuni', '${rumah['jumlah_penghuni'] ?? 0} orang'),
+                _buildDetailRow('Luas Tanah', '${rumah['luas_tanah'] ?? 0} m²'),
+                _buildDetailRow('Luas Bangunan', '${rumah['luas_bangunan'] ?? 0} m²'),
               ],
             ),
           ),
@@ -324,14 +280,6 @@ class _RumahListScreenState extends State<RumahListScreen> {
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
               child: Text('Tutup'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Navigate to edit
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              child: Text('Edit'),
             ),
           ],
         );

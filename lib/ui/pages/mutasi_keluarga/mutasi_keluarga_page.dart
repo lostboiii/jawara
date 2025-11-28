@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/register_viewmodel.dart';
 import 'mutasi_keluarga_detail_page.dart';
 
 class MutasiKeluargaItem {
-  final String keluarga;
-  final String alamatLama;
-  final String alamatBaru;
-  final DateTime tanggal;
-  final String jenis; 
-  final String alasan;
+  final String keluarga_id;
+  final String rumah_id;
+  final DateTime tanggal_mutasi;
+  final String alasan_mutasi;
 
   MutasiKeluargaItem({
-    required this.keluarga,
-    required this.alamatLama,
-    required this.alamatBaru,
-    required this.tanggal,
-    required this.jenis,
-    required this.alasan,
+    required this.keluarga_id,
+    required this.rumah_id,
+    required this.tanggal_mutasi,
+    required this.alasan_mutasi,
   });
 }
 
@@ -30,49 +28,116 @@ class MutasiKeluargaPage extends StatefulWidget {
 
 class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
   final List<MutasiKeluargaItem> _items = [
-    MutasiKeluargaItem(
-      keluarga: 'Keluarga Ijat',
-      alamatLama: 'Surabaya, Jl. Merpati No. 10',
-      alamatBaru: 'Kediri, Jl. Kenari No. 5',
-      tanggal: DateTime(2025, 10, 15),
-      jenis: 'Keluar Wilayah',
-      alasan: 'Karena mau keluar',
-    ),
-    MutasiKeluargaItem(
-      keluarga: 'Keluarga Mara Nunez',
-      alamatLama: 'Quis consequatur nob',
-      alamatBaru: 'Malang',
-      tanggal: DateTime(2025, 9, 30),
-      jenis: 'Pindah Rumah',
-      alasan: '',
-    ),
-    MutasiKeluargaItem(
-      keluarga: 'Keluarga Opo',
-      alamatLama: 'Malang, Jl. Merpati No. 10',
-      alamatBaru: 'Kediri, Jl. Kenari No. 5',
-      tanggal: DateTime(2025, 10, 15),
-      jenis: 'Pindah Rumah',
-      alasan: 'terserah gue',
-    ),
+    // starts empty; will load from backend
   ];
 
   final _formKey = GlobalKey<FormState>();
   final _keluargaCtrl = TextEditingController();
-  final _alamatLamaCtrl = TextEditingController();
-  final _alamatBaruCtrl = TextEditingController();
-  String _jenis = 'Pindah Rumah';
+  // removed free-text rumah controller; we use rumah selection from DB
+  // final _rumahCtrl = TextEditingController();
   final _alasanCtrl = TextEditingController();
   DateTime? _pickedDate = DateTime.now();
 
   // Filter states (dropdowns)
-  String? _fNama; // selected keluarga name
-  String? _fJenis; // selected jenis mutasi
+  String? _fNama; // selected keluarga id (filter)
+  String? _fRumah; // selected rumah id (filter)
+  List<Map<String, dynamic>> _rumahList = [];
+  Map<String, String> _rumahCache = {}; // id -> alamat
+  bool _loadingRumah = false;
+
+  // New family list for dropdown
+  List<Map<String, dynamic>> _keluargaList = [];
+  bool _loadingKeluarga = false;
+
+  String? _selectedRumahId;
+  String? _selectedKeluargaId; // selected keluarga id (for add dialog)
   List<MutasiKeluargaItem> _filtered = const [];
 
   @override
   void initState() {
     super.initState();
-    _filtered = List<MutasiKeluargaItem>.from(_items);
+    _filtered = [];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMutasiList();
+      // Use refactored reload method
+      _reloadDropdownData();
+    });
+  }
+
+  Future<void> _reloadDropdownData() async {
+    await Future.wait([
+      _loadRumahList(),
+      _loadKeluargaList(),
+    ]);
+  }
+
+  Future<void> _loadRumahList() async {
+    setState(() => _loadingRumah = true);
+    try {
+      final viewModel = context.read<RegisterViewModel>();
+      final list = await viewModel.getRumahList();
+      // Filter out entries with null id to prevent null safety errors
+      final validList = list.where((r) => r['id'] != null).toList();
+      if (mounted) {
+        setState(() {
+          _rumahList = validList;
+          _rumahCache = {for (var r in validList) (r['id'] as String): (r['alamat'] as String? ?? '')};
+          _loadingRumah = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading rumah list: $e');
+      if (mounted) setState(() => _loadingRumah = false);
+    }
+  }
+
+  Future<void> _loadMutasiList() async {
+    try {
+      final vm = context.read<RegisterViewModel>();
+      final list = await vm.getMutasiList();
+      final items = list.map((m) {
+        final tanggalRaw = m['tanggal_mutasi'];
+        DateTime tanggal_mutasi;
+        if (tanggalRaw is String) {
+          tanggal_mutasi = DateTime.tryParse(tanggalRaw) ?? DateTime.now();
+        } else if (tanggalRaw is DateTime) {
+          tanggal_mutasi = tanggalRaw;
+        } else {
+          tanggal_mutasi = DateTime.now();
+        }
+        return MutasiKeluargaItem(
+          keluarga_id: (m['keluarga_id'] as String?) ?? '',
+          rumah_id: (m['rumah_id'] as String?) ?? '',
+          tanggal_mutasi: tanggal_mutasi,
+          alasan_mutasi: (m['alasan_mutasi'] as String?) ?? '',
+        );
+      }).toList();
+      if (mounted) setState(() { _items.clear(); _items.addAll(items); _filtered = List.from(_items); });
+    } catch (e) {
+      debugPrint('Error loading mutasi list: $e');
+    }
+  }
+
+  Future<void> _loadKeluargaList() async {
+    setState(() => _loadingKeluarga = true);
+    try {
+      final viewModel = context.read<RegisterViewModel>();
+      final list = await viewModel.getKeluargaList();
+      if (mounted) {
+        setState(() {
+          _keluargaList = list;
+          _loadingKeluarga = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading keluarga list: $e');
+      if (mounted) setState(() => _loadingKeluarga = false);
+    }
+  }
+
+  String _rumahLabelById(String id) {
+    if (id.isEmpty) return '-';
+    return _rumahCache[id] ?? id;
   }
 
   String _formatDate(DateTime date) =>
@@ -81,9 +146,10 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
   void _applyFilter() {
     setState(() {
       _filtered = _items.where((e) {
-        final byNama = _fNama == null || e.keluarga == _fNama;
-        final byJenis = _fJenis == null || e.jenis == _fJenis;
-        return byNama && byJenis;
+        final byNama = _fNama == null || _fNama == '' || e.keluarga_id == _fNama;
+        final byRumah = _fRumah == null || _fRumah == '' || e.rumah_id == _fRumah;
+
+        return byNama && byRumah;
       }).toList();
     });
   }
@@ -91,7 +157,7 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
   void _resetFilter() {
     setState(() {
       _fNama = null;
-      _fJenis = null;
+      _fRumah = null;
       _filtered = List<MutasiKeluargaItem>.from(_items);
     });
   }
@@ -121,36 +187,34 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
                   style: Theme.of(ctx).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 12),
+                // Nama Keluarga filter (uses _fNama)
                 DropdownButtonFormField<String>(
-                  initialValue: _fNama,
+                  value: _fNama,
                   decoration: const InputDecoration(labelText: 'Nama Keluarga'),
                   isExpanded: true,
-                  items: _items
-                      .map((e) => e.keluarga)
-                      .toSet()
-                      .toList()
+                  items: _keluargaList
                       .map(
-                        (n) =>
-                            DropdownMenuItem<String>(value: n, child: Text(n)),
+                        (k) => DropdownMenuItem<String>(
+                            value: k['id'] as String?,
+                            child: Text(k['nomor_kk'] as String? ?? '-'),
+                        ),
                       )
                       .toList(),
                   onChanged: (v) => setState(() => _fNama = v),
                 ),
                 const SizedBox(height: 8),
+                // Rumah filter: now uses _rumahList instead of _items
                 DropdownButtonFormField<String>(
-                  initialValue: _fJenis,
-                  decoration: const InputDecoration(labelText: 'Jenis Mutasi'),
+                  value: _fRumah,
+                  decoration: const InputDecoration(labelText: 'Rumah'),
                   isExpanded: true,
-                  items: _items
-                      .map((e) => e.jenis)
-                      .toSet()
-                      .toList()
-                      .map(
-                        (j) =>
-                            DropdownMenuItem<String>(value: j, child: Text(j)),
-                      )
+                  items: _rumahList
+                      .map((r) => DropdownMenuItem<String>(
+                            value: r['id'] as String?,
+                            child: Text(r['alamat'] as String? ?? '-'),
+                          ))
                       .toList(),
-                  onChanged: (v) => setState(() => _fJenis = v),
+                  onChanged: (v) => setState(() => _fRumah = v),
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -184,27 +248,21 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
     );
   }
 
-  // Chip warna sederhana berdasarkan jenis
-  Color _chipBg(String jenis) {
-    switch (jenis.toLowerCase()) {
-      case 'masuk wilayah':
-        return Colors.green.shade100;
-      case 'keluar wilayah':
-        return Colors.red.shade100;
-      default:
-        return Colors.blue.shade100;
-    }
-  }
+  // simple chip color helper (not type-based anymore)
+  Color _chipBg() => Colors.grey.shade200;
+  Color _chipFg() => Colors.black87;
 
-  Color _chipFg(String jenis) {
-    switch (jenis.toLowerCase()) {
-      case 'masuk wilayah':
-        return Colors.green.shade900;
-      case 'keluar wilayah':
-        return Colors.red.shade900;
-      default:
-        return Colors.blue.shade900;
+  // Helper: get keluarga name by id
+  String _findKeluargaNameById(String id) {
+    final found = _keluargaList.firstWhere(
+      (k) => (k['id'] as String?) == id,
+      orElse: () => {},
+    );
+    // Use nomor_kk for label (can adjust to name later if available)
+    if (found.isNotEmpty) {
+      return found['nomor_kk'] as String? ?? id;
     }
+    return id;
   }
 
   Widget _kvRow(String label, String value) {
@@ -264,7 +322,7 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        m.keluarga,
+                        m.keluarga_id,
                         style: t.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -274,26 +332,22 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
                 ),
                 const SizedBox(width: 8),
                 Chip(
-                  label: Text(m.jenis),
-                  backgroundColor: _chipBg(m.jenis),
-                  labelStyle: t.labelMedium?.copyWith(color: _chipFg(m.jenis)),
+                  label: Text(_rumahLabelById(m.rumah_id)),
+                  backgroundColor: _chipBg(), 
+                  labelStyle: t.labelMedium?.copyWith(color: _chipFg()),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
             const Divider(height: 1),
             _kvRow('No', '${index + 1}'),
             const Divider(height: 1),
-            _kvRow('Alamat Lama', m.alamatLama),
+            _kvRow('Rumah', _rumahLabelById(m.rumah_id)),
             const Divider(height: 1),
-            _kvRow('Alamat Baru', m.alamatBaru),
+            _kvRow('Tanggal Mutasi', _formatDate(m.tanggal_mutasi)),
             const Divider(height: 1),
-            _kvRow('Tanggal', _formatDate(m.tanggal)),
-            const Divider(height: 1),
-            _kvRow('Alasan', m.alasan),
-
+            _kvRow('Alasan_Mutasi', m.alasan_mutasi),
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: () {
@@ -313,12 +367,12 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
   }
 
   void _showAddDialog() async {
-    _keluargaCtrl.clear();
-    _alamatLamaCtrl.clear();
-    _alamatBaruCtrl.clear();
+    _selectedKeluargaId = null;
+    _selectedRumahId = null;
     _alasanCtrl.clear();
-    _jenis = 'Pindah Rumah';
     _pickedDate = DateTime.now();
+    // Use refactored reload method to ensure dropdowns have latest data
+    await _reloadDropdownData();
 
     await showDialog(
       context: context,
@@ -330,44 +384,59 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                TextFormField(
-                  controller: _keluargaCtrl,
-                  decoration: const InputDecoration(labelText: 'Nama Keluarga'),
-                  validator: (v) =>
-                      v == null || v.isEmpty ? 'Wajib diisi' : null,
-                ),
-                TextFormField(
-                  controller: _alamatLamaCtrl,
-                  decoration: const InputDecoration(labelText: 'Alamat Lama'),
-                ),
-                TextFormField(
-                  controller: _alamatBaruCtrl,
-                  decoration: const InputDecoration(labelText: 'Alamat Baru'),
-                ),
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Jenis Mutasi'),
-                  initialValue: _jenis,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Pindah Rumah',
-                      child: Text('Pindah Rumah'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Masuk Wilayah',
-                      child: Text('Masuk Wilayah'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Keluar Wilayah',
-                      child: Text('Keluar Wilayah'),
-                    ),
-                  ],
-                  onChanged: (v) =>
-                      setState(() => _jenis = v ?? 'Pindah Rumah'),
+                  value: _selectedKeluargaId,
+                  decoration: const InputDecoration(labelText: 'Nama Keluarga'),
+                  isExpanded: true,
+                  items: _keluargaList
+                      .map(
+                        (k) => DropdownMenuItem<String>(
+                          value: k['id'] as String?,
+                          child: Text(k['nomor_kk'] as String? ?? '-'),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedKeluargaId = v),
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Wajib pilih keluarga' : null,
                 ),
+                // Rumah dropdown (loaded from DB)
+                _loadingRumah
+                    ? const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: CircularProgressIndicator(),
+                      )
+                    : _rumahList.isEmpty
+                        ? const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: Text('Tidak ada rumah tersedia'),
+                          )
+                        : Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedRumahId,
+                              decoration: const InputDecoration(labelText: 'Pilih Rumah / Alamat'),
+                              items: _rumahList
+                                  .where((rumah) => rumah['id'] != null)
+                                  .map((rumah) => DropdownMenuItem<String>(
+                                        value: rumah['id'] as String,
+                                        child: Text(rumah['alamat'] as String? ?? 'Alamat tidak diketahui'),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _selectedRumahId = v),
+                              validator: (v) => (v == null || v.isEmpty) ? 'Wajib pilih rumah' : null,
+                            ),
+                          ),
                 TextFormField(
                   controller: _alasanCtrl,
                   decoration: const InputDecoration(labelText: 'Alasan'),
                   maxLines: 2,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Alasan mutasi wajib diisi';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -402,19 +471,40 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
           FilledButton.icon(
             onPressed: () {
               if (_formKey.currentState!.validate()) {
-                setState(() {
-                  _items.add(
-                    MutasiKeluargaItem(
-                      keluarga: _keluargaCtrl.text,
-                      alamatLama: _alamatLamaCtrl.text,
-                      alamatBaru: _alamatBaruCtrl.text,
-                      tanggal: _pickedDate!,
-                      jenis: _jenis,
-                      alasan: _alasanCtrl.text,
-                    ),
-                  );
-                });
-                Navigator.pop(context);
+                // create mutasi via viewmodel with runtime checks and error handling
+                try {
+                  final vm = context.read<RegisterViewModel>();
+                  debugPrint('RegisterViewModel runtimeType: ${vm.runtimeType}');
+                  vm.createMutasi(
+                    keluarga_id: _selectedKeluargaId ?? '',
+                    rumah_id: _selectedRumahId ?? '',
+                    tanggal_mutasi: _pickedDate ?? DateTime.now(),
+                    alasan_mutasi: _alasanCtrl.text.trim(),
+                  ).then((created) {
+                    final tanggalRaw = created['tanggal_mutasi'];
+                    DateTime tanggal_mutasi;
+                    if (tanggalRaw is String) {
+                      tanggal_mutasi = DateTime.tryParse(tanggalRaw) ?? DateTime.now();
+                    } else if (tanggalRaw is DateTime) {
+                      tanggal_mutasi = tanggalRaw;
+                    } else {
+                      tanggal_mutasi = DateTime.now();
+                    }
+                    setState(() {
+                      _items.add(MutasiKeluargaItem(
+                        keluarga_id: created['keluarga_id'] as String? ?? (_selectedKeluargaId ?? ''),
+                        rumah_id: created['rumah_id'] as String? ?? (_selectedRumahId ?? ''),
+                        tanggal_mutasi: tanggal_mutasi,
+                        alasan_mutasi: created['alasan_mutasi'] as String? ?? _alasanCtrl.text,
+                      ));
+                      _filtered = List.from(_items);
+                    });
+                    Navigator.pop(context);
+                  });
+                } catch (e, st) {
+                  debugPrint('Exception while calling createMutasi: $e\n$st');
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal memanggil fungsi createMutasi: $e')));
+                }
               }
             },
             icon: const Icon(Icons.save),
@@ -432,9 +522,10 @@ class _MutasiKeluargaPageState extends State<MutasiKeluargaPage> {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.go('/home-warga'),
         ),
-        title: const Text('Mutasi Keluarga', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('Mutasi Keluarga',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),

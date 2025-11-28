@@ -38,9 +38,10 @@ class MutasiKeluargaDetailPage extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
+          onPressed: () => context.go('/rumah'),
         ),
-        title: const Text('Detail Mutasi Keluarga', style: TextStyle(fontWeight: FontWeight.w600)),
+        title: const Text('Detail Mutasi Keluarga',
+            style: TextStyle(fontWeight: FontWeight.w600)),
         backgroundColor: Colors.white,
         elevation: 0.5,
       ),
@@ -55,12 +56,9 @@ class MutasiKeluargaDetailPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
 
-              _kv(context, 'Keluarga', item.keluarga),
-              _kv(context, 'Alamat Lama', item.alamatLama),
-              _kv(context, 'Alamat Baru', item.alamatBaru),
-              _kv(context, 'Tanggal Mutasi', _formatDate(item.tanggal)),
-              _kv(context, 'Jenis Mutasi', item.jenis),
-              _kv(context, 'Alasan', item.alasan.isEmpty ? '-' : item.alasan),
+              _kv(context, 'Keluarga', item.keluarga_id),
+              _kv(context, 'Tanggal Mutasi', _formatDate(item.tanggal_mutasi)),
+              _kv(context, 'Alasan', item.alasan_mutasi.isEmpty ? '-' : item.alasan_mutasi),
             ],
           ),
         ),
