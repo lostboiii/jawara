@@ -432,7 +432,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                 buildMenuIcon(
                   icon: Icons.add_circle,
                   label: 'Tambah\nPengeluaran',
-                  onTap: () => context.go('/pengeluaran_add'),
+                  onTap: () => context.push('/pengeluaran/add'),
                 ),
                 buildMenuIcon(
                   icon: Icons.more_horiz,

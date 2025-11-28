@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/models/metode_pembayaran_model.dart';
@@ -20,7 +21,7 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
   Future<void> _openDetail(BuildContext context,
       {MetodePembayaranModel? item}) async {
     final result = await context.push<bool>(
-      AppRoutes.channelTransferDetail,
+      AppRoutes.channelTransferAdd,
       extra: item,
     );
     if (result == true && mounted) {
@@ -36,21 +37,54 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
     MetodePembayaranModel item,
   ) async {
     final viewModel = context.read<MetodePembayaranViewModel>();
+    final primaryColor = const Color(0xff5067e9);
+    
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hapus Channel'),
-        content: Text('Hapus metode pembayaran "${item.namaMetode}"?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Text(
+          'Hapus Channel',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          'Hapus metode pembayaran "${item.namaMetode}"?',
+          style: GoogleFonts.inter(),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
+            child: Text(
+              'Batal',
+              style: GoogleFonts.inter(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          FilledButton(
+          ElevatedButton(
             onPressed: viewModel.isLoading
                 ? null
                 : () => Navigator.pop(context, true),
-            child: const Text('Hapus'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[700],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              'Hapus',
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -74,7 +108,6 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
   }
 
   Widget _kvRow(String label, String value) {
-    final t = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: Row(
@@ -84,7 +117,10 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
             flex: 6,
             child: Text(
               label,
-              style: t.bodyMedium?.copyWith(color: Colors.grey[700]),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: Colors.grey[700],
+              ),
             ),
           ),
           Expanded(
@@ -96,7 +132,10 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
                 textAlign: TextAlign.right,
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-                style: t.bodyMedium,
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),
@@ -135,67 +174,121 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
   }
 
   Widget _channelCard(MetodePembayaranModel item, int index) {
-    final t = Theme.of(context).textTheme;
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nama Channel',
-                        style: t.labelLarge?.copyWith(color: Colors.grey[700]),
+    final primaryColor = const Color(0xff5067e9);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Nama Channel',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.grey[700],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        item.namaMetode,
-                        style: t.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      item.namaMetode,
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              _thumbWidget(item.thumbnail ?? item.fotoBarcode),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(height: 1),
+          _kvRow('No', '${index + 1}'),
+          const Divider(height: 1),
+          _kvRow('Nama Pemilik', item.namaPemilik ?? '-'),
+          const Divider(height: 1),
+          _kvRow('Nomor', item.nomorRekening ?? '-'),
+          if ((item.catatan ?? '').isNotEmpty) ...[
+            const Divider(height: 1),
+            _kvRow('Catatan', item.catatan!),
+          ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final result = await context.push<bool>(
+                        AppRoutes.channelTransferView,
+                        extra: item,
+                      );
+                      if (result == true && mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Channel diperbarui')),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Lihat Detail',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(width: 12),
-                _thumbWidget(item.thumbnail ?? item.fotoBarcode),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            _kvRow('No', '${index + 1}'),
-            const Divider(height: 1),
-            _kvRow('Nama Pemilik', item.namaPemilik ?? '-'),
-            const Divider(height: 1),
-            _kvRow('Nomor', item.nomorRekening ?? '-'),
-            if ((item.catatan ?? '').isNotEmpty) ...[
-              const Divider(height: 1),
-              _kvRow('Catatan', item.catatan!),
-            ],
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                OutlinedButton(
-                  onPressed: () => _openDetail(context, item: item),
-                  child: const Text('Lihat Detail'),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
+              ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 44,
+                width: 44,
+                child: IconButton(
                   onPressed: () => _confirmDelete(context, item),
-                  icon: const Icon(Icons.delete_outline),
+                  icon: const Icon(Icons.delete_outline, color: Colors.red),
                   tooltip: 'Hapus',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -204,63 +297,110 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
   Widget build(BuildContext context) {
     final viewModel = context.watch<MetodePembayaranViewModel>();
     final items = viewModel.items;
+    final primaryColor = const Color(0xff5067e9);
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go(AppRoutes.home),
-        ),
-        title: const Text('Channel Transfer', style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: viewModel.isLoading ? null : () => _openDetail(context),
-        icon: const Icon(Icons.add),
-        label: const Text('Tambah Data'),
-      ),
-      body: Stack(
-        children: [
-          if (!viewModel.isLoading && viewModel.errorMessage != null && items.isEmpty)
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Row(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                    child: Text(
-                      'Terjadi kesalahan saat memuat data.\n${viewModel.errorMessage}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.red[700]),
-                    ),
+                  IconButton(
+                    onPressed: () => context.go(AppRoutes.home),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                    color: primaryColor,
                   ),
-                  FilledButton(
-                    onPressed: viewModel.loadMetodePembayaran,
-                    child: const Text('Coba lagi'),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Channel Transfer',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
-            )
-          else if (!viewModel.isLoading && items.isEmpty)
-            Center(
-              child: Text(
-                'Belum ada channel transfer',
-                style: TextStyle(color: Colors.grey[600]),
+              const SizedBox(height: 20),
+              Expanded(
+                child: Stack(
+                  children: [
+                    if (!viewModel.isLoading && viewModel.errorMessage != null && items.isEmpty)
+                      Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              child: Text(
+                                'Terjadi kesalahan saat memuat data.\n${viewModel.errorMessage}',
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.inter(
+                                  color: Colors.red[700],
+                                ),
+                              ),
+                            ),
+                            ElevatedButton(
+                              onPressed: viewModel.loadMetodePembayaran,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Coba lagi',
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (!viewModel.isLoading && items.isEmpty)
+                      Center(
+                        child: Text(
+                          'Belum ada channel transfer',
+                          style: GoogleFonts.inter(
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 96),
+                        itemCount: items.length,
+                        itemBuilder: (context, index) => _channelCard(items[index], index),
+                      ),
+                    if (viewModel.isLoading)
+                      Container(
+                        color: Colors.black.withOpacity(0.1),
+                        child: const Center(child: CircularProgressIndicator()),
+                      ),
+                  ],
+                ),
               ),
-            )
-          else
-            ListView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-              itemCount: items.length,
-              itemBuilder: (context, index) => _channelCard(items[index], index),
-            ),
-          if (viewModel.isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.1),
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-        ],
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: viewModel.isLoading ? null : () => _openDetail(context),
+        backgroundColor: primaryColor,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: Text(
+          'Tambah Data',
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
