@@ -70,25 +70,36 @@ abstract class WargaRepository {
   /// Update rumah status to ditempati
   Future<void> updateRumahStatusToOccupied(String rumahId);
 
-  /// Update warga data
-  Future<void> updateWarga({
-    required String wargaId,
-    required String namaLengkap,
-    required String nik,
-    required String noTelepon,
-    required String jenisKelamin,
-    required String agama,
-    required String golonganDarah,
-    required String pekerjaan,
-    required String peranKeluarga,
-    String? keluargaId,
-    String? tempatLahir,
-    String? tanggalLahir,
-    String? pendidikan,
+  /// Create mutasi keluarga
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluargaId,
+    required String rumahId,
+    required DateTime tanggalMutasi,
+    required String alasanMutasi,
   });
 
-  /// Delete warga
-  Future<void> deleteWarga(String wargaId);
+  /// Get all mutasi list
+  Future<List<Map<String, dynamic>>> getMutasiList();
+
+  /// Update rumah status
+  Future<void> updateRumahStatus(String rumahId, String status);
+
+  /// Get all penghuni
+  Future<List<Map<String, dynamic>>> getAllPenghuni();
+
+  /// Update penghuni rumah
+  Future<void> updatePenghuniRumah(String penghuniId, String newRumahId);
+
+  /// Delete penghuni
+  Future<void> deletePenghuni(String penghuniId);
+
+  /// Create penghuni
+  Future<void> createPenghuni({
+    required String keluargaId,
+    required String rumahId,
+  });
+
+  Future<void> updateKeluargaAlamat(String keluargaId, String? alamatId);
 }
 
 /// Implementasi Warga Repository menggunakan Supabase
@@ -384,7 +395,7 @@ class SupabaseWargaRepository implements WargaRepository {
   Future<List<Map<String, dynamic>>> getRumahList() async {
     try {
       final response =
-          await client.from('rumah').select().eq('status_rumah', 'kosong');
+          await client.from('rumah').select();
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
       throw Exception('Gagal mengambil data rumah: $e');
@@ -508,14 +519,138 @@ class SupabaseWargaRepository implements WargaRepository {
   }
 
   @override
-  Future<void> deleteWarga(String wargaId) async {
+  Future<List<Map<String, dynamic>>> getMutasiList() async {
     try {
-      await client.from('warga_profiles').delete().eq('id', wargaId);
+      final response = await client
+          .from('mutasi_keluarga')
+          .select('''
+            *,
+            keluarga:keluarga_id(nomor_kk),
+            rumah:rumah_id(alamat)
+          ''')
+          .order('tanggal_mutasi', ascending: false);
 
-      debugPrint('Warga deleted successfully: $wargaId');
+      final mutasiList = List<Map<String, dynamic>>.from(response);
+
+      // Process the joined data
+      for (var mutasi in mutasiList) {
+        // Extract keluarga data
+        if (mutasi['keluarga'] != null) {
+          mutasi['keluarga_nomor_kk'] = mutasi['keluarga']['nomor_kk'] ?? '';
+        } else {
+          mutasi['keluarga_nomor_kk'] = '';
+        }
+
+        // Extract rumah data
+        if (mutasi['rumah'] != null) {
+          mutasi['rumah_alamat'] = mutasi['rumah']['alamat'] ?? '';
+        } else {
+          mutasi['rumah_alamat'] = '';
+        }
+      }
+
+      debugPrint('getMutasiList result: $mutasiList');
+      return mutasiList;
     } catch (e) {
-      debugPrint('Error deleting warga: $e');
-      throw Exception('Gagal menghapus data warga: $e');
+      debugPrint('Error getting mutasi list: $e');
+      throw Exception('Gagal mengambil data mutasi keluarga: $e');
+    }
+  }
+
+  @override
+  Future<void> updateRumahStatus(String rumahId, String status) async {
+    try {
+      debugPrint('START: Updating rumah $rumahId status to $status');
+      
+      final response = await client
+          .from('rumah')
+          .update({'status_rumah': status})
+          .eq('id', rumahId)
+          .select();
+
+      debugPrint('SUCCESS: Updated rumah $rumahId status to $status. Response: $response');
+    } catch (e) {
+      debugPrint('ERROR updating rumah status: $e');
+      throw Exception('Gagal mengupdate status rumah: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllPenghuni() async {
+    try {
+      final response = await client
+          .from('riwayat_penghuni')
+          .select('*');
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting penghuni list: $e');
+      throw Exception('Gagal mengambil data penghuni: $e');
+    }
+  }
+
+  @override
+  Future<void> updatePenghuniRumah(String penghuniId, String newRumahId) async {
+    try {
+      await client
+          .from('riwayat_penghuni')
+          .update({'alamat_id': newRumahId})
+          .eq('id', penghuniId);
+
+      debugPrint('Updated penghuni $penghuniId to rumah $newRumahId');
+    } catch (e) {
+      debugPrint('Error updating penghuni rumah: $e');
+      throw Exception('Gagal mengupdate rumah penghuni: $e');
+    }
+  }
+
+  @override
+  Future<void> deletePenghuni(String penghuniId) async {
+    try {
+      await client
+          .from('riwayat_penghuni')
+          .delete()
+          .eq('id', penghuniId);
+
+      debugPrint('Deleted penghuni $penghuniId');
+    } catch (e) {
+      debugPrint('Error deleting penghuni: $e');
+      throw Exception('Gagal menghapus penghuni: $e');
+    }
+  }
+
+  @override
+  Future<void> createPenghuni({
+    required String keluargaId,
+    required String rumahId,
+  }) async {
+    try {
+      await client
+          .from('riwayat_penghuni')
+          .insert({
+            'keluarga_id': keluargaId,
+            'alamat_id': rumahId,
+          });
+
+      debugPrint('Created penghuni for keluarga $keluargaId in rumah $rumahId');
+    } catch (e) {
+      debugPrint('Error creating penghuni: $e');
+      throw Exception('Gagal membuat penghuni: $e');
+    }
+  }
+
+  @override
+  Future<void> updateKeluargaAlamat(String keluargaId, String? alamatId) async {
+    try {
+      await client
+          .from('keluarga')
+          .update({'alamat': alamatId})
+          .eq('id', keluargaId);
+
+      debugPrint('Updated keluarga $keluargaId alamat to $alamatId');
+    } catch (e) {
+      debugPrint('Error updating keluarga alamat: $e');
+      throw Exception('Gagal mengupdate alamat keluarga: $e');
     }
   }
 }

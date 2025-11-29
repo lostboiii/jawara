@@ -1,7 +1,9 @@
 // lib/screens/rumah/rumah_add_screen.dart
-// coverage:ignore-file
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:jawara/viewmodels/register_viewmodel.dart';
 
 class RumahAddScreen extends StatefulWidget {
   const RumahAddScreen({super.key});
@@ -12,264 +14,184 @@ class RumahAddScreen extends StatefulWidget {
 
 class _RumahAddScreenState extends State<RumahAddScreen> {
   final _formKey = GlobalKey<FormState>();
-  
-  TextEditingController nomorRumahController = TextEditingController();
-  TextEditingController alamatController = TextEditingController();
-  TextEditingController rtController = TextEditingController();
-  TextEditingController rwController = TextEditingController();
-  TextEditingController kelurahanController = TextEditingController();
-  TextEditingController kecamatanController = TextEditingController();
-  TextEditingController luasTanahController = TextEditingController();
-  TextEditingController luasBangunanController = TextEditingController();
-  
-  String? statusKepemilikan;
+  final TextEditingController _alamatCtrl = TextEditingController();
+  String? _statusRumah;
+
+  @override
+  void dispose() {
+    _alamatCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xff5067e9);
+
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        title: Text('Tambah Rumah Baru', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.all(16),
-          children: [
-            _buildSectionTitle('Identitas Rumah'),
-            _buildCard([
-              _buildTextField('Nomor Rumah', 'Contoh: 123', nomorRumahController),
-              SizedBox(height: 16),
-              _buildTextField('Alamat Lengkap', 'Masukkan alamat lengkap', alamatController,
-                  maxLines: 2),
-            ]),
-            
-            SizedBox(height: 16),
-            _buildSectionTitle('Wilayah'),
-            _buildCard([
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField('RT', 'Contoh: 01', rtController,
-                        keyboardType: TextInputType.number),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: _buildTextField('RW', 'Contoh: 02', rwController,
-                        keyboardType: TextInputType.number),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              _buildTextField('Kelurahan', 'Masukkan kelurahan', kelurahanController),
-              SizedBox(height: 16),
-              _buildTextField('Kecamatan', 'Masukkan kecamatan', kecamatanController),
-            ]),
-            
-            SizedBox(height: 16),
-            _buildSectionTitle('Detail Properti'),
-            _buildCard([
-              _buildDropdown(
-                'Status Kepemilikan',
-                statusKepemilikan,
-                ['Milik Sendiri', 'Sewa', 'Kontrak', 'Lainnya'],
-                (value) => setState(() => statusKepemilikan = value),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTextField('Luas Tanah (m²)', 'Contoh: 200', luasTanahController,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true)),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: _buildTextField('Luas Bangunan (m²)', 'Contoh: 150', luasBangunanController,
-                        keyboardType: TextInputType.numberWithOptions(decimal: true)),
-                  ),
-                ],
-              ),
-            ]),
-            
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _showSuccessDialog();
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              child: Text(
-                'SIMPAN DATA RUMAH',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-            SizedBox(height: 32),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.grey[800],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard(List<Widget> children) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildTextField(String label, String hint, TextEditingController controller,
-      {TextInputType? keyboardType, int maxLines = 1}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: keyboardType,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.green, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.grey[50],
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Field ini wajib diisi';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDropdown(String label, String? value, List<String> items,
-      Function(String?) onChanged) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
-        SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: value,
-          decoration: InputDecoration(
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.green, width: 2),
-            ),
-            filled: true,
-            fillColor: Colors.grey[50],
-          ),
-          hint: Text('Pilih $label'),
-          items: items.map((String item) {
-            return DropdownMenuItem<String>(value: item, child: Text(item));
-          }).toList(),
-          onChanged: onChanged,
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Field ini wajib dipilih';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Column(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(20),
             children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 64),
-              SizedBox(height: 16),
-              Text('Berhasil!', style: TextStyle(fontWeight: FontWeight.bold)),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.goNamed('rumah-list'),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tambah Rumah',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Text(
+                'Alamat',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _alamatCtrl,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan alamat lengkap',
+                  hintStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[400],
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: primaryColor, width: 2),
+                  ),
+                ),
+                validator: (v) => v == null || v.trim().isEmpty ? 'Alamat wajib diisi' : null,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Status Rumah',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _statusRumah,
+                decoration: InputDecoration(
+                  hintText: 'Pilih Status Rumah',
+                  hintStyle: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[400],
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: primaryColor, width: 2),
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: 'ditempati',
+                    child: Text('Ditempati', style: GoogleFonts.inter(fontSize: 14)),
+                  ),
+                  DropdownMenuItem(
+                    value: 'kosong',
+                    child: Text('Kosong', style: GoogleFonts.inter(fontSize: 14)),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _statusRumah = v),
+                validator: (v) => v == null || v.isEmpty ? 'Status rumah wajib dipilih' : null,
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (!(_formKey.currentState?.validate() ?? false)) return;
+                    try {
+                      final vm = context.read<RegisterViewModel>();
+                      final created = await vm.createRumah(
+                        alamat: _alamatCtrl.text.trim(),
+                        statusRumah: _statusRumah ?? 'ditempati',
+                      );
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Rumah berhasil ditambahkan'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                        context.goNamed('rumah-list');
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Gagal menyimpan rumah: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Simpan',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
             ],
           ),
-          content: Text(
-            'Data rumah berhasil disimpan',
-            textAlign: TextAlign.center,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
+        ),
+      ),
     );
   }
 }

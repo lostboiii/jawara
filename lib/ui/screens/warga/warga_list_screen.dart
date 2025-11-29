@@ -267,14 +267,7 @@ class _WargaListScreenState extends State<WargaListScreen> {
 
       // 🔹 Tombol tambah warga
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const TambahWargaPage(),
-            ),
-          );
-        },
+        onPressed: () => context.goNamed('warga-add'),
         backgroundColor: Colors.blue,
         icon: const Icon(Icons.add),
         label: const Text('Tambah Warga'),
