@@ -69,6 +69,26 @@ abstract class WargaRepository {
 
   /// Update rumah status to ditempati
   Future<void> updateRumahStatusToOccupied(String rumahId);
+
+  /// Update warga data
+  Future<void> updateWarga({
+    required String wargaId,
+    required String namaLengkap,
+    required String nik,
+    required String noTelepon,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String peranKeluarga,
+    String? keluargaId,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
+  });
+
+  /// Delete warga
+  Future<void> deleteWarga(String wargaId);
 }
 
 /// Implementasi Warga Repository menggunakan Supabase
@@ -304,7 +324,7 @@ class SupabaseWargaRepository implements WargaRepository {
         } else {
           keluarga['nama_rumah'] = '';
         }
-        
+
         if (keluarga['kepala_keluarga_id'] != null) {
           try {
             final wargaResponse = await client
@@ -437,6 +457,65 @@ class SupabaseWargaRepository implements WargaRepository {
       return wargaList;
     } catch (e) {
       throw Exception('Gagal mengambil data warga: $e');
+    }
+  }
+
+  @override
+  Future<void> updateWarga({
+    required String wargaId,
+    required String namaLengkap,
+    required String nik,
+    required String noTelepon,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String peranKeluarga,
+    String? keluargaId,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
+  }) async {
+    try {
+      final updateData = <String, dynamic>{
+        'nama_lengkap': namaLengkap,
+        'nik': nik,
+        'no_telepon': noTelepon,
+        'jenis_kelamin': jenisKelamin,
+        'agama': agama,
+        'golongan_darah': golonganDarah,
+        'pekerjaan': pekerjaan,
+        'peran_keluarga': peranKeluarga,
+        'keluarga_id':
+            (keluargaId != null && keluargaId.isNotEmpty) ? keluargaId : null,
+        'tempat_lahir': (tempatLahir != null && tempatLahir.isNotEmpty)
+            ? tempatLahir
+            : null,
+        'tanggal_lahir': (tanggalLahir != null && tanggalLahir.isNotEmpty)
+            ? tanggalLahir
+            : null,
+        'pendidikan':
+            (pendidikan != null && pendidikan.isNotEmpty) ? pendidikan : null,
+      };
+
+      await client.from('warga_profiles').update(updateData).eq('id', wargaId);
+
+      debugPrint('Warga updated successfully: $wargaId');
+    } catch (e) {
+      debugPrint('Error updating warga: $e');
+      throw Exception('Gagal memperbarui data warga: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteWarga(String wargaId) async {
+    try {
+      await client.from('warga_profiles').delete().eq('id', wargaId);
+
+      debugPrint('Warga deleted successfully: $wargaId');
+    } catch (e) {
+      debugPrint('Error deleting warga: $e');
+      throw Exception('Gagal menghapus data warga: $e');
     }
   }
 }

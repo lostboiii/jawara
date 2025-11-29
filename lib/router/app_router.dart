@@ -22,6 +22,10 @@ import '../ui/pages/channel_transfer/channel_transfer_page.dart';
 import '../ui/pages/warga/daftar_keluarga_page.dart';
 import '../ui/pages/warga/detail_keluarga_page.dart';
 import '../ui/pages/warga/detail_warga_page.dart';
+import '../ui/pages/warga/edit_warga_page.dart';
+import '../ui/pages/warga/aspirasi_warga_page.dart';
+import '../ui/pages/warga/daftar_mutasi_page.dart';
+import '../ui/pages/warga/tambah_mutasi_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_detail_page.dart';
 import '../ui/pages/auth/onboarding_page.dart';
 import '../ui/pages/auth/login_page.dart';
@@ -37,14 +41,16 @@ import '../ui/pages/kegiatan/edit_kegiatan_page.dart';
 import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
-import '../ui/screens/rumah/rumah_list_screen.dart';
-import '../ui/screens/rumah/rumah_add_screen.dart';
+import '../ui/pages/warga/daftar_rumah_page.dart';
+import '../ui/pages/warga/detail_rumah_page.dart';
+import '../ui/pages/warga/tambah_rumah_page.dart';
 import '../ui/screens/warga/warga_list_screen.dart';
 import '../ui/pages/warga/tambah_warga_page.dart';
 import '../ui/screens/warga/keluarga_screen.dart';
 import '../ui/screens/warga/keluarga_page.dart';
 import '../data/models/pengeluaran_model.dart';
 import '../data/models/metode_pembayaran_model.dart';
+import '../viewmodels/daftar_rumah_viewmodel.dart';
 // (Pengeluaran, MutasiKeluargaItem)
 
 class AppRoutes {
@@ -70,6 +76,7 @@ class AppRoutes {
   // Screens module routes
   static const rumahList = '/rumah';
   static const rumahAdd = '/rumah/add';
+  static const rumahDetail = '/rumah/detail';
   static const wargaList = '/warga';
   static const wargaAdd = '/warga/add';
   static const keluarga = '/keluarga';
@@ -78,6 +85,9 @@ class AppRoutes {
   static const wargaDaftarWarga = '/warga/warga';
   static const wargaDetailKeluarga = '/warga/keluarga/detail';
   static const wargaDetail = '/warga/detail';
+  static const wargaAspirasi = '/warga/aspirasi';
+  static const wargaDaftarMutasi = '/warga/mutasi';
+  static const wargaTambahMutasi = '/warga/mutasi/add';
   static const channelTransferDetail = '/channel-transfer/detail';
   static const dashboard = '/dashboard';
   static const ListBroadcast = '/list-broadcast';
@@ -181,6 +191,32 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: AppRoutes.wargaAspirasi,
+      name: 'aspirasi-warga',
+      builder: (context, state) => const AspirasiWargaPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.wargaDaftarMutasi,
+      name: 'daftar-mutasi',
+      builder: (context, state) => const DaftarMutasiPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.wargaTambahMutasi,
+      name: 'tambah-mutasi',
+      builder: (context, state) => const TambahMutasiPage(),
+    ),
+    GoRoute(
+      path: '/warga/edit',
+      name: 'warga-edit',
+      builder: (context, state) {
+        final warga = state.extra as WargaListItem?;
+        if (warga == null) {
+          return const DaftarWargaPage();
+        }
+        return EditWargaPage(warga: warga);
+      },
+    ),
+    GoRoute(
       path: AppRoutes.activityLog,
       name: 'activity-log',
       builder: (context, state) => const ActivityLogPage(),
@@ -245,13 +281,24 @@ final GoRouter appRouter = GoRouter(
     // --- Screens module routes ---
     GoRoute(
       path: AppRoutes.rumahList,
-      name: 'rumah-list',
-      builder: (context, state) => const RumahListScreen(),
+      name: 'daftar-rumah',
+      builder: (context, state) => const DaftarRumahPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.rumahDetail,
+      name: 'detail-rumah',
+      builder: (context, state) {
+        final rumah = state.extra as RumahListItem?;
+        if (rumah == null) {
+          return const DaftarRumahPage();
+        }
+        return DetailRumahPage(rumah: rumah);
+      },
     ),
     GoRoute(
       path: AppRoutes.rumahAdd,
-      name: 'rumah-add',
-      builder: (context, state) => const RumahAddScreen(),
+      name: 'tambah-rumah',
+      builder: (context, state) => const TambahRumahPage(),
     ),
     GoRoute(
       path: AppRoutes.wargaList,
@@ -293,8 +340,8 @@ final GoRouter appRouter = GoRouter(
       name: 'detail-broadcast',
       builder: (context, state) => DetailBroadcastPage(
         broadcast: state.extra as BroadcastListItem,
-  ),
-),
+      ),
+    ),
     GoRoute(
       path: AppRoutes.kegiatan,
       name: 'kegiatan',

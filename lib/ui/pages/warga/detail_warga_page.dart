@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 import '../home_page.dart';
 import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
+import 'package:jawara/data/repositories/warga_repositories.dart';
+import 'edit_warga_page.dart';
 
 class DetailWargaPage extends StatelessWidget {
   const DetailWargaPage({super.key, required this.warga});
@@ -42,13 +45,31 @@ class DetailWargaPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Detail Warga',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                Expanded(
+                  child: Text(
+                    'Detail Warga',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => _handleEdit(context, warga),
+                  icon: Icon(
+                    Icons.edit,
                     color: primaryColor,
                   ),
+                  tooltip: 'Edit Warga',
+                ),
+                IconButton(
+                  onPressed: () => _handleDelete(context, warga),
+                  icon: const Icon(
+                    Icons.delete,
+                    color: Colors.red,
+                  ),
+                  tooltip: 'Hapus Warga',
                 ),
               ],
             ),
@@ -144,13 +165,20 @@ class DetailWargaPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildGridInfoRow(
+            'NIK',
+            warga.nik.isNotEmpty ? warga.nik : '—',
+            'Status Keaktifan',
+            warga.statusLabel,
+          ),
+          const SizedBox(height: 16),
           _buildGridInfoRow('Keluarga', warga.keluargaLabel, 'Nomor Telepon',
               (warga.noTelepon ?? '').isNotEmpty ? warga.noTelepon! : '—'),
           const SizedBox(height: 16),
           _buildGridInfoRow(
               'Jenis Kelamin',
               warga.jenisKelamin.isNotEmpty ? warga.jenisKelamin : '—',
-              'Peran',
+              'Peran dalam Keluarga',
               warga.peranLabel),
           const SizedBox(height: 16),
           _buildGridInfoRow(
@@ -229,5 +257,101 @@ class DetailWargaPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void _handleEdit(BuildContext context, WargaListItem warga) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditWargaPage(warga: warga),
+      ),
+    );
+
+    // If edit was successful, go back to refresh the list
+    if (result == true && context.mounted) {
+      context.goNamed('warga-daftar-warga');
+    }
+  }
+
+  void _handleDelete(BuildContext context, WargaListItem warga) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Hapus Warga',
+            style: GoogleFonts.inter(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus data ${warga.displayName}? Tindakan ini tidak dapat dibatalkan.',
+            style: GoogleFonts.inter(fontSize: 14),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Batal',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'Hapus',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        final repository = Provider.of<WargaRepository>(context, listen: false);
+        await repository.deleteWarga(warga.id);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Data warga berhasil dihapus'),
+              backgroundColor: Colors.green,
+            ),
+          );
+
+          // Go back to list page
+          context.goNamed('warga-daftar-warga');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal menghapus data: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 }

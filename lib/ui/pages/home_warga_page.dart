@@ -172,27 +172,27 @@ class HomeWargaPage extends StatelessWidget {
                 scope.buildMenuIcon(
                   icon: Icons.home_work_rounded,
                   label: 'Tambah Rumah',
-                  onTap: () {},
+                  onTap: () => context.goNamed('tambah-rumah'),
                 ),
                 scope.buildMenuIcon(
                   icon: Icons.home_filled,
                   label: 'Daftar Rumah',
-                  onTap: () {},
+                  onTap: () => context.goNamed('daftar-rumah'),
                 ),
                 scope.buildMenuIcon(
                   icon: Icons.campaign_rounded,
                   label: 'Aspirasi',
-                  onTap: () {},
-                ),
-                scope.buildMenuIcon(
-                  icon: Icons.verified_user_rounded,
-                  label: 'Penerimaan Warga',
-                  onTap: () {},
+                  onTap: () => context.goNamed('aspirasi-warga'),
                 ),
                 scope.buildMenuIcon(
                   icon: Icons.swap_horiz_rounded,
                   label: 'Tambah Mutasi',
-                  onTap: () {},
+                  onTap: () => context.goNamed('tambah-mutasi'),
+                ),
+                scope.buildMenuIcon(
+                  icon: Icons.view_list_rounded,
+                  label: 'Daftar Mutasi',
+                  onTap: () => context.goNamed('daftar-mutasi'),
                 ),
               ],
             ),

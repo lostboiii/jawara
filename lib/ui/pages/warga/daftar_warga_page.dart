@@ -7,6 +7,7 @@ import 'package:jawara/data/repositories/warga_repositories.dart';
 import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
 
 import '../home_page.dart';
+import 'edit_warga_page.dart';
 
 class DaftarWargaPage extends StatelessWidget {
   const DaftarWargaPage({super.key});
@@ -274,30 +275,64 @@ class _WargaCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: ElevatedButton(
-              onPressed: () => context.goNamed(
-                'warga-detail',
-                extra: warga,
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () => context.goNamed(
+                      'warga-detail',
+                      extra: warga,
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Detail',
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                shape: RoundedRectangleBorder(
+              const SizedBox(width: 8),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                elevation: 0,
-              ),
-              child: Text(
-                'Detail',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                child: IconButton(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => EditWargaPage(warga: warga),
+                    ),
+                  ).then((result) {
+                    if (result == true) {
+                      // Refresh list if edit was successful
+                      final viewModel = context.read<DaftarWargaViewModel>();
+                      viewModel.loadWarga();
+                    }
+                  }),
+                  icon: Icon(
+                    Icons.edit,
+                    color: primaryColor,
+                    size: 20,
+                  ),
+                  tooltip: 'Edit',
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
