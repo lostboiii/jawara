@@ -335,7 +335,7 @@ class SupabaseWargaRepository implements WargaRepository {
         } else {
           keluarga['nama_rumah'] = '';
         }
-        
+
         if (keluarga['kepala_keluarga_id'] != null) {
           try {
             final wargaResponse = await client
@@ -472,31 +472,49 @@ class SupabaseWargaRepository implements WargaRepository {
   }
 
   @override
-  Future<Map<String, dynamic>> createMutasi({
-    required String keluargaId,
-    required String rumahId,
-    required DateTime tanggalMutasi,
-    required String alasanMutasi,
+  Future<void> updateWarga({
+    required String wargaId,
+    required String namaLengkap,
+    required String nik,
+    required String noTelepon,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String peranKeluarga,
+    String? keluargaId,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
   }) async {
     try {
-      final mutasiData = {
-        'keluarga_id': keluargaId,
-        'rumah_id': rumahId,
-        'tanggal_mutasi': tanggalMutasi.toIso8601String(),
-        'alasan_mutasi': alasanMutasi,
+      final updateData = <String, dynamic>{
+        'nama_lengkap': namaLengkap,
+        'nik': nik,
+        'no_telepon': noTelepon,
+        'jenis_kelamin': jenisKelamin,
+        'agama': agama,
+        'golongan_darah': golonganDarah,
+        'pekerjaan': pekerjaan,
+        'peran_keluarga': peranKeluarga,
+        'keluarga_id':
+            (keluargaId != null && keluargaId.isNotEmpty) ? keluargaId : null,
+        'tempat_lahir': (tempatLahir != null && tempatLahir.isNotEmpty)
+            ? tempatLahir
+            : null,
+        'tanggal_lahir': (tanggalLahir != null && tanggalLahir.isNotEmpty)
+            ? tanggalLahir
+            : null,
+        'pendidikan':
+            (pendidikan != null && pendidikan.isNotEmpty) ? pendidikan : null,
       };
 
-      final response = await client
-          .from('mutasi_keluarga')
-          .insert(mutasiData)
-          .select()
-          .single();
+      await client.from('warga_profiles').update(updateData).eq('id', wargaId);
 
-      debugPrint('Created mutasi for keluarga $keluargaId to rumah $rumahId');
-      return response;
+      debugPrint('Warga updated successfully: $wargaId');
     } catch (e) {
-      debugPrint('Error creating mutasi: $e');
-      throw Exception('Gagal membuat mutasi keluarga: $e');
+      debugPrint('Error updating warga: $e');
+      throw Exception('Gagal memperbarui data warga: $e');
     }
   }
 
