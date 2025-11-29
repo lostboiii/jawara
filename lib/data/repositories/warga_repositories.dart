@@ -100,6 +100,26 @@ abstract class WargaRepository {
   });
 
   Future<void> updateKeluargaAlamat(String keluargaId, String? alamatId);
+
+  /// Update warga
+  Future<void> updateWarga({
+    required String wargaId,
+    required String namaLengkap,
+    required String nik,
+    required String noTelepon,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String peranKeluarga,
+    String? keluargaId,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
+  });
+
+  /// Delete warga
+  Future<void> deleteWarga(String wargaId);
 }
 
 /// Implementasi Warga Repository menggunakan Supabase
@@ -265,7 +285,6 @@ class SupabaseWargaRepository implements WargaRepository {
   }
 
   @override
-  @override
   Future<Keluarga> createKeluarga({
     required String kepalakeluargaId,
     required String nomorKk,
@@ -366,7 +385,6 @@ class SupabaseWargaRepository implements WargaRepository {
     }
   }
 
-  @override
   @override
   Future<void> linkWargaToKeluarga(String wargaId, String keluargaId) async {
     try {
@@ -651,6 +669,48 @@ class SupabaseWargaRepository implements WargaRepository {
     } catch (e) {
       debugPrint('Error updating keluarga alamat: $e');
       throw Exception('Gagal mengupdate alamat keluarga: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> createMutasi({
+    required String keluargaId,
+    required String rumahId,
+    required DateTime tanggalMutasi,
+    required String alasanMutasi,
+  }) async {
+    try {
+      final response = await client
+          .from('mutasi_keluarga')
+          .insert({
+            'keluarga_id': keluargaId,
+            'rumah_id': rumahId,
+            'tanggal_mutasi': tanggalMutasi.toIso8601String(),
+            'alasan_mutasi': alasanMutasi,
+          })
+          .select()
+          .single();
+
+      debugPrint('Created mutasi for keluarga $keluargaId');
+      return response;
+    } catch (e) {
+      debugPrint('Error creating mutasi: $e');
+      throw Exception('Gagal membuat mutasi keluarga: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteWarga(String wargaId) async {
+    try {
+      await client
+          .from('warga_profiles')
+          .delete()
+          .eq('id', wargaId);
+
+      debugPrint('Deleted warga $wargaId');
+    } catch (e) {
+      debugPrint('Error deleting warga: $e');
+      throw Exception('Gagal menghapus warga: $e');
     }
   }
 }

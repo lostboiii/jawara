@@ -100,8 +100,6 @@ class _PengeluaranPageState extends State<PengeluaranPage> {
   }
 
   void _confirmDelete(PengeluaranModel item) {
-    final primaryColor = const Color(0xff5067e9);
-    
     showDialog<void>(
       context: context,
       builder: (context) {

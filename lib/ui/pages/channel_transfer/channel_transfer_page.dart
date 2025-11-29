@@ -37,7 +37,6 @@ class _ChannelTransferPageState extends State<ChannelTransferPage> {
     MetodePembayaranModel item,
   ) async {
     final viewModel = context.read<MetodePembayaranViewModel>();
-    final primaryColor = const Color(0xff5067e9);
     
     final shouldDelete = await showDialog<bool>(
       context: context,

@@ -35,7 +35,6 @@ import '../ui/pages/warga/edit_warga_page.dart';
 import '../ui/pages/warga/aspirasi_warga_page.dart';
 import '../ui/pages/warga/daftar_mutasi_page.dart';
 import '../ui/pages/warga/tambah_mutasi_page.dart';
-import '../ui/pages/channel_transfer/channel_transfer_detail_page.dart';
 import '../ui/pages/auth/onboarding_page.dart';
 import '../ui/pages/auth/login_page.dart';
 import '../ui/pages/auth/register_step1_page.dart';

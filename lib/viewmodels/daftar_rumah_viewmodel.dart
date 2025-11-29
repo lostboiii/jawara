@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PenghuniHistoryItem {
   PenghuniHistoryItem({
@@ -98,10 +100,80 @@ class DaftarRumahViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await Future<void>.delayed(const Duration(milliseconds: 350));
-      _rumahList
-        ..clear()
-        ..addAll(_dummyData);
+      final supabase = Supabase.instance.client;
+      
+      // Get all rumah
+      final rumahResponse = await supabase
+          .from('rumah')
+          .select('*');
+
+      _rumahList.clear();
+
+      for (final rumah in rumahResponse) {
+        final riwayatList = <PenghuniHistoryItem>[];
+        
+        // Get riwayat_penghuni for this rumah
+        try {
+          final penghuniResponse = await supabase
+              .from('riwayat_penghuni')
+              .select('*, keluarga(nomor_kk, kepala_keluarga_id)')
+              .eq('alamat_id', rumah['id']);
+
+          debugPrint('Riwayat penghuni for rumah ${rumah['id']}: ${penghuniResponse.length} records');
+
+          for (final penghuni in penghuniResponse) {
+            if (penghuni['keluarga'] != null) {
+              final keluarga = penghuni['keluarga'];
+              String kepalaKeluargaNama = 'N/A';
+              
+              // Get kepala keluarga name
+              if (keluarga['kepala_keluarga_id'] != null) {
+                try {
+                  final wargaResponse = await supabase
+                      .from('warga_profiles')
+                      .select('nama_lengkap')
+                      .eq('id', keluarga['kepala_keluarga_id'])
+                      .single();
+                  kepalaKeluargaNama = wargaResponse['nama_lengkap'] ?? 'N/A';
+                } catch (e) {
+                  debugPrint('Error getting warga name: $e');
+                }
+              }
+              
+              // Use tanggal_masuk if available, otherwise use current date as fallback
+              DateTime tanggalMasuk = DateTime.now();
+              if (penghuni['tanggal_masuk'] != null) {
+                tanggalMasuk = DateTime.parse(penghuni['tanggal_masuk']);
+              } else if (penghuni['created_at'] != null) {
+                try {
+                  tanggalMasuk = DateTime.parse(penghuni['created_at']);
+                } catch (e) {
+                  debugPrint('Error parsing created_at: $e');
+                }
+              }
+              
+              riwayatList.add(PenghuniHistoryItem(
+                keluarga: keluarga['nomor_kk'] ?? 'N/A',
+                kepalaKeluarga: kepalaKeluargaNama,
+                tanggalMasuk: tanggalMasuk,
+                tanggalKeluar: penghuni['tanggal_keluar'] != null 
+                    ? DateTime.parse(penghuni['tanggal_keluar']) 
+                    : null,
+              ));
+            }
+          }
+        } catch (e) {
+          debugPrint('Error loading riwayat penghuni for rumah ${rumah['id']}: $e');
+        }
+
+        _rumahList.add(RumahListItem(
+          id: rumah['id'],
+          alamat: rumah['alamat'] ?? '',
+          status: rumah['status_rumah'] ?? 'kosong',
+          riwayatPenghuni: riwayatList,
+        ));
+      }
+
       _isLoading = false;
       notifyListeners();
     } catch (error) {

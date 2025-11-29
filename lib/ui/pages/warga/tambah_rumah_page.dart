@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../home_page.dart';
 
@@ -14,6 +15,7 @@ class TambahRumahPage extends StatefulWidget {
 class _TambahRumahPageState extends State<TambahRumahPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _alamatController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -150,16 +152,53 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
               child: const Text('Batal'),
             ),
             FilledButton(
-              onPressed: () {
+              onPressed: _isLoading ? null : () async {
                 Navigator.of(context).pop();
-                _showSuccessSheet();
+                await _saveRumah();
               },
-              child: const Text('Ya, Simpan'),
+              child: _isLoading 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Ya, Simpan'),
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _saveRumah() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase.from('rumah').insert({
+        'alamat': _alamatController.text.trim(),
+        'status_rumah': 'kosong',
+      });
+
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      _showSuccessSheet();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan rumah: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showSuccessSheet() {

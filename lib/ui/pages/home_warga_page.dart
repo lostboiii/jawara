@@ -172,12 +172,12 @@ class HomeWargaPage extends StatelessWidget {
                 scope.buildMenuIcon(
                   icon: Icons.home_work_rounded,
                   label: 'Tambah Rumah',
-                  onTap: () => context.goNamed('rumah-add'),
+                  onTap: () => context.goNamed('tambah-rumah'),
                 ),
                 scope.buildMenuIcon(
                   icon: Icons.home_filled,
                   label: 'Daftar Rumah',
-                  onTap: () => context.goNamed('rumah-list'),
+                  onTap: () => context.goNamed('daftar-rumah'),
                 ),
                 scope.buildMenuIcon(
                   icon: Icons.campaign_rounded,
@@ -209,6 +209,7 @@ class HomeWargaPage extends StatelessWidget {
             scope.buildWargaAspirasiItem(
               name: 'Dafa',
               message: 'TOLONK rumah aq kemalingan kemarin malam...',
+              time: '2 jam lalu',
             ),
           ],
         ),

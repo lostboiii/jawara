@@ -186,6 +186,47 @@ class _MinimalFakeWargaRepository implements WargaRepository {
       },
     ];
   }
+
+  @override
+  Future<void> updateRumahStatus(String rumahId, String status) async {}
+
+  @override
+  Future<List<Map<String, dynamic>>> getAllPenghuni() async => [];
+
+  @override
+  Future<void> updatePenghuniRumah(String penghuniId, String newRumahId) async {}
+
+  @override
+  Future<void> deletePenghuni(String penghuniId) async {}
+
+  @override
+  Future<void> createPenghuni({
+    required String keluargaId,
+    required String rumahId,
+  }) async {}
+
+  @override
+  Future<void> updateKeluargaAlamat(String keluargaId, String? alamatId) async {}
+
+  @override
+  Future<void> updateWarga({
+    required String wargaId,
+    required String namaLengkap,
+    required String nik,
+    required String noTelepon,
+    required String jenisKelamin,
+    required String agama,
+    required String golonganDarah,
+    required String pekerjaan,
+    required String peranKeluarga,
+    String? keluargaId,
+    String? tempatLahir,
+    String? tanggalLahir,
+    String? pendidikan,
+  }) async {}
+
+  @override
+  Future<void> deleteWarga(String wargaId) async {}
 }
 
 void main() {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../home_page.dart';
 
@@ -64,34 +65,35 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
 
-    final List<KategoriIuranItem> mockData = [
-      KategoriIuranItem(
-        id: '1',
-        namaKategori: 'Dafa',
-        jenisIuran: 'Iuran Bulanan',
-        nominal: 10000,
-      ),
-      KategoriIuranItem(
-        id: '2',
-        namaKategori: 'Keamanan',
-        jenisIuran: 'Iuran Bulanan',
-        nominal: 15000,
-      ),
-      KategoriIuranItem(
-        id: '3',
-        namaKategori: 'Agustusan',
-        jenisIuran: 'Iuran Khusus',
-        nominal: 50000,
-      ),
-    ];
+    try {
+      final supabase = Supabase.instance.client;
+      final response = await supabase
+          .from('kategori_iuran')
+          .select('*');
 
-    if (!mounted) return;
-    setState(() {
-      _items.addAll(mockData);
-      _isLoading = false;
-    });
+      _items.clear();
+      for (final item in response) {
+        _items.add(KategoriIuranItem(
+          id: item['id'],
+          namaKategori: item['nama_iuran'] ?? '',
+          jenisIuran: item['kategori_iuran'] ?? '',
+          nominal: 0, // nominal tidak ada di tabel, bisa diambil dari tagih_iuran
+        ));
+      }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memuat data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   List<KategoriIuranItem> get _filteredItems {
