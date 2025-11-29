@@ -37,6 +37,8 @@ abstract class HomePageScope {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? bgColor,
   });
 
   Widget buildTransactionItem({
@@ -54,6 +56,7 @@ abstract class HomePageScope {
   Widget buildWargaAspirasiItem({
     required String name,
     required String message,
+    required String time,
   });
 }
 
@@ -84,12 +87,12 @@ class _NavItem {
 class _HomePageState extends State<HomePage> implements HomePageScope {
   static const Color _primaryColor = Color(0xff5067e9);
   static const List<_NavItem> _navItems = [
-    const _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
-    const _NavItem(
+    _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
+    _NavItem(
         icon: Icons.account_balance_wallet_rounded, label: 'Keuangan'),
-    const _NavItem(icon: Icons.people_rounded, label: 'Warga'),
-    const _NavItem(icon: Icons.event_note_rounded, label: 'Kegiatan'),
-    const _NavItem(icon: Icons.person_rounded, label: 'Profil'),
+    _NavItem(icon: Icons.people_rounded, label: 'Warga'),
+    _NavItem(icon: Icons.event_note_rounded, label: 'Kegiatan'),
+    _NavItem(icon: Icons.person_rounded, label: 'Profil'),
   ];
 
   late int _selectedIndex;
@@ -167,7 +170,6 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
       final pengeluaranList = await _pengeluaranRepo.fetchAll();
       final pemasukanList = await _pemasukanRepo.fetchAll();
 
-      // Combine and sort by date (most recent first)
       final allTransactions = [
         ...pengeluaranList.map((p) => {'type': 'pengeluaran', 'data': p}),
         ...pemasukanList.map((p) => {'type': 'pemasukan', 'data': p}),
@@ -183,7 +185,6 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
         return bDate.compareTo(aDate);
       });
 
-      // Load all recent transactions
       final recentTransactions = allTransactions;
 
       if (!mounted) {
@@ -212,12 +213,10 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     }
 
     if (amount >= 1000000) {
-      // Format jutaan dengan truncate 1 desimal (tidak dibulatkan)
       double juta = amount / 1000000;
       double truncated = (juta * 10).truncateToDouble() / 10;
       return truncated.toStringAsFixed(1).replaceAll(RegExp(r'\.?0*$'), '');
     } else if (amount >= 1000) {
-      // Format ribuan dengan truncate 1 desimal (tidak dibulatkan)
       double ribu = amount / 1000;
       double truncated = (ribu * 10).truncateToDouble() / 10;
       return truncated.toStringAsFixed(1).replaceAll(RegExp(r'\.?0*$'), '');
@@ -299,90 +298,85 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Halo, Sayang!',
+                  'Halo, Admin!',
                   style: GoogleFonts.inter(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: primaryColor,
                   ),
                 ),
-                SizedBox(
-                  width: 160,
-                  height: 160,
-                  child: Image.asset(
-                    'assets/images/dashboard-pic.png',
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.account_balance_wallet,
-                        size: 64,
-                        color: _primaryColor,
-                      );
-                    },
+                const SizedBox(height: 4),
+                Text(
+                  'Selamat Datang',
+                  style: GoogleFonts.inter(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: primaryColor,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: buildStatCard(
-                    title: 'Pemasukan',
-                    value: '50',
-                    unit: 'juta',
+            SizedBox(
+              height: 140,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                children: [
+                  _buildHomeSummaryCard(
+                    title: 'Saldo',
+                    value: 'Rp 12.5jt',
+                    subtitle: 'Update hari ini',
+                    icon: Icons.account_balance_wallet_rounded,
                     color: primaryColor,
+                    onTap: () => context.goNamed('home-keuangan'),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _isLoadingPengeluaran
-                      ? buildLoadingCard(
-                          title: 'Pengeluaran', color: primaryColor)
-                      : buildStatCard(
-                          title: 'Pengeluaran',
-                          value: formatCurrency(_totalPengeluaran),
-                          unit: getCurrencyUnit(_totalPengeluaran),
-                          color: primaryColor,
-                        ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: buildStatCard(
-                    title: 'Transaksi',
-                    value: '7',
-                    unit: 'kali',
+                  const SizedBox(width: 16),
+                  _buildHomeSummaryCard(
+                    title: 'Agenda',
+                    value: 'Rapat RW',
+                    subtitle: 'Besok, 19:00',
+                    icon: Icons.event_note_rounded,
                     color: primaryColor,
+                    onTap: () => context.goNamed('home-kegiatan'),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  _buildHomeSummaryCard(
+                    title: 'Warga',
+                    value: '64 Jiwa',
+                    subtitle: '20 Keluarga',
+                    icon: Icons.groups_rounded,
+                    color: primaryColor,
+                    onTap: () => context.goNamed('home-warga'),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
                 onPressed: () => context.go('/dashboard'),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: primaryColor, width: 2),
+                  side: const BorderSide(color: primaryColor, width: 1.5),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.pie_chart_outline_rounded,
-                        color: primaryColor),
+                    const Icon(Icons.bar_chart_rounded, color: primaryColor),
                     const SizedBox(width: 8),
                     Text(
-                      'Lihat Statistik',
+                      'Lihat Statistik Lengkap',
                       style: GoogleFonts.inter(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: primaryColor,
                       ),
@@ -392,110 +386,181 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               ),
             ),
             const SizedBox(height: 32),
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 20,
-              crossAxisSpacing: 16,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                buildMenuIcon(
-                  icon: Icons.category,
-                  label: 'Kategori\nIuran',
-                  onTap: () {},
+                Text(
+                  'Aspirasi Warga',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-                buildMenuIcon(
-                  icon: Icons.account_balance_wallet,
-                  label: 'Tagih Iuran',
-                  onTap: () {},
-                ),
-                buildMenuIcon(
-                  icon: Icons.receipt_long,
-                  label: 'Tagihan',
-                  onTap: () {},
-                ),
-                buildMenuIcon(
-                  icon: Icons.download,
-                  label: 'Pemasukan Lain',
-                  onTap: () => context.go('/pemasukan'),
-                ),
-                buildMenuIcon(
-                  icon: Icons.add_circle,
-                  label: 'Tambah\nPemasukan',
-                  onTap: () {},
-                ),
-                buildMenuIcon(
-                  icon: Icons.arrow_circle_up,
-                  label: 'Daftar\nPengeluaran',
-                  onTap: () => context.go('/pengeluaran'),
-                ),
-                buildMenuIcon(
-                  icon: Icons.add_circle,
-                  label: 'Tambah\nPengeluaran',
-                  onTap: () => context.push('/pengeluaran/add'),
-                ),
-                buildMenuIcon(
-                  icon: Icons.more_horiz,
-                  label: 'Daftar Channel',
-                  onTap: () => context.go('/channel-transfer'),
+                TextButton(
+                  onPressed: () => context.goNamed('aspirasi-list'),
+                  child: Text(
+                    'Lihat Semua',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            Text(
-              'Riwayat Transaksi',
-              style: GoogleFonts.inter(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
+            const SizedBox(height: 12),
+            buildWargaAspirasiItem(
+              name: 'Pak Budi',
+              message: 'Mohon lampu jalan di Blok A diperbaiki secepatnya karena sudah mati 2 hari.',
+              time: '1j lalu',
             ),
-            const SizedBox(height: 16),
-            _isLoadingTransactions
-                ? const Center(child: CircularProgressIndicator())
-                : _recentTransactions.isEmpty
-                    ? Center(
-                        child: Text(
-                          'Tidak ada transaksi',
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Log Aktivitas',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.goNamed('activity-log'),
+                  child: Text(
+                    'Lihat Semua',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.history_rounded,
+                      color: primaryColor,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Update Data Warga',
                           style: GoogleFonts.inter(
                             fontSize: 16,
-                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-                      )
-                    : SizedBox(
-                        height: 200, // Adjust height to show approximately 3 items
-                        child: ListView.builder(
-                          itemCount: _recentTransactions.length,
-                          itemBuilder: (context, index) {
-                            final transaction = _recentTransactions[index];
-                            final type = transaction['type'] as String;
-                            final data = transaction['data'];
-
-                            String title;
-                            String subtitle;
-                            String amount;
-
-                            if (type == 'pengeluaran') {
-                              final pengeluaran = data as PengeluaranModel;
-                              title = pengeluaran.namaPengeluaran;
-                              subtitle = pengeluaran.kategoriPengeluaran;
-                              amount = '-Rp ${formatCurrency(pengeluaran.jumlah)}';
-                            } else {
-                              final pemasukan = data as PemasukanModel;
-                              title = pemasukan.nama_pemasukan;
-                              subtitle = pemasukan.kategori_pemasukan;
-                              amount = '+Rp ${formatCurrency(pemasukan.jumlah)}';
-                            }
-
-                            return buildTransactionItem(
-                              title: title,
-                              subtitle: subtitle,
-                              amount: amount,
-                            );
-                          },
+                        const SizedBox(height: 4),
+                        Text(
+                          'Admin mengupdate data Keluarga Bpk. Santoso',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '2j lalu',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.edit_note_rounded,
+                      color: Colors.orange,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Input Pengeluaran',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Bendahara input pengeluaran konsumsi rapat',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '5j lalu',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -631,6 +696,8 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    Color? iconColor,
+    Color? bgColor,
   }) {
     return InkWell(
       onTap: onTap,
@@ -641,10 +708,10 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xff5067e9),
+              color: bgColor ?? const Color(0xff5067e9),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
+            child: Icon(icon, color: iconColor ?? Colors.white, size: 28),
           ),
           const SizedBox(height: 8),
           Text(
@@ -719,6 +786,134 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget buildSummaryCard({
+    required String title,
+    required String value,
+    required String unit,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: _primaryColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: _primaryColor,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  unit,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: _primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget buildWargaAspirasiItem({
+    required String name,
+    required String message,
+    required String time,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: _primaryColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            time,
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: Colors.grey[500],
             ),
           ),
         ],
@@ -860,92 +1055,101 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     );
   }
 
-  @override
-  Widget buildSummaryCard({
+  Widget _buildHomeSummaryCard({
     required String title,
     required String value,
-    required String unit,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  title,
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementItem({
+    required String title,
+    required String date,
+    required String type,
+    required Color primaryColor,
+    bool isUrgent = false,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _primaryColor,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: _primaryColor,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  unit,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: _primaryColor,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget buildWargaAspirasiItem({
-    required String name,
-    required String message,
-  }) {
-    return Container(
-      padding: const EdgeInsets.only(top: 4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 4,
+            height: 40,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xff5067e9), width: 1),
-            ),
-            child: const Icon(
-              Icons.person_outline_rounded,
-              color: _primaryColor,
-              size: 24,
+              color: isUrgent ? Colors.red : primaryColor,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
           const SizedBox(width: 12),
@@ -953,26 +1157,53 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isUrgent
+                            ? Colors.red.withOpacity(0.1)
+                            : primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        type,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: isUrgent ? Colors.red : primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      date,
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  message,
+                  title,
                   style: GoogleFonts.inter(
-                    fontSize: 13,
-                    height: 1.4,
-                    color: Colors.black54,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          const Icon(Icons.chevron_right_rounded, color: Colors.grey),
         ],
       ),
     );
