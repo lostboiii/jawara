@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jawara/ui/pages/kegiatan/detail_broadcast_page.dart';
 import 'package:jawara/ui/pages/kegiatan/detail_kegiatan_page.dart';
+import 'package:jawara/ui/pages/pemasukan/detail_kategori_iuran_page.dart';
+import 'package:jawara/ui/pages/pemasukan/edit_kategori_iuran_page.dart';
+import 'package:jawara/ui/pages/pemasukan/create_kategori_iuran_page.dart';
+import 'package:jawara/ui/pages/pemasukan/tagih_iuran_page.dart';
 import 'package:jawara/ui/pages/warga/daftar_warga_page.dart';
+import 'package:jawara/ui/pages/pemasukan/tagihan_page.dart';
 import 'package:jawara/viewmodels/daftar_keluarga_viewmodel.dart';
 import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
 
@@ -17,6 +22,7 @@ import '../ui/pages/pengeluaran/pengeluaran_add_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_detail_page.dart';
 import '../ui/pages/pemasukan/pemasukan_page.dart';
 import '../ui/pages/pemasukan/pemasukan_detail_page.dart';
+import '../ui/pages/pemasukan/detail_tagihan_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_page.dart';
 import '../ui/pages/mutasi_keluarga/mutasi_keluarga_detail_page.dart';
 import '../ui/pages/channel_transfer/channel_transfer_page.dart';
@@ -39,6 +45,9 @@ import '../ui/pages/kegiatan/create_kegiatan_page.dart';
 import '../ui/pages/kegiatan/kegiatan_list_page.dart';
 import '../ui/pages/kegiatan/edit_kegiatan_page.dart';
 import '../ui/pages/aspirasi/aspirasi_list_page.dart';
+import '../ui/pages/pemasukan/kategori_iuran_page.dart';
+import '../ui/pages/pemasukan/create_pemasukan_page.dart';
+import '../ui/pages/pemasukan/edit_pemasukan_page.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
 import '../ui/screens/rumah/rumah_list_screen.dart';
@@ -70,6 +79,7 @@ class AppRoutes {
   static const pengeluaranDetail = '/pengeluaran/detail';
   static const pemasukan = '/pemasukan';
   static const pemasukanDetail = '/pemasukan/detail';
+  static const detailTagihan = '/tagihan/detail';
   static const mutasiKeluarga = '/mutasi-keluarga';
   static const mutasiKeluargaDetail = '/mutasi-keluarga/detail';
   static const channelTransfer = '/channel-transfer';
@@ -88,7 +98,7 @@ class AppRoutes {
   static const wargaDetail = '/warga/detail';
   static const channelTransferDetail = '/channel-transfer/detail';
   static const dashboard = '/dashboard';
-  static const ListBroadcast = '/list-broadcast';
+  static const listBroadcast = '/list-broadcast';
   static const createBroadcast = '/create-broadcast';
   static const editBroadcast = '/edit-broadcast';
   static const kegiatan = '/kegiatan';
@@ -97,6 +107,9 @@ class AppRoutes {
   static const detailKegiatan = '/kegiatan/detail';
   static String get editKegiatan => '/kegiatan/edit';
   static const aspirasiList = '/aspirasi-list';
+  static const tagihaniuranList = '/tagihan-iuran';
+  static const detailPemasukan = '/pemasukan-detail';
+  static const editPemasukan = '/edit-pemasukan';
 }
 
 final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>(
@@ -226,14 +239,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const PemasukanPage(),
     ),
     GoRoute(
-      path: AppRoutes.pemasukanDetail,
-      name: 'pemasukan-detail',
-      builder: (context, state) {
-        final item = state.extra as PemasukanModel;
-        return PemasukanDetailPage(item: item);
-      },
-    ),
-    GoRoute(
       path: AppRoutes.mutasiKeluarga,
       name: 'mutasi-keluarga',
       builder: (context, state) => const MutasiKeluargaPage(),
@@ -304,7 +309,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const DashboardPage(),
     ),
     GoRoute(
-      path: AppRoutes.ListBroadcast,
+      path: AppRoutes.listBroadcast,
       name: 'list-broadcast',
       builder: (context, state) => const BroadcastListPage(),
     ),
@@ -329,8 +334,8 @@ final GoRouter appRouter = GoRouter(
       name: 'detail-broadcast',
       builder: (context, state) => DetailBroadcastPage(
         broadcast: state.extra as BroadcastListItem,
-  ),
-),
+      ),
+    ),
     GoRoute(
       path: AppRoutes.kegiatan,
       name: 'kegiatan',
@@ -382,6 +387,86 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.aspirasiList,
       name: 'aspirasi-list',
       builder: (context, state) => const AspirasiListPage(),
+    ),
+    GoRoute(
+      path: '/kategori-iuran',
+      name: 'kategori-iuran',
+      builder: (context, state) => const KategoriIuranPage(),
+    ),
+    GoRoute(
+      path: '/create-kategori-iuran',
+      name: 'create-kategori-iuran',
+      builder: (context, state) => const CreateKategoriIuranPage(),
+    ),
+    GoRoute(
+      path: '/edit-kategori-iuran',
+      name: 'edit-kategori-iuran',
+      builder: (context, state) {
+        final item = state.extra as KategoriIuranItem?;
+        if (item == null) {
+          return const KategoriIuranPage();
+        }
+        return EditKategoriIuranPage(item: item);
+      },
+    ),
+    GoRoute(
+      path: '/detail-kategori-iuran',
+      name: 'detail-kategori-iuran',
+      builder: (context, state) {
+        final kategoriIuran = state.extra as KategoriIuranItem?;
+        if (kategoriIuran == null) {
+          return const KategoriIuranPage();
+        }
+        return DetailKategoriIuranPage(kategoriIuran: kategoriIuran);
+      },
+    ),
+    GoRoute(
+      path: '/tagih-iuran',
+      name: 'tagih-iuran',
+      builder: (context, state) => const TagihIuranPage(),
+    ),
+    GoRoute(
+      path: '/tagihan',
+      name: 'tagihan',
+      builder: (context, state) => const TagihanPage(),
+    ),
+    GoRoute(
+      path: '/detail-tagihan',
+      name: 'detail-tagihan',
+      builder: (context, state) {
+        final detailTagihan = state.extra as TagihanItem?;
+        if (detailTagihan == null) {
+          return const TagihanPage();
+        }
+        return DetailTagihanPage(tagihan: detailTagihan);
+      },
+    ),
+    GoRoute(
+      path: '/create-pemasukan',
+      name: 'create-pemasukan',
+      builder: (context, state) => const CreatePemasukanPage(),
+    ),
+    GoRoute(
+      path: '/pemasukan-detail',
+      name: 'pemasukan-detail',
+      builder: (context, state) {
+        final item = state.extra as PemasukanModel?;
+        if (item == null) {
+          return const PemasukanPage();
+        }
+        return PemasukanDetailPage(item: item);
+      },
+    ),
+    GoRoute(
+      path: '/edit-pemasukan',
+      name: 'edit-pemasukan',
+      builder: (context, state) {
+        final item = state.extra as PemasukanModel?;
+        if (item == null) {
+          return const PemasukanPage();
+        }
+        return EditPemasukanPage(pemasukan: item);
+      },
     ),
   ],
   errorBuilder: (context, state) => Scaffold(
