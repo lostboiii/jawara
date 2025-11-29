@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../router/app_router.dart';
 import '../../../data/models/pemasukan_model.dart';
 import '../../../viewmodels/pemasukan_viewmodel.dart';
-
-class _ChipColor {
-  final Color bg;
-  final Color fg;
-  const _ChipColor(this.bg, this.fg);
-}
+import '../home_page.dart';
 
 class PemasukanPage extends StatefulWidget {
   const PemasukanPage({super.key});
@@ -22,32 +17,25 @@ class PemasukanPage extends StatefulWidget {
 }
 
 class _PemasukanPageState extends State<PemasukanPage> {
-  final _formKey = GlobalKey<FormState>();
-  final _namaPemasukanCtrl = TextEditingController();
-  final _kategoriCtrl = TextEditingController();
-  String? _selectedKategori;
-  final List<String> _kategoriOptions = [
-    'Unnest',
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _selectedFilter;
+
+  final List<String> _filterOptions = [
+    'Iuran Bulanan',
     'Donasi',
+    'Kegiatan Warga',
+    'Eksternal',
     'Dana Bantuan Pemerintah',
     'Sumbangan Swadaya',
     'Hasil Uang Kampung',
     'Lain-lain',
+    'Unnest',
   ];
-  final _jumlahCtrl = TextEditingController();
-  DateTime? _pickedDate;
-  PlatformFile? _selectedFile;
-
-  final _fNamaPemasukanCtrl = TextEditingController();
-  String? _fKategori;
-  DateTime? _fromDate;
-  DateTime? _toDate;
 
   @override
   void initState() {
     super.initState();
-
-    // Load data when page opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PemasukanViewModel>().loadPemasukan();
     });
@@ -55,517 +43,738 @@ class _PemasukanPageState extends State<PemasukanPage> {
 
   @override
   void dispose() {
-    _namaPemasukanCtrl.dispose();
-    _kategoriCtrl.dispose();
-    _jumlahCtrl.dispose();
-    _fNamaPemasukanCtrl.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat('d MMMM y', 'id_ID').format(date);
+  Future<void> _onRefresh() async {
+    await context.read<PemasukanViewModel>().loadPemasukan();
   }
 
-  String _formatCurrency(double value) {
-    return NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 2,
-    ).format(value);
+  List<PemasukanModel> _getFilteredItems(List<PemasukanModel> items) {
+    var filtered = List<PemasukanModel>.from(items);
+
+    if (_selectedFilter != null) {
+      filtered = filtered.where((item) {
+        final itemKategori = item.kategori_pemasukan.trim().toLowerCase();
+        final filterKategori = _selectedFilter!.trim().toLowerCase();
+        return itemKategori == filterKategori;
+      }).toList();
+    }
+
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase().trim();
+      filtered = filtered.where((item) {
+        final sumberMatch = item.nama_pemasukan.toLowerCase().contains(query);
+        final kategoriMatch =
+            item.kategori_pemasukan.toLowerCase().contains(query);
+        return sumberMatch || kategoriMatch;
+      }).toList();
+    }
+
+    filtered.sort(
+        (a, b) => b.tanggal_pemasukan.compareTo(a.tanggal_pemasukan));
+
+    return filtered;
   }
 
-  Future<void> _applyFilter() async {
-    final viewModel = context.read<PemasukanViewModel>();
-    await viewModel.filterPemasukan(
-      nama: _fNamaPemasukanCtrl.text.trim(),
-      kategori: _fKategori?.isEmpty ?? true ? null : _fKategori,
-      fromDate: _fromDate,
-      toDate: _toDate,
-    );
+  Color _getKategoriColor(String kategori) {
+    switch (kategori.toLowerCase()) {
+      case 'iuran bulanan':
+        return Colors.green;
+      case 'donasi':
+        return Colors.blue;
+      case 'kegiatan warga':
+        return Colors.purple;
+      case 'eksternal':
+        return Colors.teal;
+      case 'dana bantuan pemerintah':
+        return const Color(0xff5067e9);
+      case 'sumbangan swadaya':
+        return Colors.orange;
+      case 'hasil uang kampung':
+        return Colors.amber.shade700;
+      case 'unnest':
+        return Colors.red.shade400;
+      default:
+        return Colors.grey;
+    }
   }
 
-  void _resetFilter() {
-    setState(() {
-      _fNamaPemasukanCtrl.clear();
-      _fKategori = null;
-      _fromDate = null;
-      _toDate = null;
-    });
-    context.read<PemasukanViewModel>().loadPemasukan();
-  }
-
-  Future<void> _showFilterSheet() async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Filter Pemasukan',
-                  style: Theme.of(ctx).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _fNamaPemasukanCtrl,
-                  decoration: const InputDecoration(labelText: 'Nama Pemasukan'),
-                ),
-                const SizedBox(height: 8),
-                Consumer<PemasukanViewModel>(
-                  builder: (context, viewModel, _) {
-                    final categories = viewModel.items
-                        .map((e) => e.kategori_pemasukan)
-                        .toSet()
-                        .toList()
-                      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
-
-                    return DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'Kategori'),
-                      isExpanded: true,
-                      value: _fKategori,
-                      items: [
-                        const DropdownMenuItem<String>(
-                          value: '',
-                          child: Text('Semua'),
-                        ),
-                        ...categories.map(
-                          (c) => DropdownMenuItem<String>(
-                            value: c,
-                            child: Text(c),
-                          ),
-                        ),
-                      ],
-                      onChanged: (v) => setState(() => _fKategori = v),
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(_fromDate == null ? '-' : _formatDate(_fromDate!)),
-                    ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        final d = await showDatePicker(
-                          context: ctx,
-                          initialDate: _fromDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (d != null) setState(() => _fromDate = d);
-                      },
-                      icon: const Icon(Icons.calendar_month),
-                      label: const Text('Dari'),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(_toDate == null ? '-' : _formatDate(_toDate!)),
-                    ),
-                    TextButton.icon(
-                      onPressed: () async {
-                        final d = await showDatePicker(
-                          context: ctx,
-                          initialDate: _toDate ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-                        if (d != null) setState(() => _toDate = d);
-                      },
-                      icon: const Icon(Icons.calendar_month),
-                      label: const Text('Sampai'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          _resetFilter();
-                          Navigator.pop(ctx);
-                        },
-                        child: const Text('Reset'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: () async {
-                          await _applyFilter();
-                          if (ctx.mounted) Navigator.pop(ctx);
-                        },
-                        child: const Text('Terapkan'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
+  @override
+  Widget build(BuildContext context) {
+    return HomePage(
+      initialIndex: 1,
+      sectionBuilders: {
+        1: (ctx, scope) => _buildSection(ctx, scope),
       },
     );
   }
 
-  _ChipColor _chipColors(String kategori) {
-    switch (kategori.toLowerCase()) {
-      case 'iuran bulanan':
-        return _ChipColor(Colors.green.shade100, Colors.green.shade900);
-      case 'donasi':
-        return _ChipColor(Colors.blue.shade100, Colors.blue.shade900);
-      case 'kegiatan warga':
-        return _ChipColor(Colors.purple.shade100, Colors.purple.shade900);
-      case 'eksternal':
-        return _ChipColor(Colors.teal.shade100, Colors.teal.shade900);
-      default:
-        return _ChipColor(Colors.grey.shade200, Colors.grey.shade800);
-    }
-  }
+  Widget _buildSection(BuildContext context, HomePageScope scope) {
+    final primaryColor = scope.primaryColor;
 
-  Widget _kvRow(String label, String value) {
-    final textTheme = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 6,
-            child: Text(
-              label,
-              style: textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
-            ),
-          ),
-          Expanded(
-            flex: 7,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                value,
-                textAlign: TextAlign.right,
-                style: textTheme.bodyMedium,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    return SafeArea(
+      child: Consumer<PemasukanViewModel>(
+        builder: (context, viewModel, child) {
+          final filteredList = _getFilteredItems(viewModel.items);
 
-  Widget _pemasukanCard(PemasukanModel item, int index) {
-    final kategori = item.kategori_pemasukan;
-    final colors = _chipColors(kategori);
-    final theme = Theme.of(context);
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
+          return RefreshIndicator(
+            onRefresh: _onRefresh,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Nominal',
-                        style: theme.textTheme.labelLarge
-                            ?.copyWith(color: Colors.grey[700]),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => context.goNamed('home-keuangan'),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: primaryColor,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatCurrency(item.jumlah),
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.green[700],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pemasukan',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() => _searchQuery = value);
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Cari sumber atau kategori',
+                          hintStyle: GoogleFonts.inter(fontSize: 14),
+                          prefixIcon: const Icon(Icons.search, size: 18),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding:
+                              const EdgeInsets.symmetric(horizontal: 16),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.grey.shade200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide:
+                                BorderSide(color: primaryColor, width: 2),
+                          ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          context.goNamed('create-pemasukan');
+                        },
+                        icon:
+                            const Icon(Icons.add_rounded, color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: IconButton(
+                        onPressed: () => _showFilterDialog(context),
+                        icon: const Icon(Icons.filter_alt_rounded,
+                            color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ),
-                Chip(
-                  label: Text(kategori),
-                  backgroundColor: colors.bg,
-                  labelStyle: theme.textTheme.labelMedium?.copyWith(color: colors.fg),
-                )
+                if (_selectedFilter != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16, bottom: 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Filter: ',
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.grey),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _selectedFilter!,
+                            style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: primaryColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 24),
+                if (viewModel.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (filteredList.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.filter_list_off_rounded,
+                            size: 48, color: Color(0xffA1A1A1)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tidak ada pemasukan ditemukan.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Coba reset filter atau tambah data baru.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  ...filteredList.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _PemasukanCard(
+                        item: item,
+                        kategoriColor:
+                            _getKategoriColor(item.kategori_pemasukan),
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 20),
               ],
             ),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            _kvRow('No', '${index + 1}'),
-            const Divider(height: 1),
-            _kvRow('Nama', item.nama_pemasukan),
-            const Divider(height: 1),
-            _kvRow('Tanggal', _formatDate(item.tanggal_pemasukan)),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () {
-                context.push(AppRoutes.pemasukanDetail, extra: item);
-              },
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text('Lihat Detail'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  void _showAddDialog() async {
-    _pickedDate = DateTime.now();
-    _namaPemasukanCtrl.clear();
-    _kategoriCtrl.clear();
-    _jumlahCtrl.clear();
-    _selectedFile = null;
-    _selectedKategori = null;
-
-    await showDialog(
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
       context: context,
       builder: (context) {
+        String? tempSelectedFilter = _selectedFilter;
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Tambah Pemasukan'),
-              content: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: _namaPemasukanCtrl,
-                        decoration: const InputDecoration(labelText: 'Nama Pemasukan'),
-                        validator: (v) => v == null || v.isEmpty ? 'Wajib diisi' : null,
-                      ),
-                      DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(labelText: 'Kategori Pemasukan'),
-                        value: _selectedKategori,
-                        items: _kategoriOptions
-                            .map((category) => DropdownMenuItem<String>(
-                                  value: category,
-                                  child: Text(category),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setDialogState(() => _selectedKategori = value);
-                        },
-                        validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
-                      ),
-                      TextFormField(
-                        controller: _jumlahCtrl,
-                        decoration: const InputDecoration(labelText: 'Jumlah (Rp)'),
-                        keyboardType: TextInputType.number,
-                        validator: (v) =>
-                            (v == null || double.tryParse(v) == null) ? 'Masukkan angka' : null,
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              backgroundColor: Colors.white,
+              insetPadding: const EdgeInsets.all(20),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Filter Pemasukan',
+                          style: GoogleFonts.inter(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        if (tempSelectedFilter != null)
+                          GestureDetector(
+                            onTap: () {
+                              setDialogState(() {
+                                tempSelectedFilter = null;
+                              });
+                            },
                             child: Text(
-                              _selectedFile != null
-                                  ? 'Bukti: ${_selectedFile!.name}'
-                                  : 'Belum ada bukti',
-                              overflow: TextOverflow.ellipsis,
+                              'Reset',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.red,
+                              ),
                             ),
                           ),
-                          TextButton.icon(
-                            onPressed: () async {
-                              final result = await FilePicker.platform.pickFiles();
-                              if (result != null) {
-                                setDialogState(() => _selectedFile = result.files.first);
-                              }
-                            },
-                            icon: const Icon(Icons.upload),
-                            label: const Text('Upload'),
-                          ),
-                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Kategori Pemasukan',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _filterOptions.map((filter) {
+                        final isSelected = tempSelectedFilter == filter;
+                        return InkWell(
+                          onTap: () {
+                            setDialogState(() {
+                              if (isSelected) {
+                                tempSelectedFilter = null;
+                              } else {
+                                tempSelectedFilter = filter;
+                              }
+                            });
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? const Color(0xff5067e9)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: isSelected
+                                    ? const Color(0xff5067e9)
+                                    : Colors.grey.shade300,
+                              ),
+                            ),
                             child: Text(
-                              _pickedDate != null
-                                  ? 'Tanggal: ${_formatDate(_pickedDate!)}'
-                                  : 'Pilih Tanggal',
+                              filter,
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.black54,
+                              ),
                             ),
                           ),
-                          TextButton.icon(
-                            onPressed: () async {
-                              final d = await showDatePicker(
-                                context: context,
-                                initialDate: _pickedDate ?? DateTime.now(),
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (d != null) {
-                                setDialogState(() => _pickedDate = d);
-                              }
-                            },
-                            icon: const Icon(Icons.calendar_today),
-                            label: const Text('Pilih'),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: OutlinedButton(
+                              onPressed: () => Navigator.pop(context),
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                side: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              child: Text(
+                                'Batal',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 48,
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedFilter = tempSelectedFilter;
+                                });
+                                Navigator.pop(context);
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xff5067e9),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                'Terapkan',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Batal'),
-                ),
-                FilledButton.icon(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate() && _pickedDate != null) {
-                      try {
-                        final viewModel = context.read<PemasukanViewModel>();
-
-                        String? buktiUrl;
-                        if (_selectedFile != null && _selectedFile!.bytes != null) {
-                          buktiUrl = await viewModel.repository.uploadBukti(
-                            _selectedFile!.name,
-                            _selectedFile!.bytes!,
-                          );
-                        }
-
-                        await viewModel.addPemasukan(
-                          nama_pemasukan: _namaPemasukanCtrl.text,
-                          tanggal_pemasukan: _pickedDate!,
-                          kategori_pemasukan: _selectedKategori ?? '',
-                          jumlah: double.parse(_jumlahCtrl.text),
-                          bukti_pemasukan: buktiUrl,
-                        );
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pemasukan berhasil ditambahkan')),
-                          );
-                        }
-                      } catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
-                        }
-                      }
-                    }
-                  },
-                  icon: const Icon(Icons.save),
-                  label: const Text('Simpan'),
-                ),
-              ],
             );
           },
         );
       },
     );
   }
+}
+
+class _PemasukanCard extends StatelessWidget {
+  const _PemasukanCard({
+    required this.item,
+    required this.kategoriColor,
+  });
+
+  final PemasukanModel item;
+  final Color kategoriColor;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/home'),
-        ),
-        title: const Text(
-          'Daftar Pemasukan',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
+    final primaryColor = const Color(0xff5067e9);
+    
+    final currencyFormat = NumberFormat.currency(
+        locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    
+    final dateFormat = DateFormat('d MMMM yyyy', 'id_ID');
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      body: Consumer<PemasukanViewModel>(
-        builder: (context, viewModel, _) {
-          if (viewModel.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (viewModel.errorMessage != null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Error: ${viewModel.errorMessage}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () => viewModel.loadPemasukan(),
-                    child: const Text('Coba Lagi'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  item.nama_pemasukan,
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87,
                   ),
-                ],
-              ),
-            );
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    FilledButton.icon(
-                      onPressed: _showAddDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Tambah Data'),
-                    ),
-                    const SizedBox(width: 8),
-                    OutlinedButton.icon(
-                      onPressed: _showFilterSheet,
-                      icon: const Icon(Icons.filter_list),
-                      label: const Text('Filter'),
-                    ),
-                  ],
                 ),
-                const SizedBox(height: 12),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: kategoriColor.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  item.kategori_pemasukan,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: kategoriColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            currencyFormat.format(item.jumlah),
+            style: GoogleFonts.inter(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today_rounded,
+                size: 16,
+                color: Colors.grey.shade500,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                dateFormat.format(item.tanggal_pemasukan),
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  color: Colors.grey.shade700,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          if (item.bukti_pemasukan != null && item.bukti_pemasukan!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.attach_file_rounded,
+                  size: 16,
+                  color: Colors.grey.shade500,
+                ),
+                const SizedBox(width: 8),
                 Expanded(
-                  child: viewModel.items.isEmpty
-                      ? const Center(child: Text('Belum ada data pemasukan'))
-                      : RefreshIndicator(
-                          onRefresh: () => viewModel.loadPemasukan(),
-                          child: ListView.builder(
-                            itemCount: viewModel.items.length,
-                            itemBuilder: (context, i) =>
-                                _pemasukanCard(viewModel.items[i], i),
-                          ),
-                        ),
+                  child: Text(
+                    'Bukti tersedia',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
-          );
-        },
+          ],
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      context.pushNamed(
+                        AppRoutes.pemasukanDetail,
+                        extra: item,
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Detail',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 44,
+                width: 44,
+                child: ElevatedButton(
+                  onPressed: () {
+                     context.pushNamed(AppRoutes.editPemasukan, extra: item);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Icon(
+                    Icons.edit_rounded,
+                    color: Colors.orange.shade700,
+                    size: 20,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 44,
+                width: 44,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final confirmed = await _confirmDelete(context, item);
+                    if (confirmed == true) {
+                      try {
+                        await context
+                            .read<PemasukanViewModel>()
+                            .deletePemasukan(item.id);
+                        
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Pemasukan dihapus',
+                                style: GoogleFonts.inter(),
+                              ),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                         if (context.mounted) {
+                           ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Gagal menghapus data")),
+                           );
+                         }
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Icon(
+                    Icons.delete_rounded,
+                    color: Colors.red.shade600,
+                    size: 20,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+  }
+
+  Future<bool?> _confirmDelete(BuildContext context, PemasukanModel pemasukan) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Column(
+            children: [
+              const Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.red,
+                size: 64,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Hapus Pemasukan?',
+                style: GoogleFonts.inter(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus pemasukan dari "${pemasukan.nama_pemasukan}"? Data yang dihapus tidak dapat dikembalikan.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(fontSize: 14),
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        side: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        'Batal',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        'Hapus',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
