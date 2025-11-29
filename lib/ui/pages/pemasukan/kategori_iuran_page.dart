@@ -2,43 +2,58 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
 
-import '../../../router/app_router.dart';
-import '../../../data/models/pemasukan_model.dart';
-import '../../../viewmodels/pemasukan_viewmodel.dart';
 import '../home_page.dart';
 
-class PemasukanPage extends StatefulWidget {
-  const PemasukanPage({super.key});
+class KategoriIuranItem {
+  KategoriIuranItem({
+    required this.id,
+    required this.namaKategori,
+    required this.jenisIuran,
+    required this.nominal,
+  });
 
-  @override
-  State<PemasukanPage> createState() => _PemasukanPageState();
+  final String id;
+  final String namaKategori;
+  final String jenisIuran;
+  final double nominal;
+
+  String get displayName =>
+      namaKategori.isNotEmpty ? namaKategori : 'Nama tidak tersedia';
+
+  String get jenisLabel =>
+      jenisIuran.isNotEmpty ? jenisIuran : 'Belum ditetapkan';
+
+  String get formattedNominal => NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: 'Rp ',
+        decimalDigits: 0,
+      ).format(nominal);
 }
 
-class _PemasukanPageState extends State<PemasukanPage> {
+class KategoriIuranPage extends StatefulWidget {
+  const KategoriIuranPage({super.key});
+
+  @override
+  State<KategoriIuranPage> createState() => _KategoriIuranPageState();
+}
+
+class _KategoriIuranPageState extends State<KategoriIuranPage> {
   final TextEditingController _searchController = TextEditingController();
+  final List<KategoriIuranItem> _items = [];
+  bool _isLoading = true;
   String _searchQuery = '';
   String? _selectedFilter;
 
   final List<String> _filterOptions = [
     'Iuran Bulanan',
-    'Donasi',
-    'Kegiatan Warga',
-    'Eksternal',
-    'Dana Bantuan Pemerintah',
-    'Sumbangan Swadaya',
-    'Hasil Uang Kampung',
-    'Lain-lain',
-    'Unnest',
+    'Iuran Khusus',
   ];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PemasukanViewModel>().loadPemasukan();
-    });
+    _loadData();
   }
 
   @override
@@ -47,247 +62,62 @@ class _PemasukanPageState extends State<PemasukanPage> {
     super.dispose();
   }
 
-  Future<void> _onRefresh() async {
-    await context.read<PemasukanViewModel>().loadPemasukan();
+  Future<void> _loadData() async {
+    setState(() => _isLoading = true);
+    await Future.delayed(const Duration(seconds: 1));
+
+    final List<KategoriIuranItem> mockData = [
+      KategoriIuranItem(
+        id: '1',
+        namaKategori: 'Dafa',
+        jenisIuran: 'Iuran Bulanan',
+        nominal: 10000,
+      ),
+      KategoriIuranItem(
+        id: '2',
+        namaKategori: 'Keamanan',
+        jenisIuran: 'Iuran Bulanan',
+        nominal: 15000,
+      ),
+      KategoriIuranItem(
+        id: '3',
+        namaKategori: 'Agustusan',
+        jenisIuran: 'Iuran Khusus',
+        nominal: 50000,
+      ),
+    ];
+
+    if (!mounted) return;
+    setState(() {
+      _items.addAll(mockData);
+      _isLoading = false;
+    });
   }
 
-  List<PemasukanModel> _getFilteredItems(List<PemasukanModel> items) {
-    var filtered = List<PemasukanModel>.from(items);
+  List<KategoriIuranItem> get _filteredItems {
+    var filtered = List<KategoriIuranItem>.from(_items);
 
     if (_selectedFilter != null) {
       filtered = filtered.where((item) {
-        final itemKategori = item.kategori_pemasukan.trim().toLowerCase();
-        final filterKategori = _selectedFilter!.trim().toLowerCase();
-        return itemKategori == filterKategori;
+        final itemJenis = item.jenisLabel.trim().toLowerCase();
+        final filterJenis = _selectedFilter!.trim().toLowerCase();
+        return itemJenis == filterJenis;
       }).toList();
     }
 
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase().trim();
       filtered = filtered.where((item) {
-        final sumberMatch = item.nama_pemasukan.toLowerCase().contains(query);
-        final kategoriMatch =
-            item.kategori_pemasukan.toLowerCase().contains(query);
-        return sumberMatch || kategoriMatch;
+        final nameMatch = item.displayName.toLowerCase().contains(query);
+        final jenisMatch = item.jenisLabel.toLowerCase().contains(query);
+        return nameMatch || jenisMatch;
       }).toList();
     }
-
-    filtered.sort(
-        (a, b) => b.tanggal_pemasukan.compareTo(a.tanggal_pemasukan));
 
     return filtered;
   }
 
-  Color _getKategoriColor(String kategori) {
-    switch (kategori.toLowerCase()) {
-      case 'iuran bulanan':
-        return Colors.green;
-      case 'donasi':
-        return Colors.blue;
-      case 'kegiatan warga':
-        return Colors.purple;
-      case 'eksternal':
-        return Colors.teal;
-      case 'dana bantuan pemerintah':
-        return const Color(0xff5067e9);
-      case 'sumbangan swadaya':
-        return Colors.orange;
-      case 'hasil uang kampung':
-        return Colors.amber.shade700;
-      case 'unnest':
-        return Colors.red.shade400;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return HomePage(
-      initialIndex: 1,
-      sectionBuilders: {
-        1: (ctx, scope) => _buildSection(ctx, scope),
-      },
-    );
-  }
-
-  Widget _buildSection(BuildContext context, HomePageScope scope) {
-    final primaryColor = scope.primaryColor;
-
-    return SafeArea(
-      child: Consumer<PemasukanViewModel>(
-        builder: (context, viewModel, child) {
-          final filteredList = _getFilteredItems(viewModel.items);
-
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => context.goNamed('home-keuangan'),
-                      icon: Icon(
-                        Icons.arrow_back_ios_new_rounded,
-                        color: primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Pemasukan',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (value) {
-                          setState(() => _searchQuery = value);
-                        },
-                        decoration: InputDecoration(
-                          hintText: 'Cari sumber atau kategori',
-                          hintStyle: GoogleFonts.inter(fontSize: 14),
-                          prefixIcon: const Icon(Icons.search, size: 18),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding:
-                              const EdgeInsets.symmetric(horizontal: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(color: Colors.grey.shade200),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide:
-                                BorderSide(color: primaryColor, width: 2),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () {
-                          context.goNamed('create-pemasukan');
-                        },
-                        icon:
-                            const Icon(Icons.add_rounded, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: IconButton(
-                        onPressed: () => _showFilterDialog(context),
-                        icon: const Icon(Icons.filter_alt_rounded,
-                            color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-                if (_selectedFilter != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 16, bottom: 8),
-                    child: Row(
-                      children: [
-                        Text(
-                          'Filter: ',
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.grey),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            _selectedFilter!,
-                            style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: primaryColor),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 24),
-                if (viewModel.isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 80),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (filteredList.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 60),
-                    child: Column(
-                      children: [
-                        const Icon(Icons.filter_list_off_rounded,
-                            size: 48, color: Color(0xffA1A1A1)),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Tidak ada pemasukan ditemukan.',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'Coba reset filter atau tambah data baru.',
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.black54),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ...filteredList.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _PemasukanCard(
-                        item: item,
-                        kategoriColor:
-                            _getKategoriColor(item.kategori_pemasukan),
-                      ),
-                    ),
-                  ),
-                const SizedBox(height: 20),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+  Future<void> _onRefresh() => _loadData();
 
   void _showFilterDialog(BuildContext context) {
     showDialog(
@@ -312,7 +142,7 @@ class _PemasukanPageState extends State<PemasukanPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Filter Pemasukan',
+                          'Filter Kategori Iuran',
                           style: GoogleFonts.inter(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -339,7 +169,7 @@ class _PemasukanPageState extends State<PemasukanPage> {
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'Kategori Pemasukan',
+                      'Jenis Iuran',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -460,25 +290,192 @@ class _PemasukanPageState extends State<PemasukanPage> {
       },
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return HomePage(
+      initialIndex: 1,
+      sectionBuilders: {
+        1: (ctx, scope) => _buildSection(ctx, scope),
+      },
+    );
+  }
+
+  Widget _buildSection(BuildContext context, HomePageScope scope) {
+    final primaryColor = scope.primaryColor;
+
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => context.goNamed('home-keuangan'),
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Kategori Iuran',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() => _searchQuery = value);
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama atau jenis iuran',
+                      hintStyle: GoogleFonts.inter(fontSize: 14),
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: Colors.grey.shade200),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(color: primaryColor, width: 2),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    onPressed: () {
+                      context.goNamed('create-kategori-iuran');
+                    },
+                    icon: const Icon(Icons.add_rounded, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: primaryColor,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: IconButton(
+                    onPressed: () => _showFilterDialog(context),
+                    icon: const Icon(Icons.filter_alt_rounded,
+                        color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            if (_selectedFilter != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16, bottom: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Filter: ',
+                      style:
+                          GoogleFonts.inter(fontSize: 12, color: Colors.grey),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: primaryColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        _selectedFilter!,
+                        style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: primaryColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 24),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 80),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (_filteredItems.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 60),
+                child: Column(
+                  children: [
+                    const Icon(Icons.filter_list_off_rounded,
+                        size: 48, color: Color(0xffA1A1A1)),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Tidak ada kategori iuran ditemukan.',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Coba reset filter atau gunakan kata kunci lain.',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: Colors.black54),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._filteredItems.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _IuranCard(item: item),
+                ),
+              ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _PemasukanCard extends StatelessWidget {
-  const _PemasukanCard({
-    required this.item,
-    required this.kategoriColor,
-  });
+class _IuranCard extends StatelessWidget {
+  const _IuranCard({required this.item});
 
-  final PemasukanModel item;
-  final Color kategoriColor;
+  final KategoriIuranItem item;
 
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xff5067e9);
-    
-    final currencyFormat = NumberFormat.currency(
-        locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    
-    final dateFormat = DateFormat('d MMMM yyyy', 'id_ID');
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -502,7 +499,7 @@ class _PemasukanCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  item.nama_pemasukan,
+                  item.displayName,
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -515,40 +512,31 @@ class _PemasukanCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: kategoriColor.withOpacity(0.08),
+                  color: primaryColor.withOpacity(0.08),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  item.kategori_pemasukan,
+                  item.jenisLabel,
                   style: GoogleFonts.inter(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: kategoriColor,
+                    color: primaryColor,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            currencyFormat.format(item.jumlah),
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.blue.shade700,
-            ),
-          ),
           const SizedBox(height: 16),
           Row(
             children: [
               Icon(
-                Icons.calendar_today_rounded,
+                Icons.account_balance_wallet_rounded,
                 size: 16,
                 color: Colors.grey.shade500,
               ),
               const SizedBox(width: 8),
               Text(
-                dateFormat.format(item.tanggal_pemasukan),
+                item.formattedNominal,
                 style: GoogleFonts.inter(
                   fontSize: 13,
                   color: Colors.grey.shade700,
@@ -557,31 +545,6 @@ class _PemasukanCard extends StatelessWidget {
               ),
             ],
           ),
-          if (item.bukti_pemasukan != null && item.bukti_pemasukan!.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  Icons.attach_file_rounded,
-                  size: 16,
-                  color: Colors.grey.shade500,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Bukti tersedia',
-                    style: GoogleFonts.inter(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                      fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ],
           const SizedBox(height: 20),
           Row(
             children: [
@@ -590,8 +553,8 @@ class _PemasukanCard extends StatelessWidget {
                   height: 44,
                   child: ElevatedButton(
                     onPressed: () {
-                      context.pushNamed(
-                        AppRoutes.pemasukanDetail,
+                      context.goNamed(
+                        'detail-kategori-iuran',
                         extra: item,
                       );
                     },
@@ -619,7 +582,7 @@ class _PemasukanCard extends StatelessWidget {
                 width: 44,
                 child: ElevatedButton(
                   onPressed: () {
-                     context.pushNamed(AppRoutes.editPemasukan, extra: item);
+                    context.goNamed('edit-kategori-iuran', extra: item);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade50,
@@ -644,29 +607,16 @@ class _PemasukanCard extends StatelessWidget {
                   onPressed: () async {
                     final confirmed = await _confirmDelete(context, item);
                     if (confirmed == true) {
-                      try {
-                        await context
-                            .read<PemasukanViewModel>()
-                            .deletePemasukan(item.id);
-                        
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Pemasukan dihapus',
-                                style: GoogleFonts.inter(),
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                         if (context.mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Gagal menghapus data")),
-                           );
-                         }
-                      }
+                      // Handle delete action
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Kategori iuran dihapus',
+                            style: GoogleFonts.inter(),
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -691,7 +641,8 @@ class _PemasukanCard extends StatelessWidget {
     );
   }
 
-  Future<bool?> _confirmDelete(BuildContext context, PemasukanModel pemasukan) {
+  Future<bool?> _confirmDelete(
+      BuildContext context, KategoriIuranItem kategori) {
     return showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -708,7 +659,7 @@ class _PemasukanCard extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'Hapus Pemasukan?',
+                'Hapus Kategori Iuran?',
                 style: GoogleFonts.inter(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
@@ -717,7 +668,7 @@ class _PemasukanCard extends StatelessWidget {
             ],
           ),
           content: Text(
-            'Apakah Anda yakin ingin menghapus pemasukan dari "${pemasukan.nama_pemasukan}"? Data yang dihapus tidak dapat dikembalikan.',
+            'Apakah Anda yakin ingin menghapus kategori iuran "${kategori.displayName}"? Data yang dihapus tidak dapat dikembalikan.',
             textAlign: TextAlign.center,
             style: GoogleFonts.inter(fontSize: 14),
           ),
