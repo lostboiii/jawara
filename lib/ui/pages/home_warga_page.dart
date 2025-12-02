@@ -1,23 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'home_page.dart';
 
-class HomeWargaPage extends StatelessWidget {
+class HomeWargaPage extends StatefulWidget {
   const HomeWargaPage({super.key});
+
+  @override
+  State<HomeWargaPage> createState() => _HomeWargaPageState();
+}
+
+class _HomeWargaPageState extends State<HomeWargaPage> {
+  final _supabase = Supabase.instance.client;
+  bool _isLoading = true;
+  int _totalWarga = 0;
+  int _totalKeluarga = 0;
+  int _totalRumah = 0;
+  int _totalAspirasi = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      // Load total warga
+      final wargaResponse = await _supabase
+          .from('warga_profiles')
+          .select('id');
+
+      // Load total keluarga
+      final keluargaResponse = await _supabase
+          .from('keluarga')
+          .select('id');
+
+      // Load total rumah
+      final rumahResponse = await _supabase
+          .from('rumah')
+          .select('id');
+
+      // Load total aspirasi
+      final aspirasiResponse = await _supabase
+          .from('aspirasi')
+          .select('id');
+
+      if (mounted) {
+        setState(() {
+          _totalWarga = wargaResponse.length;
+          _totalKeluarga = keluargaResponse.length;
+          _totalRumah = rumahResponse.length;
+          _totalAspirasi = aspirasiResponse.length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return HomePage(
       initialIndex: 2,
       sectionBuilders: {
-        2: _buildWargaSection,
+        2: (ctx, scope) => _buildWargaSection(ctx, scope),
       },
     );
   }
 
-  static Widget _buildWargaSection(
+  Widget _buildWargaSection(
     BuildContext context,
     HomePageScope scope,
   ) {
@@ -101,7 +158,7 @@ class HomeWargaPage extends StatelessWidget {
                 Expanded(
                   child: scope.buildStatCard(
                     title: 'Total Keluarga',
-                    value: '20',
+                    value: _isLoading ? '...' : '$_totalKeluarga',
                     unit: 'keluarga',
                     color: primaryColor,
                   ),
@@ -109,9 +166,31 @@ class HomeWargaPage extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: scope.buildStatCard(
-                    title: 'Total Anggota',
-                    value: '64',
-                    unit: 'anggota',
+                    title: 'Total Warga',
+                    value: _isLoading ? '...' : '$_totalWarga',
+                    unit: 'warga',
+                    color: primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: scope.buildStatCard(
+                    title: 'Total Rumah',
+                    value: _isLoading ? '...' : '$_totalRumah',
+                    unit: 'rumah',
+                    color: primaryColor,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: scope.buildStatCard(
+                    title: 'Total Aspirasi',
+                    value: _isLoading ? '...' : '$_totalAspirasi',
+                    unit: 'aspirasi',
                     color: primaryColor,
                   ),
                 ),
@@ -122,7 +201,7 @@ class HomeWargaPage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () => context.go('/dashboard'),
+                onPressed: () => context.goNamed('statistik-warga'),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: primaryColor, width: 2),
                   shape: RoundedRectangleBorder(

@@ -1,23 +1,97 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'home_page.dart';
 
-class HomeKegiatanPage extends StatelessWidget {
+class HomeKegiatanPage extends StatefulWidget {
   const HomeKegiatanPage({super.key});
+
+  @override
+  State<HomeKegiatanPage> createState() => _HomeKegiatanPageState();
+}
+
+class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
+  final _supabase = Supabase.instance.client;
+  bool _isLoading = true;
+  int _totalKegiatan = 0;
+  int _totalBroadcast = 0;
+  int _kegiatanAkanDatang = 0;
+  int _kegiatanSelesai = 0;
+  Map<String, dynamic>? _nextKegiatan;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final now = DateTime.now();
+      
+      // Load total kegiatan
+      final kegiatanResponse = await _supabase
+          .from('kegiatan')
+          .select('id');
+
+      // Load total broadcast
+      final broadcastResponse = await _supabase
+          .from('broadcast')
+          .select('id');
+
+      // Load kegiatan yang akan datang (tanggal >= hari ini)
+      final akanDatangResponse = await _supabase
+          .from('kegiatan')
+          .select('id')
+          .gte('tanggal_kegiatan', now.toIso8601String());
+
+      // Load kegiatan selesai (tanggal < hari ini)
+      final selesaiResponse = await _supabase
+          .from('kegiatan')
+          .select('id')
+          .lt('tanggal_kegiatan', now.toIso8601String());
+
+      // Load kegiatan terdekat
+      final nextKegiatanResponse = await _supabase
+          .from('kegiatan')
+          .select('nama_kegiatan, tanggal_kegiatan')
+          .gte('tanggal_kegiatan', now.toIso8601String())
+          .order('tanggal_kegiatan')
+          .limit(1);
+
+      if (mounted) {
+        setState(() {
+          _totalKegiatan = kegiatanResponse.length;
+          _totalBroadcast = broadcastResponse.length;
+          _kegiatanAkanDatang = akanDatangResponse.length;
+          _kegiatanSelesai = selesaiResponse.length;
+          _nextKegiatan = nextKegiatanResponse.isNotEmpty 
+              ? nextKegiatanResponse.first 
+              : null;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading kegiatan data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return HomePage(
       initialIndex: 3,
       sectionBuilders: {
-        3: _buildKegiatanSection,
+        3: (ctx, scope) => _buildKegiatanSection(ctx, scope),
       },
     );
   }
 
-  static Widget _buildKegiatanSection(
+  Widget _buildKegiatanSection(
     BuildContext context,
     HomePageScope scope,
   ) {
@@ -119,7 +193,7 @@ class HomeKegiatanPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              '25',
+                              _isLoading ? '...' : '$_totalKegiatan',
                               style: GoogleFonts.inter(
                                 fontSize: 56,
                                 fontWeight: FontWeight.w700,
@@ -130,7 +204,7 @@ class HomeKegiatanPage extends StatelessWidget {
                             Padding(
                               padding: const EdgeInsets.only(bottom: 8, left: 8),
                               child: Text(
-                                'Agenda',
+                                'Kegiatan',
                                 style: GoogleFonts.inter(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -173,6 +247,116 @@ class HomeKegiatanPage extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
+                            Icons.play_arrow_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _isLoading ? '...' : '$_totalBroadcast',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Broadcast',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.calendar_month_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _isLoading ? '...' : '$_kegiatanAkanDatang',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Akan Datang',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
                             Icons.check_circle_rounded,
                             color: primaryColor,
                             size: 20,
@@ -180,7 +364,7 @@ class HomeKegiatanPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '12',
+                          _isLoading ? '...' : '$_kegiatanSelesai',
                           style: GoogleFonts.inter(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -226,14 +410,14 @@ class HomeKegiatanPage extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.play_arrow_rounded,
+                            Icons.event_note_rounded,
                             color: primaryColor,
                             size: 20,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '1',
+                          _isLoading ? '...' : '$_totalKegiatan',
                           style: GoogleFonts.inter(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
@@ -243,60 +427,7 @@ class HomeKegiatanPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Berlangsung',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: primaryColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.calendar_month_rounded,
-                            color: primaryColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          '7',
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black87,
-                            height: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Akan Datang',
+                          'Total',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -314,7 +445,7 @@ class HomeKegiatanPage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () => context.go('/dashboard'),
+                onPressed: () => context.goNamed('statistik-kegiatan'),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: primaryColor, width: 1.5),
                   shape: RoundedRectangleBorder(

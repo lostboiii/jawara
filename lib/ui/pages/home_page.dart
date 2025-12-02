@@ -97,9 +97,12 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
 
   late int _selectedIndex;
   double _totalPengeluaran = 0;
+  double _totalPemasukan = 0;
+  double _saldo = 0;
+  int _totalWarga = 0;
+  int _totalKeluarga = 0;
   bool _isLoadingPengeluaran = true;
-  List<dynamic> _recentTransactions = [];
-  bool _isLoadingTransactions = true;
+  bool _isLoadingStats = true;
 
   late final PengeluaranRepository _pengeluaranRepo;
   late final PemasukanRepository _pemasukanRepo;
@@ -135,7 +138,72 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
           (ctx, scope) => _buildPlaceholderContent(ctx, 'Kegiatan'),
     };
     _loadPengeluaran();
-    _loadTransactions();
+    _loadHomeStats();
+  }
+
+  Future<void> _loadHomeStats() async {
+    try {
+      final supabase = SupabaseService.client;
+      
+      // Load pemasukan lain
+      final pemasukanResponse = await supabase
+          .from('pemasukan_lain')
+          .select('jumlah');
+      
+      double pemasukanLain = 0;
+      for (var item in pemasukanResponse) {
+        pemasukanLain += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load iuran yang sudah dibayar (sudah_bayar)
+      final iuranResponse = await supabase
+          .from('tagih_iuran')
+          .select('jumlah')
+          .eq('status_tagihan', 'sudah_bayar');
+      
+      double iuranLunas = 0;
+      for (var item in iuranResponse) {
+        iuranLunas += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load pengeluaran for saldo
+      final pengeluaranResponse = await supabase
+          .from('pengeluaran')
+          .select('jumlah');
+      
+      double pengeluaran = 0;
+      for (var item in pengeluaranResponse) {
+        pengeluaran += (item['jumlah'] as num).toDouble();
+      }
+
+      // Total pemasukan = pemasukan lain + iuran yang sudah dibayar
+      double totalPemasukan = pemasukanLain + iuranLunas;
+
+      // Load warga
+      final wargaResponse = await supabase
+          .from('warga_profiles')
+          .select('id');
+
+      // Load keluarga
+      final keluargaResponse = await supabase
+          .from('keluarga')
+          .select('id');
+
+      if (mounted) {
+        setState(() {
+          _totalPemasukan = totalPemasukan;
+          _saldo = totalPemasukan - pengeluaran;
+          _totalWarga = wargaResponse.length;
+          _totalKeluarga = keluargaResponse.length;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading home stats: $e');
+      if (mounted) {
+        setState(() => _isLoadingStats = false);
+      }
+    }
   }
 
   Future<void> _loadPengeluaran() async {
@@ -161,47 +229,6 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
 
       setState(() {
         _isLoadingPengeluaran = false;
-      });
-    }
-  }
-
-  Future<void> _loadTransactions() async {
-    try {
-      final pengeluaranList = await _pengeluaranRepo.fetchAll();
-      final pemasukanList = await _pemasukanRepo.fetchAll();
-
-      final allTransactions = [
-        ...pengeluaranList.map((p) => {'type': 'pengeluaran', 'data': p}),
-        ...pemasukanList.map((p) => {'type': 'pemasukan', 'data': p}),
-      ];
-
-      allTransactions.sort((a, b) {
-        final aDate = a['type'] == 'pengeluaran'
-            ? (a['data'] as PengeluaranModel).tanggalPengeluaran
-            : (a['data'] as PemasukanModel).tanggal_pemasukan;
-        final bDate = b['type'] == 'pengeluaran'
-            ? (b['data'] as PengeluaranModel).tanggalPengeluaran
-            : (b['data'] as PemasukanModel).tanggal_pemasukan;
-        return bDate.compareTo(aDate);
-      });
-
-      final recentTransactions = allTransactions;
-
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _recentTransactions = recentTransactions;
-        _isLoadingTransactions = false;
-      });
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        _isLoadingTransactions = false;
       });
     }
   }
@@ -329,7 +356,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                 children: [
                   _buildHomeSummaryCard(
                     title: 'Saldo',
-                    value: 'Rp 12.5jt',
+                    value: _isLoadingStats ? 'Memuat...' : 'Rp ${formatCurrency(_saldo)}${getCurrencyUnit(_saldo)}',
                     subtitle: 'Update hari ini',
                     icon: Icons.account_balance_wallet_rounded,
                     color: primaryColor,
@@ -337,52 +364,23 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                   ),
                   const SizedBox(width: 16),
                   _buildHomeSummaryCard(
-                    title: 'Agenda',
-                    value: 'Rapat RW',
-                    subtitle: 'Besok, 19:00',
-                    icon: Icons.event_note_rounded,
-                    color: primaryColor,
-                    onTap: () => context.goNamed('home-kegiatan'),
-                  ),
-                  const SizedBox(width: 16),
-                  _buildHomeSummaryCard(
                     title: 'Warga',
-                    value: '64 Jiwa',
-                    subtitle: '20 Keluarga',
+                    value: _isLoadingStats ? 'Memuat...' : '$_totalWarga Jiwa',
+                    subtitle: '$_totalKeluarga Keluarga',
                     icon: Icons.groups_rounded,
                     color: primaryColor,
                     onTap: () => context.goNamed('home-warga'),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: OutlinedButton(
-                onPressed: () => context.go('/dashboard'),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: primaryColor, width: 1.5),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                  const SizedBox(width: 16),
+                  _buildHomeSummaryCard(
+                    title: 'Agenda',
+                    value: 'Lihat Kegiatan',
+                    subtitle: 'Cek jadwal terbaru',
+                    icon: Icons.event_note_rounded,
+                    color: primaryColor,
+                    onTap: () => context.goNamed('home-kegiatan'),
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.bar_chart_rounded, color: primaryColor),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Lihat Statistik Lengkap',
-                      style: GoogleFonts.inter(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
             const SizedBox(height: 32),

@@ -1,23 +1,106 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'home_page.dart';
 
-class HomeKeuanganPage extends StatelessWidget {
+class HomeKeuanganPage extends StatefulWidget {
   const HomeKeuanganPage({super.key});
+
+  @override
+  State<HomeKeuanganPage> createState() => _HomeKeuanganPageState();
+}
+
+class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
+  final _supabase = Supabase.instance.client;
+  bool _isLoading = true;
+  double _totalPemasukan = 0;
+  double _totalPengeluaran = 0;
+  double _saldo = 0;
+  double _pemasukanLain = 0;
+  double _iuranLunas = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      // Load pemasukan lain
+      final pemasukanResponse = await _supabase
+          .from('pemasukan_lain')
+          .select('jumlah');
+      
+      double pemasukanLain = 0;
+      for (var item in pemasukanResponse) {
+        pemasukanLain += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load iuran yang sudah dibayar (sudah_bayar)
+      final iuranResponse = await _supabase
+          .from('tagih_iuran')
+          .select('jumlah')
+          .eq('status_tagihan', 'sudah_bayar');
+      
+      double iuranLunas = 0;
+      for (var item in iuranResponse) {
+        iuranLunas += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load pengeluaran
+      final pengeluaranResponse = await _supabase
+          .from('pengeluaran')
+          .select('jumlah');
+      
+      double pengeluaran = 0;
+      for (var item in pengeluaranResponse) {
+        pengeluaran += (item['jumlah'] as num).toDouble();
+      }
+
+      // Total pemasukan = pemasukan lain + iuran yang sudah dibayar
+      double totalPemasukan = pemasukanLain + iuranLunas;
+
+      if (mounted) {
+        setState(() {
+          _pemasukanLain = pemasukanLain;
+          _iuranLunas = iuranLunas;
+          _totalPemasukan = totalPemasukan;
+          _totalPengeluaran = pengeluaran;
+          _saldo = totalPemasukan - pengeluaran;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('Error loading keuangan data: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  String _formatRupiah(double amount) {
+    if (amount >= 1000000) {
+      return 'Rp ${(amount / 1000000).toStringAsFixed(1)}jt';
+    } else if (amount >= 1000) {
+      return 'Rp ${(amount / 1000).toStringAsFixed(0)}rb';
+    }
+    return 'Rp ${amount.toStringAsFixed(0)}';
+  }
 
   @override
   Widget build(BuildContext context) {
     return HomePage(
       initialIndex: 1,
       sectionBuilders: {
-        1: _buildKeuanganSection,
+        1: (ctx, scope) => _buildKeuanganSection(ctx, scope),
       },
     );
   }
 
-  static Widget _buildKeuanganSection(
+  Widget _buildKeuanganSection(
     BuildContext context,
     HomePageScope scope,
   ) {
@@ -119,7 +202,7 @@ class HomeKeuanganPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              'Rp 12.500.000',
+                              _isLoading ? 'Memuat...' : _formatRupiah(_saldo),
                               style: GoogleFonts.inter(
                                 fontSize: 32,
                                 fontWeight: FontWeight.w700,
@@ -163,14 +246,14 @@ class HomeKeuanganPage extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.trending_up_rounded,
+                            Icons.attach_money_rounded,
                             color: primaryColor,
                             size: 20,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Rp 5.000.000',
+                          _isLoading ? '...' : _formatRupiah(_pemasukanLain),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -180,7 +263,7 @@ class HomeKeuanganPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Pemasukan',
+                          'Pemasukan Lain',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -217,6 +300,64 @@ class HomeKeuanganPage extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
+                            Icons.payment_rounded,
+                            color: primaryColor,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _isLoading ? '...' : _formatRupiah(_iuranLunas),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black87,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Iuran Terbayar',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
                             Icons.trending_down_rounded,
                             color: primaryColor,
                             size: 20,
@@ -224,7 +365,7 @@ class HomeKeuanganPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Rp 2.000.000',
+                          _isLoading ? '...' : _formatRupiah(_totalPengeluaran),
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -271,16 +412,16 @@ class HomeKeuanganPage extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            Icons.history_rounded,
+                            Icons.trending_up_rounded,
                             color: primaryColor,
                             size: 20,
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '45',
+                          _isLoading ? '...' : _formatRupiah(_totalPemasukan),
                           style: GoogleFonts.inter(
-                            fontSize: 24,
+                            fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: Colors.black87,
                             height: 1,
@@ -288,7 +429,7 @@ class HomeKeuanganPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Transaksi',
+                          'Total Pemasukan',
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -306,7 +447,7 @@ class HomeKeuanganPage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: OutlinedButton(
-                onPressed: () => context.go('/dashboard'),
+                onPressed: () => context.goNamed('statistik-keuangan'),
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: primaryColor, width: 1.5),
                   shape: RoundedRectangleBorder(

@@ -330,7 +330,9 @@ class _LoginPageState extends State<LoginPage> {
             );
             
             // Redirect berdasarkan role
-            if (role == 'admin') {
+            // Admin, Ketua RW, Ketua RT, Sekretaris, Bendahara -> admin homepage
+            // Warga -> warga homepage
+            if (role != null && role.toLowerCase() != 'warga') {
               context.go(AppRoutes.home); // Homepage admin
             } else {
               context.go('/warga-home'); // Homepage warga

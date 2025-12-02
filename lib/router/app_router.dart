@@ -15,6 +15,9 @@ import '../ui/pages/home_page.dart';
 import '../ui/pages/home_keuangan_page.dart';
 import '../ui/pages/home_warga_page.dart';
 import '../ui/pages/home_kegiatan_page.dart';
+import '../ui/pages/statistik_keuangan_page.dart';
+import '../ui/pages/statistik_warga_page.dart';
+import '../ui/pages/statistik_kegiatan_page.dart';
 import '../ui/pages/warga/warga_home_page.dart';
 import '../ui/pages/activity_log_page.dart';
 import '../ui/pages/user_list_page.dart';
@@ -41,7 +44,6 @@ import '../ui/pages/auth/login_page.dart';
 import '../ui/pages/auth/register_step1_page.dart';
 import '../ui/pages/auth/register_step2_page.dart';
 import '../ui/pages/auth/register_step3_page.dart';
-import '../ui/pages/dashboard_page.dart';
 import '../ui/pages/kegiatan/broadcast_list_page.dart';
 import '../ui/pages/kegiatan/create_broadcast_page.dart';
 import '../ui/pages/kegiatan/edit_broadcast_page.dart';
@@ -107,7 +109,6 @@ class AppRoutes {
   static const wargaDaftarMutasi = '/warga/mutasi';
   static const wargaTambahMutasi = '/warga/mutasi/add';
   static const channelTransferDetail = '/channel-transfer/detail';
-  static const dashboard = '/dashboard';
   static const listBroadcast = '/list-broadcast';
   static const createBroadcast = '/create-broadcast';
   static const editBroadcast = '/edit-broadcast';
@@ -184,6 +185,21 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.homeKegiatan,
       name: 'home-kegiatan',
       builder: (context, state) => const HomeKegiatanPage(),
+    ),
+    GoRoute(
+      path: '/statistik-keuangan',
+      name: 'statistik-keuangan',
+      builder: (context, state) => const StatistikKeuanganPage(),
+    ),
+    GoRoute(
+      path: '/statistik-warga',
+      name: 'statistik-warga',
+      builder: (context, state) => const StatistikWargaPage(),
+    ),
+    GoRoute(
+      path: '/statistik-kegiatan',
+      name: 'statistik-kegiatan',
+      builder: (context, state) => const StatistikKegiatanPage(),
     ),
     GoRoute(
       path: AppRoutes.wargaDaftarKeluarga,
@@ -354,11 +370,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.keluargaPage,
       name: 'keluarga-page',
       builder: (context, state) => const KeluargaPage(),
-    ),
-    GoRoute(
-      path: AppRoutes.dashboard,
-      name: 'dashboard',
-      builder: (context, state) => const DashboardPage(),
     ),
     GoRoute(
       path: AppRoutes.listBroadcast,

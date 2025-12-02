@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'tambah_aspirasi_page.dart';
-import 'tambah_aspirasi_page.dart';
 
 class WargaHomePage extends StatefulWidget {
   const WargaHomePage({super.key});
