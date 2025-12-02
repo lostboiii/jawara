@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/kategori_iuran_list_viewmodel.dart';
 
 import '../home_page.dart';
 
@@ -42,7 +43,6 @@ class KategoriIuranPage extends StatefulWidget {
 class _KategoriIuranPageState extends State<KategoriIuranPage> {
   final TextEditingController _searchController = TextEditingController();
   final List<KategoriIuranItem> _items = [];
-  bool _isLoading = true;
   String _searchQuery = '';
   String? _selectedFilter;
 
@@ -54,7 +54,9 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<KategoriIuranListViewModel>().loadKategoris();
+    });
   }
 
   @override
@@ -63,40 +65,17 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('kategori_iuran')
-          .select('*');
-
-      _items.clear();
-      for (final item in response) {
-        _items.add(KategoriIuranItem(
-          id: item['id'],
-          namaKategori: item['nama_iuran'] ?? '',
-          jenisIuran: item['kategori_iuran'] ?? '',
-          nominal: 0, // nominal tidak ada di tabel, bisa diambil dari tagih_iuran
-        ));
-      }
-
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Gagal memuat data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+  List<KategoriIuranItem> _getFilteredItems(List<Map<String, dynamic>> kategoris) {
+    _items.clear();
+    for (final item in kategoris) {
+      _items.add(KategoriIuranItem(
+        id: item['id'],
+        namaKategori: item['nama_iuran'] ?? '',
+        jenisIuran: item['kategori_iuran'] ?? '',
+        nominal: 0,
+      ));
     }
-  }
 
-  List<KategoriIuranItem> get _filteredItems {
     var filtered = List<KategoriIuranItem>.from(_items);
 
     if (_selectedFilter != null) {
@@ -119,7 +98,9 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
     return filtered;
   }
 
-  Future<void> _onRefresh() => _loadData();
+  Future<void> _onRefresh() async {
+    await context.read<KategoriIuranListViewModel>().loadKategoris();
+  }
 
   void _showFilterDialog(BuildContext context) {
     showDialog(
@@ -295,11 +276,14 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
 
   @override
   Widget build(BuildContext context) {
-    return HomePage(
-      initialIndex: 1,
-      sectionBuilders: {
-        1: (ctx, scope) => _buildSection(ctx, scope),
-      },
+    return ChangeNotifierProvider(
+      create: (_) => KategoriIuranListViewModel(),
+      child: HomePage(
+        initialIndex: 1,
+        sectionBuilders: {
+          1: (ctx, scope) => _buildSection(ctx, scope),
+        },
+      ),
     );
   }
 
@@ -425,43 +409,54 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
                 ),
               ),
             const SizedBox(height: 24),
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 80),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_filteredItems.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Column(
-                  children: [
-                    const Icon(Icons.filter_list_off_rounded,
-                        size: 48, color: Color(0xffA1A1A1)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tidak ada kategori iuran ditemukan.',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+            Consumer<KategoriIuranListViewModel>(
+              builder: (context, viewModel, _) {
+                if (viewModel.isLoading) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final filteredItems = _getFilteredItems(viewModel.kategoris);
+                
+                if (filteredItems.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.filter_list_off_rounded,
+                            size: 48, color: Color(0xffA1A1A1)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tidak ada kategori iuran ditemukan.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Coba reset filter atau gunakan kata kunci lain.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Coba reset filter atau gunakan kata kunci lain.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: Colors.black54),
+                  );
+                }
+                
+                return Column(
+                  children: filteredItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _IuranCard(item: item),
                     ),
-                  ],
-                ),
-              )
-            else
-              ..._filteredItems.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _IuranCard(item: item),
-                ),
-              ),
+                  ).toList(),
+                );
+              },
+            ),
             const SizedBox(height: 20),
           ],
         ),

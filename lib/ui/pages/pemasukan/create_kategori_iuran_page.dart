@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-import 'kategori_iuran_page.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/create_kategori_iuran_viewmodel.dart';
 
 class CreateKategoriIuranPage extends StatefulWidget {
   const CreateKategoriIuranPage({super.key});
@@ -23,6 +23,18 @@ class _CreateKategoriIuranPageState extends State<CreateKategoriIuranPage> {
     'Iuran Khusus',
   ];
 
+  // Map display name to enum value
+  String _getEnumValue(String displayName) {
+    switch (displayName) {
+      case 'Iuran Bulanan':
+        return 'bulanan';
+      case 'Iuran Khusus':
+        return 'khusus';
+      default:
+        return 'bulanan';
+    }
+  }
+
   @override
   void dispose() {
     _namaController.dispose();
@@ -34,116 +46,123 @@ class _CreateKategoriIuranPageState extends State<CreateKategoriIuranPage> {
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xff5067e9);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.goNamed('kategori-iuran'),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: primaryColor,
+    return ChangeNotifierProvider(
+      create: (_) => CreateKategoriIuranViewModel(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => context.goNamed('kategori-iuran'),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: primaryColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Buat Iuran Baru',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
+                    const SizedBox(width: 8),
+                    Text(
+                      'Buat Iuran Baru',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Masukkan data iuran baru dengan lengkap.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                  ],
                 ),
-              ),
-              const SizedBox(height: 24),
-              _buildTextField(
-                'Nama Iuran',
-                'Masukkan nama iuran',
-                _namaController,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                'Jumlah',
-                'Masukkan jumlah',
-                _jumlahController,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              _buildDropdownField(
-                'Kategori Iuran',
-                _selectedKategori,
-                _kategoriOptions,
-                (value) {
-                  setState(() => _selectedKategori = value);
-                },
-              ),
-              const SizedBox(height: 32),
-              Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: OutlinedButton(
-                        onPressed: () => context.goNamed('kategori-iuran'),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.grey.shade300),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Batal',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                const SizedBox(height: 24),
+                Text(
+                  'Masukkan data iuran baru dengan lengkap.',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                _buildTextField(
+                  'Nama Iuran',
+                  'Masukkan nama iuran',
+                  _namaController,
+                ),
+                const SizedBox(height: 16),
+                _buildDropdownField(
+                  'Kategori Iuran',
+                  _selectedKategori,
+                  _kategoriOptions,
+                  (value) {
+                    setState(() => _selectedKategori = value);
+                  },
+                ),
+                const SizedBox(height: 32),
+                Consumer<CreateKategoriIuranViewModel>(
+                  builder: (context, viewModel, _) => Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: OutlinedButton(
+                            onPressed: () => context.goNamed('kategori-iuran'),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.grey.shade300),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              'Batal',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _handleSimpan,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primaryColor,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: Text(
-                          'Simpan',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 50,
+                          child: ElevatedButton(
+                            onPressed: viewModel.isLoading ? null : () => _handleSimpan(viewModel),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child: viewModel.isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    'Simpan',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -287,75 +306,83 @@ class _CreateKategoriIuranPageState extends State<CreateKategoriIuranPage> {
     );
   }
 
-  void _handleSimpan() {
+  void _handleSimpan(CreateKategoriIuranViewModel viewModel) async {
     if (_formKey.currentState!.validate()) {
-      // Buat object KategoriIuranItem baru
-      final newItem = KategoriIuranItem(
-        id: DateTime.now().toString(), // Generate unique ID
-        namaKategori: _namaController.text,
-        jenisIuran: _selectedKategori ?? '',
-        nominal: double.tryParse(_jumlahController.text) ?? 0,
-      );
+      try {
+        await viewModel.createKategori(
+          namaIuran: _namaController.text.trim(),
+          kategoriIuran: _getEnumValue(_selectedKategori ?? ''),
+        );
 
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Column(
-              children: [
-                const Icon(
-                  Icons.check_circle,
-                  color: Color(0xff34C759),
-                  size: 64,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Berhasil!',
-                  style: GoogleFonts.inter(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
+        if (!mounted) return;
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: Column(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    color: Color(0xff34C759),
+                    size: 64,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Berhasil!',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                'Data iuran berhasil disimpan',
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(fontSize: 14),
+              ),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      context.goNamed('kategori-iuran');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xff5067e9),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
-            content: Text(
-              'Data iuran berhasil disimpan',
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 14),
-            ),
-            actions: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Pop dialog
-                    Navigator.of(context).pop();
-                    // Pop halaman create dan kembali ke list dengan membawa data
-                    context.goNamed('kategori-iuran');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xff5067e9),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: Text(
-                    'OK',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
-      );
+            );
+          },
+        );
+      } catch (e) {
+        if (!mounted) return;
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal menyimpan data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

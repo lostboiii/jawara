@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/tagihan_viewmodel.dart';
 
 import '../home_page.dart';
 
@@ -50,7 +52,6 @@ class TagihanPage extends StatefulWidget {
 class _TagihanPageState extends State<TagihanPage> {
   final TextEditingController _searchController = TextEditingController();
   final List<TagihanItem> _items = [];
-  bool _isLoading = true;
   String _searchQuery = '';
   String? _selectedFilter;
 
@@ -62,7 +63,9 @@ class _TagihanPageState extends State<TagihanPage> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TagihanViewModel>().loadTagihan();
+    });
   }
 
   @override
@@ -71,45 +74,44 @@ class _TagihanPageState extends State<TagihanPage> {
     super.dispose();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
-    await Future.delayed(const Duration(seconds: 1));
+  List<TagihanItem> _getFilteredItems(List<Map<String, dynamic>> tagihan) {
+    _items.clear();
+    
+    for (final item in tagihan) {
+      String namaKeluarga = 'N/A';
+      
+      if (item['keluarga'] != null) {
+        final keluarga = item['keluarga'];
+        final nomorKk = keluarga['nomor_kk'] ?? 'N/A';
+        
+        if (keluarga['warga_profiles'] != null) {
+          final warga = keluarga['warga_profiles'];
+          namaKeluarga = 'KK ${warga['nama_lengkap'] ?? nomorKk}';
+        } else {
+          namaKeluarga = 'KK $nomorKk';
+        }
+      }
 
-    final List<TagihanItem> mockData = [
-      TagihanItem(
-        id: '1',
-        namaKeluarga: 'Keluarga Cemara',
-        jenisIuran: 'Iuran Mingguan',
-        nominal: 20000,
-        tanggal: DateTime(2025, 11, 12),
-        status: 'Belum Bayar',
-      ),
-      TagihanItem(
-        id: '2',
-        namaKeluarga: 'Keluarga Budi',
-        jenisIuran: 'Iuran Bulanan',
-        nominal: 50000,
-        tanggal: DateTime(2025, 11, 10),
-        status: 'Lunas',
-      ),
-      TagihanItem(
-        id: '3',
-        namaKeluarga: 'Keluarga Hartono',
-        jenisIuran: 'Iuran Keamanan',
-        nominal: 25000,
-        tanggal: DateTime(2025, 11, 05),
-        status: 'Belum Bayar',
-      ),
-    ];
+      String jenisIuran = 'N/A';
+      if (item['kategori_iuran'] != null) {
+        jenisIuran = item['kategori_iuran']['nama_iuran'] ?? 'N/A';
+      }
 
-    if (!mounted) return;
-    setState(() {
-      _items.addAll(mockData);
-      _isLoading = false;
-    });
-  }
+      String status = 'Belum Bayar';
+      if (item['status_tagihan'] == 'lunas') {
+        status = 'Lunas';
+      }
 
-  List<TagihanItem> get _filteredItems {
+      _items.add(TagihanItem(
+        id: item['id'],
+        namaKeluarga: namaKeluarga,
+        jenisIuran: jenisIuran,
+        nominal: (item['jumlah'] ?? 0).toDouble(),
+        tanggal: DateTime.parse(item['tanggal_tagihan']),
+        status: status,
+      ));
+    }
+
     var filtered = List<TagihanItem>.from(_items);
 
     if (_selectedFilter != null) {
@@ -133,7 +135,9 @@ class _TagihanPageState extends State<TagihanPage> {
     return filtered;
   }
 
-  Future<void> _onRefresh() => _loadData();
+  Future<void> _onRefresh() async {
+    await context.read<TagihanViewModel>().loadTagihan();
+  }
 
   void _showFilterDialog(BuildContext context) {
     showDialog(
@@ -309,11 +313,14 @@ class _TagihanPageState extends State<TagihanPage> {
 
   @override
   Widget build(BuildContext context) {
-    return HomePage(
-      initialIndex: 1,
-      sectionBuilders: {
-        1: (ctx, scope) => _buildSection(ctx, scope),
-      },
+    return ChangeNotifierProvider(
+      create: (_) => TagihanViewModel(),
+      child: HomePage(
+        initialIndex: 1,
+        sectionBuilders: {
+          1: (ctx, scope) => _buildSection(ctx, scope),
+        },
+      ),
     );
   }
 
@@ -437,43 +444,54 @@ class _TagihanPageState extends State<TagihanPage> {
                 ),
               ),
             const SizedBox(height: 24),
-            if (_isLoading)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 80),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_filteredItems.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 60),
-                child: Column(
-                  children: [
-                    const Icon(Icons.filter_list_off_rounded,
-                        size: 48, color: Color(0xffA1A1A1)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Tidak ada tagihan ditemukan.',
-                      style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+            Consumer<TagihanViewModel>(
+              builder: (context, viewModel, _) {
+                if (viewModel.isLoading) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final filteredItems = _getFilteredItems(viewModel.tagihan);
+                
+                if (filteredItems.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.filter_list_off_rounded,
+                            size: 48, color: Color(0xffA1A1A1)),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tidak ada tagihan ditemukan.',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Coba reset filter atau gunakan kata kunci lain.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Coba reset filter atau gunakan kata kunci lain.',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                          fontSize: 12, color: Colors.black54),
+                  );
+                }
+                
+                return Column(
+                  children: filteredItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _TagihanCard(item: item),
                     ),
-                  ],
-                ),
-              )
-            else
-              ..._filteredItems.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _TagihanCard(item: item),
-                ),
-              ),
+                  ).toList(),
+                );
+              },
+            ),
             const SizedBox(height: 20),
           ],
         ),
