@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '/router/app_router.dart';
 import 'package:jawara/viewmodels/login_viewmodel.dart';
 
@@ -310,10 +311,36 @@ class _LoginPageState extends State<LoginPage> {
 
     if (mounted) {
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login berhasil')),
-        );
-        context.go(AppRoutes.home);
+        // Cek role user
+        final supabase = Supabase.instance.client;
+        final userId = supabase.auth.currentUser?.id;
+        
+        if (userId != null) {
+          try {
+            final profile = await supabase
+                .from('warga_profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            
+            final role = profile['role'] as String?;
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Login berhasil')),
+            );
+            
+            // Redirect berdasarkan role
+            if (role == 'admin') {
+              context.go(AppRoutes.home); // Homepage admin
+            } else {
+              context.go('/warga-home'); // Homepage warga
+            }
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          }
+        }
       } else {
         // Pesan error sudah ditangani oleh Consumer
       }

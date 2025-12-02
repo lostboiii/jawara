@@ -15,6 +15,7 @@ import '../ui/pages/home_page.dart';
 import '../ui/pages/home_keuangan_page.dart';
 import '../ui/pages/home_warga_page.dart';
 import '../ui/pages/home_kegiatan_page.dart';
+import '../ui/pages/warga/warga_home_page.dart';
 import '../ui/pages/activity_log_page.dart';
 import '../ui/pages/user_list_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_page.dart';
@@ -163,6 +164,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.home,
       name: 'home',
       builder: (context, state) => const HomePage(),
+    ),
+    GoRoute(
+      path: '/warga-home',
+      name: 'warga-home',
+      builder: (context, state) => const WargaHomePage(),
     ),
     GoRoute(
       path: AppRoutes.homeKeuangan,
