@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/tambah_rumah_viewmodel.dart';
 
 import '../home_page.dart';
 
@@ -15,7 +16,6 @@ class TambahRumahPage extends StatefulWidget {
 class _TambahRumahPageState extends State<TambahRumahPage> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _alamatController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -25,11 +25,14 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
 
   @override
   Widget build(BuildContext context) {
-    return HomePage(
-      initialIndex: 2,
-      sectionBuilders: <int, HomeSectionBuilder>{
-        2: _buildSection,
-      },
+    return ChangeNotifierProvider(
+      create: (_) => TambahRumahViewModel(),
+      child: HomePage(
+        initialIndex: 2,
+        sectionBuilders: <int, HomeSectionBuilder>{
+          2: _buildSection,
+        },
+      ),
     );
   }
 
@@ -98,23 +101,34 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
               children: <Widget>[
                 _buildAlamatField(primaryColor),
                 const SizedBox(height: 32),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                Consumer<TambahRumahViewModel>(
+                  builder: (context, viewModel, _) => SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
-                    ),
-                    onPressed: _handleSubmit,
-                    child: Text(
-                      'Simpan Alamat Rumah',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
+                      onPressed: viewModel.isLoading ? null : () => _handleSubmit(viewModel),
+                      child: viewModel.isLoading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Simpan Alamat Rumah',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 15,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -126,7 +140,7 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
     );
   }
 
-  void _handleSubmit() {
+  void _handleSubmit(TambahRumahViewModel viewModel) {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -152,17 +166,11 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
               child: const Text('Batal'),
             ),
             FilledButton(
-              onPressed: _isLoading ? null : () async {
+              onPressed: () async {
                 Navigator.of(context).pop();
-                await _saveRumah();
+                await _saveRumah(viewModel);
               },
-              child: _isLoading 
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Ya, Simpan'),
+              child: const Text('Ya, Simpan'),
             ),
           ],
         );
@@ -170,28 +178,16 @@ class _TambahRumahPageState extends State<TambahRumahPage> {
     );
   }
 
-  Future<void> _saveRumah() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _saveRumah(TambahRumahViewModel viewModel) async {
     try {
-      final supabase = Supabase.instance.client;
-      await supabase.from('rumah').insert({
-        'alamat': _alamatController.text.trim(),
-        'status_rumah': 'kosong',
-      });
+      await viewModel.addRumah(
+        alamat: _alamatController.text.trim(),
+      );
 
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
       _showSuccessSheet();
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal menyimpan rumah: $e'),

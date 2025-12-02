@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../../../viewmodels/create_tagih_iuran_viewmodel.dart';
 
 class TagihIuranPage extends StatefulWidget {
   const TagihIuranPage({super.key});
@@ -17,34 +18,13 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
   final TextEditingController _jumlahController = TextEditingController();
   String? _selectedKategoriId;
   DateTime? _selectedTanggal;
-  bool _isLoading = false;
-  List<Map<String, dynamic>> _kategoriList = [];
 
   @override
   void initState() {
     super.initState();
-    _loadKategori();
-  }
-
-  Future<void> _loadKategori() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final response = await supabase
-          .from('kategori_iuran')
-          .select('id, nama_iuran');
-      
-      if (mounted) {
-        setState(() {
-          _kategoriList = List<Map<String, dynamic>>.from(response);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat kategori: $e')),
-        );
-      }
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<CreateTagihIuranViewModel>().loadKategoris();
+    });
   }
 
   @override
@@ -58,73 +38,78 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xff5067e9);
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.goNamed('home-keuangan'),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new_rounded,
-                      color: primaryColor,
+    return ChangeNotifierProvider(
+      create: (_) => CreateTagihIuranViewModel(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => context.goNamed('home-keuangan'),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: primaryColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Tagih Iuran',
-                    style: GoogleFonts.inter(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: primaryColor,
+                    const SizedBox(width: 8),
+                    Text(
+                      'Tagih Iuran',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                  ],
+                ),
+                const SizedBox(height: 24),
               _buildKategoriDropdown(),
               const SizedBox(height: 16),
               _buildJumlahField(),
               const SizedBox(height: 16),
               _buildDateField('Tanggal Tagihan', _tanggalController),
               const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleSimpan,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Consumer<CreateTagihIuranViewModel>(
+                builder: (context, viewModel, _) => SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: viewModel.isLoading ? null : () => _handleSimpan(viewModel),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
+                    child: viewModel.isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            'Simpan',
+                            style: GoogleFonts.inter(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          'Simpan',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
                 ),
               ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -132,23 +117,24 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
   }
 
   Widget _buildKategoriDropdown() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Kategori Iuran',
-          style: GoogleFonts.inter(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.black87,
+    return Consumer<CreateTagihIuranViewModel>(
+      builder: (context, viewModel, _) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Kategori Iuran',
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          value: _selectedKategoriId,
-          isExpanded: true,
-          style: GoogleFonts.inter(fontSize: 14, color: Colors.black87),
-          decoration: InputDecoration(
+          const SizedBox(height: 8),
+          DropdownButtonFormField<String>(
+            value: _selectedKategoriId,
+            isExpanded: true,
+            style: GoogleFonts.inter(fontSize: 14, color: Colors.black87),
+            decoration: InputDecoration(
             hintText: 'Pilih Kategori Iuran',
             hintStyle: GoogleFonts.inter(
               fontSize: 14,
@@ -180,23 +166,24 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
               borderSide: const BorderSide(color: Colors.red, width: 1.5),
             ),
           ),
-          items: _kategoriList.map((kategori) {
-            return DropdownMenuItem<String>(
-              value: kategori['id'],
-              child: Text(kategori['nama_iuran'] ?? 'N/A'),
-            );
-          }).toList(),
-          onChanged: (value) {
-            setState(() => _selectedKategoriId = value);
-          },
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Kategori iuran tidak boleh kosong';
-            }
-            return null;
-          },
-        ),
-      ],
+            items: viewModel.kategoris.map((kategori) {
+              return DropdownMenuItem<String>(
+                value: kategori['id'],
+                child: Text(kategori['nama_iuran'] ?? 'N/A'),
+              );
+            }).toList(),
+            onChanged: (value) {
+              setState(() => _selectedKategoriId = value);
+            },
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Kategori iuran tidak boleh kosong';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -340,24 +327,18 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
     );
   }
 
-  void _handleSimpan() async {
+  void _handleSimpan(CreateTagihIuranViewModel viewModel) async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
-
       try {
-        final supabase = Supabase.instance.client;
+        final jumlah = int.parse(_jumlahController.text.replaceAll(',', ''));
         
-        final jumlah = double.parse(_jumlahController.text.replaceAll(',', ''));
-        
-        await supabase.from('tagih_iuran').insert({
-          'kategori_id': _selectedKategoriId,
-          'tanggal_tagihan': _selectedTanggal!.toIso8601String().split('T')[0],
-          'jumlah': jumlah,
-          'status_tagihan': 'belum_bayar',
-        });
+        await viewModel.tagihSemuaKeluarga(
+          kategoriId: _selectedKategoriId!,
+          tanggalTagihan: _selectedTanggal!.toIso8601String().split('T')[0],
+          jumlah: jumlah,
+        );
 
         if (!mounted) return;
-        setState(() => _isLoading = false);
 
         showDialog(
           context: context,
@@ -384,7 +365,7 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
                 ],
               ),
               content: Text(
-                'Tagihan iuran berhasil dibuat',
+                'Tagihan berhasil dibuat untuk semua keluarga',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(fontSize: 14),
               ),
@@ -418,7 +399,6 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
         );
       } catch (e) {
         if (!mounted) return;
-        setState(() => _isLoading = false);
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
