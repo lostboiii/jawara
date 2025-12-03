@@ -104,34 +104,27 @@ class ChannelTransferViewPage extends StatelessWidget {
   }
 
   Widget _buildInfoRow(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey.shade500,
           ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value ?? '-',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.right,
-            ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value ?? '-',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -148,34 +141,53 @@ class ChannelTransferViewPage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                    color: primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Detail Channel',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: primaryColor,
+                        size: 20,
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () async {
-                      final result = await context.push<bool>(
-                        AppRoutes.channelTransferAdd,
-                        extra: item,
-                      );
-                      if (result == true && context.mounted) {
-                        Navigator.pop(context, true);
-                      }
-                    },
-                    icon: const Icon(Icons.edit_outlined),
-                    color: primaryColor,
-                    tooltip: 'Edit',
+                  const SizedBox(width: 16),
+                  Text(
+                    'Detail Channel',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: IconButton(
+                      onPressed: () async {
+                        final result = await context.push<bool>(
+                          AppRoutes.channelTransferAdd,
+                          extra: item,
+                        );
+                        if (result == true && context.mounted) {
+                          Navigator.pop(context, true);
+                        }
+                      },
+                      icon: Icon(
+                        Icons.edit_rounded,
+                        color: primaryColor,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -185,15 +197,15 @@ class ChannelTransferViewPage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade200),
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.grey.shade100),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 10,
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),
                       ],
@@ -205,54 +217,73 @@ class ChannelTransferViewPage extends StatelessWidget {
                           item.namaMetode,
                           style: GoogleFonts.inter(
                             fontSize: 24,
-                            fontWeight: FontWeight.w700,
-                            color: primaryColor,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black87,
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 8),
+                        Text(
+                          item.namaPemilik ?? 'Pemilik tidak diketahui',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        Divider(color: Colors.grey.shade100, height: 1),
+                        const SizedBox(height: 24),
                         _buildInfoRow('Nomor Rekening', item.nomorRekening),
-                        Divider(height: 1, color: Colors.grey.shade200),
-                        _buildInfoRow('Nama Pemilik', item.namaPemilik),
-                        if (item.catatan != null && item.catatan!.isNotEmpty) ...[
-                          Divider(height: 1, color: Colors.grey.shade200),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Catatan',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
+                        const SizedBox(height: 20),
+                        Divider(color: Colors.grey.shade100, height: 1),
+                        const SizedBox(height: 20),
+                        if (item.catatan != null &&
+                            item.catatan!.isNotEmpty) ...[
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Catatan',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey.shade500,
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  item.catatan!,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                item.catatan!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ],
                       ],
                     ),
                   ),
-                  if (item.fotoBarcode != null && item.fotoBarcode!.isNotEmpty) ...[
+                  if (item.fotoBarcode != null &&
+                      item.fotoBarcode!.isNotEmpty) ...[
                     const SizedBox(height: 24),
                     Text(
                       'Foto Barcode',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildImage(item.fotoBarcode),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: _buildImage(item.fotoBarcode),
+                    ),
                   ],
                   if (item.thumbnail != null && item.thumbnail!.isNotEmpty) ...[
                     const SizedBox(height: 24),
@@ -260,11 +291,18 @@ class ChannelTransferViewPage extends StatelessWidget {
                       'Thumbnail',
                       style: GoogleFonts.inter(
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildImage(item.thumbnail),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: _buildImage(item.thumbnail),
+                    ),
                   ],
                 ],
               ),

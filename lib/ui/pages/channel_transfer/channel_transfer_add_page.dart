@@ -54,7 +54,8 @@ class _ChannelTransferAddPageState extends State<ChannelTransferAddPage> {
     if (kIsWeb) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Upload gambar tidak didukung di web. Isi URL secara manual.'),
+          content: Text(
+              'Upload gambar tidak didukung di web. Isi URL secara manual.'),
         ),
       );
       return;
@@ -81,11 +82,16 @@ class _ChannelTransferAddPageState extends State<ChannelTransferAddPage> {
 
     final viewModel = context.read<MetodePembayaranViewModel>();
     final namaMetode = _namaCtrl.text.trim();
-    final nomor = _nomorCtrl.text.trim().isEmpty ? null : _nomorCtrl.text.trim();
-    final pemilik = _pemilikCtrl.text.trim().isEmpty ? null : _pemilikCtrl.text.trim();
-    final barcode = _barcodeCtrl.text.trim().isEmpty ? null : _barcodeCtrl.text.trim();
-    final thumb = _thumbCtrl.text.trim().isEmpty ? null : _thumbCtrl.text.trim();
-    final catatan = _catatanCtrl.text.trim().isEmpty ? null : _catatanCtrl.text.trim();
+    final nomor =
+        _nomorCtrl.text.trim().isEmpty ? null : _nomorCtrl.text.trim();
+    final pemilik =
+        _pemilikCtrl.text.trim().isEmpty ? null : _pemilikCtrl.text.trim();
+    final barcode =
+        _barcodeCtrl.text.trim().isEmpty ? null : _barcodeCtrl.text.trim();
+    final thumb =
+        _thumbCtrl.text.trim().isEmpty ? null : _thumbCtrl.text.trim();
+    final catatan =
+        _catatanCtrl.text.trim().isEmpty ? null : _catatanCtrl.text.trim();
 
     try {
       if (widget.item != null) {
@@ -137,226 +143,55 @@ class _ChannelTransferAddPageState extends State<ChannelTransferAddPage> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                    color: primaryColor,
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: primaryColor,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    isEditing ? 'Ubah Channel Transfer' : 'Tambah Channel Transfer',
+                    isEditing
+                        ? 'Ubah Channel Transfer'
+                        : 'Tambah Channel Transfer',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
+                      color: primaryColor,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              Text(
+              const SizedBox(height: 24),
+              _buildTextField(
                 'Nama Metode',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Contoh: Transfer BCA, QRIS RT 08',
+                _namaCtrl,
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _namaCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Contoh: Transfer BCA, QRIS RT 08',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nama wajib diisi' : null,
-              ),
-              const SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 16),
+              _buildTextField(
                 'Nomor Rekening / Akun',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Contoh: 1234567890',
+                _nomorCtrl,
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _nomorCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Contoh: 1234567890',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 16),
+              _buildTextField(
                 'Nama Pemilik',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Contoh: John Doe',
+                _pemilikCtrl,
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _pemilikCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Contoh: John Doe',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Foto Barcode (Opsional)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _barcodeCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Masukkan URL atau pilih file',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  suffixIcon: IconButton(
-                    onPressed: () => _pickImage(_barcodeCtrl),
-                    icon: Icon(Icons.upload_file, color: primaryColor),
-                    tooltip: 'Pilih file',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Thumbnail (Opsional)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _thumbCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Masukkan URL atau pilih file',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  suffixIcon: IconButton(
-                    onPressed: () => _pickImage(_thumbCtrl),
-                    icon: Icon(Icons.upload_file, color: primaryColor),
-                    tooltip: 'Pilih file',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 16),
+              _buildFileUploadField('Foto Barcode (Opsional)', _barcodeCtrl),
+              const SizedBox(height: 16),
+              _buildFileUploadField('Thumbnail (Opsional)', _thumbCtrl),
+              const SizedBox(height: 16),
+              _buildTextAreaField(
                 'Catatan (Opsional)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Contoh: Transfer hanya dari bank yang sama agar instan',
+                _catatanCtrl,
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _catatanCtrl,
-                style: GoogleFonts.inter(),
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: 'Contoh: Transfer hanya dari bank yang sama agar instan',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-              ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
               SizedBox(
+                width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _handleSubmit,
@@ -373,7 +208,8 @@ class _ChannelTransferAddPageState extends State<ChannelTransferAddPage> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Text(
@@ -386,10 +222,203 @@ class _ChannelTransferAddPageState extends State<ChannelTransferAddPage> {
                         ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField(
+    String label,
+    String hint,
+    TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    final primaryColor = const Color(0xff5067e9);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: GoogleFonts.inter(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xffC7C7CD),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xff5067e9), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          validator: (value) => value == null || value.trim().isEmpty
+              ? '$label wajib diisi'
+              : null,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextAreaField(
+    String label,
+    String hint,
+    TextEditingController controller,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          maxLines: 3,
+          style: GoogleFonts.inter(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xffC7C7CD),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xff5067e9), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFileUploadField(String label, TextEditingController controller) {
+    final primaryColor = const Color(0xff5067e9);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: () => _pickImage(controller),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xffE5E5EA),
+                style: BorderStyle.solid,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.upload_file_rounded,
+                  size: 48,
+                  color: primaryColor,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  controller.text.isNotEmpty
+                      ? controller.text.split('/').last
+                      : 'Unggah File',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: controller.text.isNotEmpty
+                        ? Colors.black87
+                        : primaryColor,
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (controller.text.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Pilih file dari perangkat',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: const Color(0xffC7C7CD),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

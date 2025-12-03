@@ -72,8 +72,7 @@ class _PemasukanPageState extends State<PemasukanPage> {
       }).toList();
     }
 
-    filtered.sort(
-        (a, b) => b.tanggal_pemasukan.compareTo(a.tanggal_pemasukan));
+    filtered.sort((a, b) => b.tanggal_pemasukan.compareTo(a.tanggal_pemasukan));
 
     return filtered;
   }
@@ -386,9 +385,8 @@ class _PemasukanPageState extends State<PemasukanPage> {
                                 fontWeight: isSelected
                                     ? FontWeight.w600
                                     : FontWeight.w500,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black54,
+                                color:
+                                    isSelected ? Colors.white : Colors.black54,
                               ),
                             ),
                           ),
@@ -474,10 +472,10 @@ class _PemasukanCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xff5067e9);
-    
-    final currencyFormat = NumberFormat.currency(
-        locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    
+
+    final currencyFormat =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
     final dateFormat = DateFormat('d MMMM yyyy', 'id_ID');
 
     return Container(
@@ -557,7 +555,8 @@ class _PemasukanCard extends StatelessWidget {
               ),
             ],
           ),
-          if (item.bukti_pemasukan != null && item.bukti_pemasukan!.isNotEmpty) ...[
+          if (item.bukti_pemasukan != null &&
+              item.bukti_pemasukan!.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
               children: [
@@ -591,7 +590,7 @@ class _PemasukanCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       context.pushNamed(
-                        AppRoutes.pemasukanDetail,
+                        'pemasukan-detail',
                         extra: item,
                       );
                     },
@@ -619,8 +618,11 @@ class _PemasukanCard extends StatelessWidget {
                 width: 44,
                 child: ElevatedButton(
                   onPressed: () {
-                     context.pushNamed(AppRoutes.editPemasukan, extra: item);
-                  },
+                      context.pushNamed(
+                        'edit-pemasukan',
+                        extra: item,
+                      );
+                    },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange.shade50,
                     shape: RoundedRectangleBorder(
@@ -648,7 +650,7 @@ class _PemasukanCard extends StatelessWidget {
                         await context
                             .read<PemasukanViewModel>()
                             .deletePemasukan(item.id);
-                        
+
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -661,11 +663,12 @@ class _PemasukanCard extends StatelessWidget {
                           );
                         }
                       } catch (e) {
-                         if (context.mounted) {
-                           ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Gagal menghapus data")),
-                           );
-                         }
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text("Gagal menghapus data")),
+                          );
+                        }
                       }
                     }
                   },
