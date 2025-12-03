@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AspirasiListPage extends StatefulWidget {
   const AspirasiListPage({super.key});
@@ -33,171 +34,200 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     },
   ];
 
-  int _currentPage = 1;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _filterStatus;
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<Map<String, String>> get _filteredAspirasi {
+    var filtered = _aspirasi;
+
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((item) {
+        return item['JUDUL']!.toLowerCase().contains(query) ||
+            item['PENGIRIM']!.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    if (_filterStatus != null) {
+      filtered = filtered.where((item) => item['STATUS'] == _filterStatus).toList();
+    }
+
+    return filtered;
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Filter Status',
+          style: GoogleFonts.inter(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RadioListTile<String>(
+              title: Text('Semua', style: GoogleFonts.inter(fontSize: 14)),
+              value: 'Semua',
+              groupValue: _filterStatus ?? 'Semua',
+              onChanged: (value) {
+                setState(() => _filterStatus = null);
+                Navigator.pop(context);
+              },
+              activeColor: const Color(0xff5067e9),
+            ),
+            RadioListTile<String>(
+              title: Text('Diterima', style: GoogleFonts.inter(fontSize: 14)),
+              value: 'Diterima',
+              groupValue: _filterStatus,
+              onChanged: (value) {
+                setState(() => _filterStatus = value);
+                Navigator.pop(context);
+              },
+              activeColor: const Color(0xff5067e9),
+            ),
+            RadioListTile<String>(
+              title: Text('Pending', style: GoogleFonts.inter(fontSize: 14)),
+              value: 'Pending',
+              groupValue: _filterStatus,
+              onChanged: (value) {
+                setState(() => _filterStatus = value);
+                Navigator.pop(context);
+              },
+              activeColor: const Color(0xff5067e9),
+            ),
+            RadioListTile<String>(
+              title: Text('Ditolak', style: GoogleFonts.inter(fontSize: 14)),
+              value: 'Ditolak',
+              groupValue: _filterStatus,
+              onChanged: (value) {
+                setState(() => _filterStatus = value);
+                Navigator.pop(context);
+              },
+              activeColor: const Color(0xff5067e9),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = const Color(0xff5067e9);
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
-        title: const Text('Informasi Aspirasi', style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-      ),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Statistics Cards
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.go('/home'),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: primaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Informasi Aspirasi',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
-                    child: _buildStatCard(
-                      'Total Aspirasi',
-                      '${_aspirasi.length}',
-                      Icons.feedback,
-                      Colors.blue,
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) => setState(() => _searchQuery = value),
+                      decoration: InputDecoration(
+                        hintText: 'Cari aspirasi...',
+                        hintStyle: GoogleFonts.inter(fontSize: 14),
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(color: primaryColor, width: 2),
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Pending',
-                      '${_aspirasi.where((a) => a['STATUS'] == 'Pending').length}',
-                      Icons.pending,
-                      Colors.orange,
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: primaryColor,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: IconButton(
+                      onPressed: _showFilterDialog,
+                      icon: const Icon(Icons.filter_alt_rounded, color: Colors.white),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
-
-              // Data Table
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SingleChildScrollView(
-                      child: DataTable(
-                        columnSpacing: 30.0,
-                        dataRowHeight: 60.0,
-                        headingRowColor: WidgetStateProperty.resolveWith(
-                          (states) => Colors.grey[100],
+                child: _filteredAspirasi.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.search_off_rounded,
+                                size: 48, color: Colors.grey),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Tidak ada aspirasi ditemukan',
+                              style: GoogleFonts.inter(
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
-                        columns: const [
-                          DataColumn(
-                            label: Text(
-                              'NO',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'PENGIRIM',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'JUDUL',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'STATUS',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'TANGGAL DIBUAT',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          DataColumn(
-                            label: Text(
-                              'AKSI',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                        rows: _aspirasi.map((item) {
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(item['NO']!)),
-                              DataCell(Text(item['PENGIRIM']!)),
-                              DataCell(
-                                Text(
-                                  item['JUDUL']!,
-                                  style: const TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ),
-                              DataCell(_buildStatusChip(item['STATUS']!)),
-                              DataCell(Text(item['TANGGAL_DIBUAT']!)),
-                              DataCell(
-                                PopupMenuButton<String>(
-                                  icon: const Icon(Icons.more_vert),
-                                  onSelected: (value) {
-                                    if (value == 'detail') {
-                                      _showDetailDialog(context, item);
-                                    } else if (value == 'delete') {
-                                      _showDeleteConfirmation(context, item['NO']!);
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    const PopupMenuItem(
-                                      value: 'detail',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.info, size: 20),
-                                          SizedBox(width: 8),
-                                          Text('Detail'),
-                                        ],
-                                      ),
-                                    ),
-                                    const PopupMenuItem(
-                                      value: 'delete',
-                                      child: Row(
-                                        children: [
-                                          Icon(Icons.delete, size: 20, color: Colors.red),
-                                          SizedBox(width: 8),
-                                          Text('Hapus', style: TextStyle(color: Colors.red)),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _filteredAspirasi.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = _filteredAspirasi[index];
+                          return _buildAspirasiCard(item, primaryColor);
+                        },
                       ),
-                    ),
-                  ),
-                ),
               ),
-              const SizedBox(height: 16),
-
-              // Pagination
-              _buildPagination(),
             ],
           ),
         ),
@@ -205,146 +235,260 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildAspirasiCard(Map<String, String> item, Color primaryColor) {
+    final statusColor = _getStatusColor(item['STATUS']!);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+          Text(
+            item['JUDUL']!,
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.black87,
             ),
-            child: Icon(icon, color: color, size: 24),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.person, size: 14, color: Colors.grey.shade500),
+              const SizedBox(width: 6),
+              Text(
+                item['PENGIRIM']!,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade500),
+              const SizedBox(width: 6),
+              Text(
+                item['TANGGAL_DIBUAT']!,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  item['STATUS']!,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+              ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: ElevatedButton(
+                      onPressed: () => _showDetailDialog(context, item),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Icon(
+                        Icons.info_rounded,
+                        color: Colors.blue.shade700,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    height: 32,
+                    width: 32,
+                    child: ElevatedButton(
+                      onPressed: () =>
+                          _showDeleteConfirmation(context, item['NO']!),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        elevation: 0,
+                        padding: EdgeInsets.zero,
+                      ),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: Colors.red.shade600,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusChip(String status) {
-    Color color;
+  Color _getStatusColor(String status) {
     switch (status) {
       case 'Diterima':
-        color = Colors.green;
-        break;
+        return Colors.green;
       case 'Pending':
-        color = Colors.orange;
-        break;
+        return Colors.orange;
       case 'Ditolak':
-        color = Colors.red;
-        break;
+        return Colors.red;
       default:
-        color = Colors.grey;
+        return Colors.grey;
     }
-    
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: _currentPage > 1
-              ? () {
-                  setState(() {
-                    _currentPage--;
-                  });
-                }
-              : null,
-        ),
-        Text(
-          'Halaman $_currentPage',
-          style: const TextStyle(fontWeight: FontWeight.w500),
-        ),
-        IconButton(
-          icon: const Icon(Icons.chevron_right),
-          onPressed: () {
-            setState(() {
-              _currentPage++;
-            });
-          },
-        ),
-      ],
-    );
   }
 
   void _showDetailDialog(BuildContext context, Map<String, String> item) {
+    final statusColor = _getStatusColor(item['STATUS']!);
+    final primaryColor = const Color(0xff5067e9);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(item['JUDUL']!),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Column(
+          children: [
+            const Icon(
+              Icons.info_rounded,
+              color: Color(0xff5067e9),
+              size: 56,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              item['JUDUL']!,
+              style: GoogleFonts.inter(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pengirim: ${item['PENGIRIM']}'),
-            const SizedBox(height: 8),
-            Text('Status: ${item['STATUS']}'),
-            const SizedBox(height: 8),
-            Text('Tanggal: ${item['TANGGAL_DIBUAT']}'),
-            const SizedBox(height: 16),
-            const Text(
-              'Detail aspirasi akan ditampilkan di sini...',
-              style: TextStyle(fontStyle: FontStyle.italic),
+            Text(
+              'Pengirim',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item['PENGIRIM']!,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Status',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                item['STATUS']!,
+                style: GoogleFonts.inter(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: statusColor,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tanggal Dibuat',
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              item['TANGGAL_DIBUAT']!,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
             ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Tutup',
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -355,27 +499,88 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Konfirmasi Hapus'),
-        content: const Text('Apakah Anda yakin ingin menghapus aspirasi ini?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Column(
+          children: [
+            const Icon(
+              Icons.warning_amber_rounded,
+              color: Colors.red,
+              size: 64,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Hapus Aspirasi?',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Apakah Anda yakin ingin menghapus aspirasi ini? Data yang dihapus tidak dapat dikembalikan.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(fontSize: 14),
+        ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              setState(() {
-                _aspirasi.removeWhere((item) => item['NO'] == id);
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Aspirasi berhasil dihapus'),
-                  backgroundColor: Colors.green,
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      side: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    child: Text(
+                      'Batal',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
                 ),
-              );
-            },
-            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 44,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      setState(() {
+                        _aspirasi.removeWhere((item) => item['NO'] == id);
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Aspirasi berhasil dihapus')),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'Hapus',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
