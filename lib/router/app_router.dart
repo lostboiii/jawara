@@ -24,6 +24,7 @@ import '../ui/pages/user_list_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_add_page.dart';
 import '../ui/pages/pengeluaran/pengeluaran_detail_page.dart';
+import '../ui/pages/pengeluaran/pengeluaran_edit_page.dart';
 import '../ui/pages/pemasukan/pemasukan_page.dart';
 import '../ui/pages/pemasukan/pemasukan_detail_page.dart';
 import '../ui/pages/pemasukan/detail_tagihan_page.dart';
@@ -54,6 +55,8 @@ import '../ui/pages/aspirasi/aspirasi_list_page.dart';
 import '../ui/pages/pemasukan/kategori_iuran_page.dart';
 import '../ui/pages/pemasukan/create_pemasukan_page.dart';
 import '../ui/pages/pemasukan/edit_pemasukan_page.dart';
+import '../ui/pages/keuangan/laporan_keuangan.dart';
+import '../ui/pages/keuangan/cetak_laporan.dart';
 // Types for detail routes come from their list pages
 // Screens (feature modules)
 import '../ui/pages/warga/daftar_rumah_page.dart';
@@ -78,6 +81,7 @@ class AppRoutes {
   static const registerStep3 = '/register-step3';
   static const home = '/home';
   static const homeKeuangan = '/home-keuangan';
+  static const laporanKeuangan = '/laporan-keuangan';
   static const homeWarga = '/home-warga';
   static const homeKegiatan = '/home-kegiatan';
   static const activityLog = '/activity-log';
@@ -121,6 +125,7 @@ class AppRoutes {
   static const tagihaniuranList = '/tagihan-iuran';
   static const detailPemasukan = '/pemasukan-detail';
   static const editPemasukan = '/edit-pemasukan';
+  static const cetakLaporan = '/cetak-laporan';
 }
 
 final GlobalKey<NavigatorState> _rootKey = GlobalKey<NavigatorState>(
@@ -175,6 +180,16 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.homeKeuangan,
       name: 'home-keuangan',
       builder: (context, state) => const HomeKeuanganPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.laporanKeuangan,
+      name: 'laporan-keuangan',
+      builder: (context, state) => const LaporanKeuanganPage(),
+    ),
+    GoRoute(
+      path: AppRoutes.cetakLaporan,
+      name: 'cetak-laporan',
+      builder: (context, state) => const CetakLaporanPage(),
     ),
     GoRoute(
       path: AppRoutes.homeWarga,
@@ -288,6 +303,14 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) {
         final item = state.extra as PengeluaranModel;
         return PengeluaranDetailPage(item: item);
+      },
+    ),
+    GoRoute(
+      path: '/pengeluaran/edit',
+      name: 'pengeluaran-edit',
+      builder: (context, state) {
+        final pengeluaran = state.extra as PengeluaranModel;
+        return PengeluaranEditPage(pengeluaran: pengeluaran);
       },
     ),
     GoRoute(
