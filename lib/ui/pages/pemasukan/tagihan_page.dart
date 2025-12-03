@@ -76,14 +76,14 @@ class _TagihanPageState extends State<TagihanPage> {
 
   List<TagihanItem> _getFilteredItems(List<Map<String, dynamic>> tagihan) {
     _items.clear();
-    
+
     for (final item in tagihan) {
       String namaKeluarga = 'N/A';
-      
+
       if (item['keluarga'] != null) {
         final keluarga = item['keluarga'];
         final nomorKk = keluarga['nomor_kk'] ?? 'N/A';
-        
+
         if (keluarga['warga_profiles'] != null) {
           final warga = keluarga['warga_profiles'];
           namaKeluarga = 'KK ${warga['nama_lengkap'] ?? nomorKk}';
@@ -236,9 +236,8 @@ class _TagihanPageState extends State<TagihanPage> {
                                 fontWeight: isSelected
                                     ? FontWeight.w600
                                     : FontWeight.w500,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.black54,
+                                color:
+                                    isSelected ? Colors.white : Colors.black54,
                               ),
                             ),
                           ),
@@ -395,19 +394,6 @@ class _TagihanPageState extends State<TagihanPage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.print_rounded, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: primaryColor,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: IconButton(
                     onPressed: () => _showFilterDialog(context),
                     icon: const Icon(Icons.filter_alt_rounded,
                         color: Colors.white),
@@ -454,7 +440,7 @@ class _TagihanPageState extends State<TagihanPage> {
                 }
 
                 final filteredItems = _getFilteredItems(viewModel.tagihan);
-                
+
                 if (filteredItems.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 60),
@@ -481,14 +467,16 @@ class _TagihanPageState extends State<TagihanPage> {
                     ),
                   );
                 }
-                
+
                 return Column(
-                  children: filteredItems.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _TagihanCard(item: item),
-                    ),
-                  ).toList(),
+                  children: filteredItems
+                      .map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _TagihanCard(item: item),
+                        ),
+                      )
+                      .toList(),
                 );
               },
             ),
@@ -616,7 +604,10 @@ class _TagihanCard extends StatelessWidget {
             height: 44,
             child: ElevatedButton(
               onPressed: () {
-                context.goNamed('detail-tagihan', extra: item,);
+                context.goNamed(
+                  'detail-tagihan',
+                  extra: item,
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
