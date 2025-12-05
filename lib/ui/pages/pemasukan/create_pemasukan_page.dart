@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../data/repositories/pemasukan_repository.dart';
 
 class CreatePemasukanPage extends StatefulWidget {
   const CreatePemasukanPage({super.key});
@@ -22,13 +25,25 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
   DateTime? _selectedTanggal;
   String? _buktiPath;
   String? _buktiFileName;
+  List<int>? _buktiBytes;
+  bool _isLoading = false;
+  late final PemasukanRepository _repository;
 
   final List<String> _kategoriOptions = [
-    'Iuran Bulanan',
     'Donasi',
-    'Kegiatan Warga',
-    'Eksternal',
+    'Dana Bantuan Pemerintah',
+    'Sumbangan Swadaya',
+    'Hasil Uang Kampung',
+    'Lain-lain',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _repository = SupabasePemasukanRepository(
+      client: Supabase.instance.client,
+    );
+  }
 
   @override
   void dispose() {
@@ -101,7 +116,7 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _handleSimpan,
+                  onPressed: _isLoading ? null : _handleSimpan,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     shape: RoundedRectangleBorder(
@@ -109,14 +124,23 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Simpan',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          'Simpan',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 32),
@@ -418,15 +442,21 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: kIsWeb, // Penting untuk web: load bytes
       );
 
-      if (result != null && result.files.single.path != null) {
+      if (result != null) {
+        final file = result.files.single;
+        
         setState(() {
-          _buktiPath = result.files.single.path;
-          _buktiFileName = result.files.single.name;
+          // Di web gunakan name, di mobile gunakan path
+          _buktiPath = kIsWeb ? file.name : (file.path ?? file.name);
+          _buktiFileName = file.name;
+          _buktiBytes = file.bytes?.toList();
         });
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Gagal memilih file: $e'),
@@ -448,7 +478,51 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
       return;
     }
 
+    if (_selectedTanggal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tanggal harus dipilih')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
     try {
+      String? buktiUrl;
+
+      // Upload bukti jika ada file yang dipilih
+      if (_buktiPath != null && _buktiBytes != null) {
+        try {
+          buktiUrl = await _repository.uploadBukti(_buktiPath!, _buktiBytes!);
+        } catch (uploadError) {
+          // Jika upload gagal, tampilkan error dan batalkan
+          setState(() => _isLoading = false);
+          if (!mounted) return;
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Gagal upload bukti: $uploadError'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+          return; // Batalkan simpan jika upload gagal
+        }
+      }
+
+      // Simpan data pemasukan ke Supabase
+      await _repository.createPemasukan(
+        nama_pemasukan: _namaController.text.trim(),
+        tanggal_pemasukan: _selectedTanggal!,
+        kategori_pemasukan: _selectedKategori!,
+        jumlah: double.parse(_nominalController.text.trim()),
+        bukti_pemasukan: buktiUrl,
+      );
+
+      setState(() => _isLoading = false);
+
+      if (!mounted) return;
+
       await showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -507,6 +581,8 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
         },
       );
     } catch (e) {
+      setState(() => _isLoading = false);
+      
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(

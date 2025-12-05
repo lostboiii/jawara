@@ -200,19 +200,25 @@ class SupabasePemasukanRepository implements PemasukanRepository {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final filePath = 'pemasukan/$timestamp-$fileName';
 
+      print('📤 Uploading file: $filePath');
+      print('📦 File size: ${fileBytes.length} bytes');
+
       // ✅ convert List<int> → Uint8List
       final Uint8List bytes = Uint8List.fromList(fileBytes);
 
       await _supabase.storage.from('bukti').uploadBinary(
             filePath,
-            bytes, // ← perbaikan utama
+            bytes,
             fileOptions: const FileOptions(upsert: true),
           );
 
       final publicUrl = _supabase.storage.from('bukti').getPublicUrl(filePath);
+      
+      print('✅ Upload success: $publicUrl');
 
       return publicUrl;
     } catch (e) {
+      print('❌ Upload error: $e');
       throw Exception('Gagal mengupload bukti: $e');
     }
   }

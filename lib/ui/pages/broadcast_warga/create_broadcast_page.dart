@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../viewmodels/broadcast_viewmodel.dart';
+import '../../../data/repositories/broadcast_repository.dart';
 
 class CreateBroadcastPage extends StatefulWidget {
   const CreateBroadcastPage({super.key});
@@ -15,12 +19,47 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
   final _formKey = GlobalKey<FormState>();
   final _judulController = TextEditingController();
   final _isiController = TextEditingController();
+  
+  String? _fotoPath;
+  List<int>? _fotoBytes;
+  String? _dokumenPath;
+  List<int>? _dokumenBytes;
+  late BroadcastRepository _repository;
 
   @override
   void dispose() {
     _judulController.dispose();
     _isiController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickFoto() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: kIsWeb,
+    );
+    if (result != null) {
+      final file = result.files.single;
+      setState(() {
+        _fotoPath = file.name;
+        _fotoBytes = kIsWeb ? file.bytes?.toList() : null;
+      });
+    }
+  }
+
+  Future<void> _pickDokumen() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: kIsWeb,
+    );
+    if (result != null) {
+      final file = result.files.single;
+      setState(() {
+        _dokumenPath = file.name;
+        _dokumenBytes = kIsWeb ? file.bytes?.toList() : null;
+      });
+    }
   }
 
   @override
@@ -89,20 +128,70 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
                 const SizedBox(height: 20),
 
                 // Foto Upload
-                _buildUploadField(
-                  'Foto',
+                _buildFormLabel('Foto'),
+                Text(
                   'Maksimal 10 gambar (.png / .jpg), ukuran maksimal 5MB per gambar.',
-                  'Upload foto png/jpg',
-                  100,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: _pickFoto,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.upload_file, color: Colors.grey[600], size: 32),
+                          const SizedBox(height: 4),
+                          Text(
+                            _fotoPath ?? 'Upload foto png/jpg',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 20),
 
                 // Dokumen Upload
-                _buildUploadField(
-                  'Dokumen',
+                _buildFormLabel('Dokumen'),
+                Text(
                   'Maksimal 10 file (.pdf), ukuran maksimal 5MB per file.',
-                  'Upload dokumen pdf',
-                  70,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                InkWell(
+                  onTap: _pickDokumen,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    height: 70,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.upload_file, color: Colors.grey[600], size: 32),
+                          const SizedBox(height: 4),
+                          Text(
+                            _dokumenPath ?? 'Upload dokumen pdf',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 30),
 
@@ -119,9 +208,40 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
                                 }
 
                                 try {
+                                  String? fotoUrl;
+                                  String? dokumenUrl;
+
+                                  // Upload foto jika ada
+                                  if (_fotoBytes != null && _fotoPath != null) {
+                                    try {
+                                      fotoUrl = await _repository.uploadFoto(_fotoPath!, _fotoBytes!);
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Gagal upload foto: $e')),
+                                      );
+                                      return;
+                                    }
+                                  }
+
+                                  // Upload dokumen jika ada
+                                  if (_dokumenBytes != null && _dokumenPath != null) {
+                                    try {
+                                      dokumenUrl = await _repository.uploadDokumen(_dokumenPath!, _dokumenBytes!);
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Gagal upload dokumen: $e')),
+                                      );
+                                      return;
+                                    }
+                                  }
+
                                   await broadcastViewModel.addBroadcast(
                                     judul: _judulController.text.trim(),
                                     isi: _isiController.text.trim(),
+                                    foto: fotoUrl,
+                                    dokumen: dokumenUrl,
                                   );
                                   if (!context.mounted) return;
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -163,6 +283,12 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
                             : () {
                                 _judulController.clear();
                                 _isiController.clear();
+                                setState(() {
+                                  _fotoPath = null;
+                                  _fotoBytes = null;
+                                  _dokumenPath = null;
+                                  _dokumenBytes = null;
+                                });
                               },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
@@ -190,49 +316,6 @@ class _CreateBroadcastPageState extends State<CreateBroadcastPage> {
           fontSize: 15,
         ),
       ),
-    );
-  }
-
-  Widget _buildUploadField(String title, String subtitle, String hint, double height) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildFormLabel(title),
-        Text(
-          subtitle,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Fitur upload akan segera hadir')),
-            );
-          },
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey[300]!),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.upload_file, color: Colors.grey[600], size: 32),
-                  const SizedBox(height: 4),
-                  Text(
-                    hint,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

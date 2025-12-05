@@ -1,4 +1,5 @@
 // coverage:ignore-file
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -22,6 +23,7 @@ abstract class PengeluaranRepository {
     String? bukti,
   });
   Future<void> deletePengeluaran(String id);
+  Future<String> uploadBukti(String path, List<int> fileBytes);
 }
 
 class SupabasePengeluaranRepository implements PengeluaranRepository {
@@ -118,6 +120,35 @@ class SupabasePengeluaranRepository implements PengeluaranRepository {
       debugPrint('deletePengeluaran error: $e');
       debugPrint('$st');
       rethrow;
+    }
+  }
+
+  @override
+  Future<String> uploadBukti(String path, List<int> fileBytes) async {
+    try {
+      final fileName = path.split('/').last;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = 'pengeluaran/$timestamp-$fileName';
+
+      print('📤 Uploading file: $filePath');
+      print('📦 File size: ${fileBytes.length} bytes');
+
+      final bytes = Uint8List.fromList(fileBytes);
+
+      await _client.storage.from('bukti').uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final publicUrl = _client.storage.from('bukti').getPublicUrl(filePath);
+      
+      print('✅ Upload success: $publicUrl');
+
+      return publicUrl;
+    } catch (e) {
+      print('❌ Upload error: $e');
+      throw Exception('Gagal mengupload bukti: $e');
     }
   }
 }
