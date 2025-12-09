@@ -30,6 +30,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
   DateTime? _selectedTanggal;
   String? _buktiPath;
   String? _buktiFileName;
+  List<int>? _buktiBytes;
   bool _isSaving = false;
   late PengeluaranRepository _repository;
 
@@ -103,12 +104,15 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: kIsWeb,
       );
 
-      if (result != null && result.files.single.path != null) {
+      if (result != null) {
+        final file = result.files.single;
         setState(() {
-          _buktiPath = result.files.single.path;
-          _buktiFileName = result.files.single.name;
+          _buktiPath = kIsWeb ? file.name : file.path;
+          _buktiFileName = file.name;
+          _buktiBytes = kIsWeb ? file.bytes?.toList() : null;
         });
       }
     } catch (e) {
@@ -121,20 +125,13 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
     }
   }
 
-  Future<void> _pickBukti() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-      withData: kIsWeb,
+  void _showSnack(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
     );
-    if (result != null) {
-      final file = result.files.single;
-      setState(() {
-        _buktiPath = file.name;
-        _buktiBytes = kIsWeb ? file.bytes?.toList() : null;
-      });
-    }
+  }
 
+  Future<void> _handleSimpan() async {
     if (_selectedKategori == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Kategori harus dipilih')),
