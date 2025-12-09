@@ -32,8 +32,18 @@ class RumahModel {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'nomorRumah': nomorRumah,
       'alamatLengkap': alamatLengkap,
+      'rt': rt,
+      'rw': rw,
+      'kelurahan': kelurahan,
+      'kecamatan': kecamatan,
       'statusKepemilikan': statusKepemilikan,
+      'luasTanah': luasTanah,
+      'luasBangunan': luasBangunan,
+      'jumlahPenghuni': jumlahPenghuni,
+      if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
   }
 

@@ -1,4 +1,5 @@
 // coverage:ignore-file
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -20,6 +21,8 @@ abstract class BroadcastRepository {
     String? dokumen,
   });
   Future<void> deleteBroadcast(String id);
+  Future<String> uploadFoto(String path, List<int> fileBytes);
+  Future<String> uploadDokumen(String path, List<int> fileBytes);
 }
 
 class SupabaseBroadcastRepository implements BroadcastRepository {
@@ -113,6 +116,64 @@ class SupabaseBroadcastRepository implements BroadcastRepository {
       debugPrint('deleteBroadcast error: $e');
       debugPrint('$st');
       rethrow;
+    }
+  }
+
+  @override
+  Future<String> uploadFoto(String path, List<int> fileBytes) async {
+    try {
+      final fileName = path.split('/').last;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = 'broadcast/foto/$timestamp-$fileName';
+
+      print('📤 Uploading foto: $filePath');
+      print('📦 File size: ${fileBytes.length} bytes');
+
+      final bytes = Uint8List.fromList(fileBytes);
+
+      await _client.storage.from('bukti').uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final publicUrl = _client.storage.from('bukti').getPublicUrl(filePath);
+      
+      print('✅ Upload success: $publicUrl');
+
+      return publicUrl;
+    } catch (e) {
+      print('❌ Upload error: $e');
+      throw Exception('Gagal mengupload foto: $e');
+    }
+  }
+
+  @override
+  Future<String> uploadDokumen(String path, List<int> fileBytes) async {
+    try {
+      final fileName = path.split('/').last;
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filePath = 'broadcast/dokumen/$timestamp-$fileName';
+
+      print('📤 Uploading dokumen: $filePath');
+      print('📦 File size: ${fileBytes.length} bytes');
+
+      final bytes = Uint8List.fromList(fileBytes);
+
+      await _client.storage.from('bukti').uploadBinary(
+            filePath,
+            bytes,
+            fileOptions: const FileOptions(upsert: true),
+          );
+
+      final publicUrl = _client.storage.from('bukti').getPublicUrl(filePath);
+      
+      print('✅ Upload success: $publicUrl');
+
+      return publicUrl;
+    } catch (e) {
+      print('❌ Upload error: $e');
+      throw Exception('Gagal mengupload dokumen: $e');
     }
   }
 }

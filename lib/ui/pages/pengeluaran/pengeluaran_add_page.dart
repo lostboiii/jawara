@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:file_picker/file_picker.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/models/pengeluaran_model.dart';
 import '../../../viewmodels/pengeluaran_viewmodel.dart';
+import '../../../data/repositories/pengeluaran_repository.dart';
 
 class PengeluaranAddPage extends StatefulWidget {
   final PengeluaranModel? item;
@@ -28,6 +31,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
   String? _buktiPath;
   String? _buktiFileName;
   bool _isSaving = false;
+  late PengeluaranRepository _repository;
 
   static const Map<String, String> _kategoriLabels = {
     'Operasional': 'Operasional',
@@ -59,6 +63,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
   @override
   void initState() {
     super.initState();
+    _repository = SupabasePengeluaranRepository(client: Supabase.instance.client);
     if (widget.item != null) {
       // Edit mode
       _namaController.text = widget.item!.namaPengeluaran;
@@ -116,9 +121,18 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
     }
   }
 
-  Future<void> _handleSimpan() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  Future<void> _pickBukti() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+      withData: kIsWeb,
+    );
+    if (result != null) {
+      final file = result.files.single;
+      setState(() {
+        _buktiPath = file.name;
+        _buktiBytes = kIsWeb ? file.bytes?.toList() : null;
+      });
     }
 
     if (_selectedKategori == null) {
@@ -145,6 +159,19 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
     final tanggal = _selectedTanggal ?? DateTime.now();
 
     try {
+      String? buktiUrl;
+
+      // Upload file jika ada
+      if (_buktiBytes != null && _buktiPath != null) {
+        try {
+          buktiUrl = await _repository.uploadBukti(_buktiPath!, _buktiBytes!);
+        } catch (e) {
+          _showSnack('Gagal upload bukti: $e');
+          setState(() => _isSaving = false);
+          return;
+        }
+      }
+
       if (widget.item != null) {
         // Edit mode
         await vm.updatePengeluaran(
@@ -153,7 +180,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
           kategori: kategori,
           tanggal: tanggal,
           jumlah: jumlah,
-          bukti: _buktiPath,
+          bukti: buktiUrl ?? widget.item!.buktiPengeluaran,
         );
       } else {
         // Add mode
@@ -162,7 +189,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
           kategori: kategori,
           tanggal: tanggal,
           jumlah: jumlah,
-          bukti: _buktiPath,
+          bukti: buktiUrl,
         );
       }
 

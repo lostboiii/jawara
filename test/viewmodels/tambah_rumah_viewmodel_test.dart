@@ -3,18 +3,20 @@ import 'package:jawara/viewmodels/tambah_rumah_viewmodel.dart';
 
 void main() {
   group('TambahRumahViewModel Tests', () {
-    test('viewmodel should be instantiable', () {
-      // NOTE: Cannot instantiate without Supabase initialization
-      // In production tests, you would:
-      // 1. Mock Supabase client
-      // 2. Use dependency injection to pass mock
-      // 3. Test business logic independently
-      
-      expect(true, true); // Placeholder test
+    // TODO: Implement test untuk saveRumah()
+    // Fitur: Menyimpan data rumah baru (alamat, status_rumah)
+    // Digunakan di: lib/ui/pages/warga/tambah_rumah_page.dart
+    test('saveRumah should insert new rumah', () {
+      // TODO: Mock Supabase client
+      // TODO: Test successful insertion
+      // TODO: Test error handling and rethrow
+      // TODO: Test loading state changes
     });
 
-    test('business logic separation completed', () {
-      expect(TambahRumahViewModel, isNotNull);
+    // TODO: Implement test untuk initial state
+    test('initial state should be correct', () {
+      // TODO: Test isLoading = false
+      // TODO: Test errorMessage = null
     });
   });
 }

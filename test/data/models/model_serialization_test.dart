@@ -148,8 +148,9 @@ void main() {
         'jumlahPenghuni': 4,
       };
 
-      final rumah = Rumah.fromJson(source);
-      expect(rumah.luasBangunan, 72);
+      final rumah = RumahModel.fromJson(source);
+      expect(rumah.luasBangunan, 72.0);
+      expect(rumah.toJson()['luasBangunan'], 72.0);
       expect(rumah.toJson()['statusKepemilikan'], 'Milik Sendiri');
     });
   });
