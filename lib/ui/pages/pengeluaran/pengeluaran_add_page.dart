@@ -12,7 +12,7 @@ import '../../../data/repositories/pengeluaran_repository.dart';
 
 class PengeluaranAddPage extends StatefulWidget {
   final PengeluaranModel? item;
-  
+
   const PengeluaranAddPage({super.key, this.item});
 
   @override
@@ -21,12 +21,15 @@ class PengeluaranAddPage extends StatefulWidget {
 
 class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
   final _formKey = GlobalKey<FormState>();
-  final _namaCtrl = TextEditingController();
-  final _nominalCtrl = TextEditingController();
+
+  final TextEditingController _namaController = TextEditingController();
+  final TextEditingController _tanggalController = TextEditingController();
+  final TextEditingController _nominalController = TextEditingController();
+
   String? _selectedKategori;
-  DateTime? _selectedDate;
+  DateTime? _selectedTanggal;
   String? _buktiPath;
-  List<int>? _buktiBytes;
+  String? _buktiFileName;
   bool _isSaving = false;
   late PengeluaranRepository _repository;
 
@@ -63,14 +66,18 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
     _repository = SupabasePengeluaranRepository(client: Supabase.instance.client);
     if (widget.item != null) {
       // Edit mode
-      _namaCtrl.text = widget.item!.namaPengeluaran;
-      _nominalCtrl.text = widget.item!.jumlah.toStringAsFixed(2);
-      _selectedKategori = _resolveKategoriValue(widget.item!.kategoriPengeluaran);
-      _selectedDate = widget.item!.tanggalPengeluaran;
+      _namaController.text = widget.item!.namaPengeluaran;
+      _nominalController.text = widget.item!.jumlah.toStringAsFixed(2);
+      _selectedKategori =
+          _resolveKategoriValue(widget.item!.kategoriPengeluaran);
+      _selectedTanggal = widget.item!.tanggalPengeluaran;
       _buktiPath = widget.item!.buktiPengeluaran;
+      _tanggalController.text =
+          DateFormat('dd/MM/yyyy').format(_selectedTanggal ?? DateTime.now());
     } else {
       // Add mode
-      _selectedDate = DateTime.now();
+      _selectedTanggal = DateTime.now();
+      _tanggalController.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
     }
   }
 
@@ -85,34 +92,32 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
 
   @override
   void dispose() {
-    _namaCtrl.dispose();
-    _nominalCtrl.dispose();
+    _namaController.dispose();
+    _tanggalController.dispose();
+    _nominalController.dispose();
     super.dispose();
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat('dd MMM yyyy', 'id_ID').format(date);
-  }
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+      );
 
-  Future<void> _pickTanggal() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xff5067e9),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _selectedDate = picked);
+      if (result != null && result.files.single.path != null) {
+        setState(() {
+          _buktiPath = result.files.single.path;
+          _buktiFileName = result.files.single.name;
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal memilih file: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -129,40 +134,29 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
         _buktiBytes = kIsWeb ? file.bytes?.toList() : null;
       });
     }
-  }
 
-  bool _validateForm() {
-    final formValid = _formKey.currentState?.validate() ?? false;
-    if (!formValid) return false;
-    if (_selectedKategori == null || _selectedKategori!.isEmpty) {
-      _showSnack('Kategori wajib dipilih');
-      return false;
+    if (_selectedKategori == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kategori harus dipilih')),
+      );
+      return;
     }
-    if (_selectedDate == null) {
-      _showSnack('Tanggal pengeluaran wajib diisi');
-      return false;
+
+    if (_selectedTanggal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tanggal harus dipilih')),
+      );
+      return;
     }
-    return true;
-  }
-
-  void _showSnack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  Future<void> _handleSave() async {
-    if (!_validateForm()) return;
 
     setState(() => _isSaving = true);
 
     final vm = context.read<PengeluaranViewModel>();
-    final sanitizedJumlah = _nominalCtrl.text
-        .replaceAll('.', '')
-        .replaceAll(',', '.');
+    final sanitizedJumlah =
+        _nominalController.text.replaceAll('.', '').replaceAll(',', '.');
     final jumlah = double.parse(sanitizedJumlah);
     final kategori = _selectedKategori!;
-    final tanggal = _selectedDate ?? DateTime.now();
+    final tanggal = _selectedTanggal ?? DateTime.now();
 
     try {
       String? buktiUrl;
@@ -182,7 +176,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
         // Edit mode
         await vm.updatePengeluaran(
           id: widget.item!.id,
-          nama: _namaCtrl.text.trim(),
+          nama: _namaController.text.trim(),
           kategori: kategori,
           tanggal: tanggal,
           jumlah: jumlah,
@@ -191,23 +185,389 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
       } else {
         // Add mode
         await vm.addPengeluaran(
-          nama: _namaCtrl.text.trim(),
+          nama: _namaController.text.trim(),
           kategori: kategori,
           tanggal: tanggal,
           jumlah: jumlah,
           bukti: buktiUrl,
         );
       }
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
+
+      if (!mounted) return;
+
+      await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: Column(
+              children: [
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xff34C759),
+                  size: 64,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Berhasil!',
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              widget.item != null
+                  ? 'Data pengeluaran berhasil diperbarui'
+                  : 'Data pengeluaran berhasil disimpan',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(fontSize: 14),
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pop(context, true);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xff5067e9),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'OK',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
     } catch (e) {
-      _showSnack('Gagal menyimpan data: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Gagal menyimpan data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  Widget _buildTextField(
+    String label,
+    String hint,
+    TextEditingController controller, {
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          style: GoogleFonts.inter(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xffC7C7CD),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xff5067e9), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label tidak boleh kosong';
+            }
+            if (keyboardType == TextInputType.number) {
+              final sanitized = value.replaceAll('.', '').replaceAll(',', '.');
+              if (double.tryParse(sanitized) == null) {
+                return 'Masukkan nominal yang valid';
+              }
+              if (double.parse(sanitized) <= 0) {
+                return 'Nominal harus lebih dari 0';
+              }
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDateField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          readOnly: true,
+          style: GoogleFonts.inter(fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'dd/mm/yyyy',
+            hintStyle: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xffC7C7CD),
+            ),
+            suffixIcon: const Icon(Icons.calendar_today,
+                size: 20, color: Color(0xffC7C7CD)),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xff5067e9), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          onTap: () async {
+            final DateTime? pickedDate = await showDatePicker(
+              context: context,
+              initialDate: _selectedTanggal ?? DateTime.now(),
+              firstDate: DateTime(2000),
+              lastDate: DateTime(2100),
+              builder: (context, child) {
+                return Theme(
+                  data: Theme.of(context).copyWith(
+                    colorScheme: const ColorScheme.light(
+                      primary: Color(0xff5067e9),
+                    ),
+                  ),
+                  child: child!,
+                );
+              },
+            );
+            if (pickedDate != null) {
+              setState(() {
+                _selectedTanggal = pickedDate;
+                controller.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+              });
+            }
+          },
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label tidak boleh kosong';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField(
+    String label,
+    String? value,
+    Map<String, String> options,
+    Function(String?) onChanged,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          isExpanded: true,
+          style: GoogleFonts.inter(fontSize: 14, color: Colors.black87),
+          decoration: InputDecoration(
+            hintText: 'Pilih $label',
+            hintStyle: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xffC7C7CD),
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xffE5E5EA)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide:
+                  const BorderSide(color: Color(0xff5067e9), width: 1.5),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.red, width: 1.5),
+            ),
+          ),
+          items: options.entries.map((entry) {
+            return DropdownMenuItem<String>(
+              value: entry.key,
+              child: Text(entry.value),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return '$label tidak boleh kosong';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFileUploadField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Bukti',
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 8),
+        GestureDetector(
+          onTap: _pickFile,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xffE5E5EA),
+                style: BorderStyle.solid,
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.upload_file_rounded,
+                  size: 48,
+                  color: const Color(0xff5067e9),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _buktiFileName ?? 'Unggah Bukti Pengeluaran',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: _buktiFileName != null
+                        ? Colors.black87
+                        : const Color(0xff5067e9),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (_buktiFileName == null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Pilih file dari perangkat',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: const Color(0xffC7C7CD),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -226,227 +586,56 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                    color: primaryColor,
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: primaryColor,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    widget.item != null ? 'Ubah Pengeluaran' : 'Tambah Pengeluaran',
+                    widget.item != null
+                        ? 'Ubah Pengeluaran'
+                        : 'Tambah Pengeluaran',
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
+                      color: primaryColor,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              Text(
+              const SizedBox(height: 24),
+              _buildTextField(
                 'Nama Pengeluaran',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Masukkan Nama Pengeluaran',
+                _namaController,
               ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _namaCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Masukkan nama pengeluaran',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Nama wajib diisi' : null,
-              ),
-              const SizedBox(height: 20),
-              Text(
+              const SizedBox(height: 16),
+              _buildDateField('Tanggal Pengeluaran', _tanggalController),
+              const SizedBox(height: 16),
+              _buildDropdownField(
                 'Kategori Pengeluaran',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: _selectedKategori,
-                style: GoogleFonts.inter(color: Colors.black),
-                decoration: InputDecoration(
-                  hintText: 'Pilih kategori',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-                items: _kategoriLabels.entries
-                    .map(
-                      (entry) => DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(entry.value),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedKategori = value),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Kategori wajib dipilih'
-                    : null,
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Jumlah (Rp)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _nominalCtrl,
-                style: GoogleFonts.inter(),
-                decoration: InputDecoration(
-                  hintText: 'Masukkan jumlah pengeluaran',
-                  hintStyle: GoogleFonts.inter(color: Colors.grey[400]),
-                  filled: true,
-                  fillColor: Colors.grey[50],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primaryColor, width: 2),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                ),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Jumlah wajib diisi';
-                  }
-                  final sanitized =
-                      value.replaceAll('.', '').replaceAll(',', '.');
-                  final parsed = double.tryParse(sanitized);
-                  if (parsed == null) {
-                    return 'Masukkan angka valid';
-                  }
-                  if (parsed <= 0) {
-                    return 'Jumlah harus lebih dari 0';
-                  }
-                  return null;
+                _selectedKategori,
+                _kategoriLabels,
+                (value) {
+                  setState(() => _selectedKategori = value);
                 },
               ),
-              const SizedBox(height: 20),
-              Text(
-                'Tanggal Pengeluaran',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                'Nominal',
+                'Masukkan Nominal',
+                _nominalController,
+                keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: _pickTanggal,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.calendar_today, color: primaryColor, size: 20),
-                      const SizedBox(width: 12),
-                      Text(
-                        _selectedDate == null
-                            ? 'Pilih tanggal'
-                            : _formatDate(_selectedDate!),
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: _selectedDate == null ? Colors.grey[400] : Colors.black,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Bukti Pengeluaran (Opsional)',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              InkWell(
-                onTap: _pickBukti,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.upload_file, color: primaryColor, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _buktiPath == null || _buktiPath!.isEmpty
-                              ? 'Upload bukti (jpg, png, pdf)'
-                              : 'File: ${_buktiPath!.split(RegExp(r"[\\/]+")).last}',
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: _buktiPath == null ? Colors.grey[400] : Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 16),
+              _buildFileUploadField(),
+              const SizedBox(height: 32),
               SizedBox(
+                width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: _isSaving ? null : _handleSave,
+                  onPressed: _isSaving ? null : _handleSimpan,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryColor,
                     shape: RoundedRectangleBorder(
@@ -460,11 +649,12 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
                       : Text(
-                          widget.item != null ? 'Simpan Perubahan' : 'Simpan Pengeluaran',
+                          widget.item != null ? 'Simpan Perubahan' : 'Simpan',
                           style: GoogleFonts.inter(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -473,6 +663,7 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
                         ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
