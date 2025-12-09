@@ -96,6 +96,16 @@ class _FakeBroadcastRepository implements BroadcastRepository {
     }
     lastDeleteId = id;
   }
+
+  @override
+  Future<String> uploadFoto(String path, List<int> fileBytes) async {
+    return 'https://fake-url.com/foto.jpg';
+  }
+
+  @override
+  Future<String> uploadDokumen(String path, List<int> fileBytes) async {
+    return 'https://fake-url.com/dokumen.pdf';
+  }
 }
 
 BroadcastModel _sampleBroadcast(String id) {

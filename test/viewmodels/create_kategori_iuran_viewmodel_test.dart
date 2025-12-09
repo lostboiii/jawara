@@ -3,23 +3,21 @@ import 'package:jawara/viewmodels/create_kategori_iuran_viewmodel.dart';
 
 void main() {
   group('CreateKategoriIuranViewModel Tests', () {
-    test('viewmodel should be instantiable', () {
-      // NOTE: Cannot instantiate without Supabase initialization
-      // In production tests, you would:
-      // 1. Mock Supabase client
-      // 2. Use dependency injection to pass mock
-      // 3. Test business logic independently
-      
-      expect(true, true); // Placeholder test
+    // TODO: Implement test untuk createKategori()
+    // Fitur: Membuat kategori iuran baru dengan namaIuran dan kategoriIuran
+    // Digunakan di: lib/ui/pages/pemasukan/create_kategori_iuran_page.dart
+    test('createKategori should insert new kategori', () {
+      // TODO: Mock Supabase client
+      // TODO: Test successful insertion
+      // TODO: Test error handling and rethrow
+      // TODO: Test loading state changes
     });
 
-    test('business logic separation completed', () {
-      // This test verifies that the refactoring goal is achieved:
-      // - Business logic is in ViewModel (not in UI)
-      // - UI can focus on presentation
-      // - Logic can be tested independently (with proper mocks)
-      
-      expect(CreateKategoriIuranViewModel, isNotNull);
+    // TODO: Implement test untuk initial state
+    test('initial state should be correct', () {
+      // TODO: Test isLoading = false
+      // TODO: Test errorMessage = null
     });
   });
 }
+

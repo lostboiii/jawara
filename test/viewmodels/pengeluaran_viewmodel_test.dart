@@ -104,6 +104,11 @@ class _FakePengeluaranRepository implements PengeluaranRepository {
     }
     lastDeleteId = id;
   }
+
+  @override
+  Future<String> uploadBukti(String path, List<int> fileBytes) async {
+    return 'https://fake-url.com/bukti.jpg';
+  }
 }
 
 PengeluaranModel _samplePengeluaran(String id) {
