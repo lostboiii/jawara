@@ -19,11 +19,104 @@ class _HomeWargaPageState extends State<HomeWargaPage> {
   int _totalKeluarga = 0;
   int _totalRumah = 0;
   int _totalAspirasi = 0;
+  bool _isLoadingAspirasi = true;
+  List<Map<String, dynamic>> _recentAspirasi = [];
+  bool _isLoadingBroadcast = true;
+  List<Map<String, dynamic>> _recentBroadcast = [];
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadRecentAspirasi();
+    _loadRecentBroadcast();
+  }
+
+  Future<void> _loadRecentAspirasi() async {
+    try {
+      print('🔍 Loading aspirasi data...');
+      
+      final response = await _supabase
+          .from('aspirasi')
+          .select('id, user_id, judul_aspirasi, deskripsi_aspirasi')
+          .order('id', ascending: false)
+          .limit(4);
+      
+      // Get user names for each aspirasi
+      if (response is List && response.isNotEmpty) {
+        for (var aspirasi in response) {
+          try {
+            final userId = aspirasi['user_id'];
+            if (userId != null) {
+              final userResponse = await _supabase
+                  .from('warga_profiles')
+                  .select('nama_lengkap')
+                  .eq('id', userId)
+                  .maybeSingle();
+              
+              aspirasi['user_name'] = userResponse?['nama_lengkap'] ?? 'Warga';
+            } else {
+              aspirasi['user_name'] = 'Anonim';
+            }
+          } catch (e) {
+            aspirasi['user_name'] = 'Warga';
+          }
+        }
+      }
+      
+      print('✅ Aspirasi query completed');
+      
+      if (mounted) {
+        setState(() {
+          _recentAspirasi = response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingAspirasi = false;
+        });
+        print('✅ State updated - ${_recentAspirasi.length} aspirasi loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading aspirasi: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentAspirasi = [];
+          _isLoadingAspirasi = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadRecentBroadcast() async {
+    try {
+      print('🔍 Loading broadcast data...');
+      
+      final response = await _supabase
+          .from('broadcast')
+          .select('uuid, judul_broadcast, isi_broadcast')
+          .limit(3);
+      
+      print('✅ Broadcast query completed');
+      print('📊 Broadcast data: $response');
+      print('📊 Is List: ${response is List}');
+      print('📊 Length: ${response is List ? response.length : "Not a list"}');
+      
+      if (mounted) {
+        setState(() {
+          _recentBroadcast = response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingBroadcast = false;
+        });
+        print('✅ State updated - ${_recentBroadcast.length} broadcast loaded');
+        print('📊 _recentBroadcast contents: $_recentBroadcast');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading broadcast: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentBroadcast = [];
+          _isLoadingBroadcast = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -493,37 +586,195 @@ class _HomeWargaPageState extends State<HomeWargaPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildWargaItem(
-              icon: Icons.campaign_rounded,
-              iconColor: primaryColor,
-              name: 'Dafa',
-              message: 'TOLONK rumah aq kemalingan kemarin malam...',
-              time: '2 jam lalu',
+            if (_isLoadingAspirasi)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentAspirasi.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada aspirasi',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              )
+            else
+              ..._recentAspirasi.map((aspirasi) {
+                final userName = aspirasi['user_name'] ?? 'Warga';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.campaign_rounded,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userName,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                aspirasi['judul_aspirasi'] ?? aspirasi['deskripsi_aspirasi'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.grey.shade600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            const SizedBox(height: 32),
+            Text(
+              'Broadcast Terbaru',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
-            const SizedBox(height: 12),
-            _buildWargaItem(
-              icon: Icons.comment_rounded,
-              iconColor: primaryColor,
-              name: 'Budi',
-              message: 'Saran untuk perbaikan jalan di RT 05',
-              time: '5 jam lalu',
-            ),
-            const SizedBox(height: 12),
-            _buildWargaItem(
-              icon: Icons.campaign_rounded,
-              iconColor: primaryColor,
-              name: 'Siti',
-              message: 'Ada yang punya kontak tukang listrik terpercaya?',
-              time: '1 hari lalu',
-            ),
-            const SizedBox(height: 12),
-            _buildWargaItem(
-              icon: Icons.comment_rounded,
-              iconColor: primaryColor,
-              name: 'Joko',
-              message: 'Pengumuman: Rapat RT akan diadakan Minggu depan',
-              time: '2 hari lalu',
-            ),
+            const SizedBox(height: 16),
+            if (_isLoadingBroadcast)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentBroadcast.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Belum ada broadcast',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      'Cek console log untuk debug info',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ..._recentBroadcast.map((broadcast) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.campaign,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                broadcast['judul_broadcast'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                broadcast['isi_broadcast'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.grey.shade600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             const SizedBox(height: 32),
           ],
         ),
@@ -664,7 +915,7 @@ class _PagedMenuGridState extends State<_PagedMenuGrid> {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 4,
-                childAspectRatio: 0.85,
+                childAspectRatio: 0.75,
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 children: pageMenus,
               );

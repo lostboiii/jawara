@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/repositories/pengeluaran_repository.dart';
-import '../../data/repositories/pemasukan_repository.dart';
-import '../../data/models/pengeluaran_model.dart';
-import '../../data/models/pemasukan_model.dart';
 import '../../core/services/supabase_service.dart';
 
 typedef HomeSectionBuilder = Widget Function(
@@ -88,8 +85,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
   static const Color _primaryColor = Color(0xff5067e9);
   static const List<_NavItem> _navItems = [
     _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
-    _NavItem(
-        icon: Icons.account_balance_wallet_rounded, label: 'Keuangan'),
+    _NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Keuangan'),
     _NavItem(icon: Icons.people_rounded, label: 'Warga'),
     _NavItem(icon: Icons.event_note_rounded, label: 'Kegiatan'),
     _NavItem(icon: Icons.person_rounded, label: 'Profil'),
@@ -103,9 +99,17 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
   int _totalKeluarga = 0;
   bool _isLoadingPengeluaran = true;
   bool _isLoadingStats = true;
+  bool _isLoadingTransaksi = true;
+  bool _isLoadingAspirasi = true;
+  bool _isLoadingKegiatan = true;
+  bool _isLoadingBroadcast = true;
+
+  List<Map<String, dynamic>> _recentTransaksi = [];
+  List<Map<String, dynamic>> _recentAspirasi = [];
+  List<Map<String, dynamic>> _ongoingKegiatan = [];
+  List<Map<String, dynamic>> _recentBroadcast = [];
 
   late final PengeluaranRepository _pengeluaranRepo;
-  late final PemasukanRepository _pemasukanRepo;
   late final Map<int, HomeSectionBuilder> _builders;
 
   @override
@@ -124,14 +128,11 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     _pengeluaranRepo = SupabasePengeluaranRepository(
       client: SupabaseService.client,
     );
-    _pemasukanRepo = SupabasePemasukanRepository(
-      client: SupabaseService.client,
-    );
     _builders = {
       0: widget.sectionBuilders[0] ??
           (ctx, scope) => _buildDefaultHomeContent(ctx),
       1: widget.sectionBuilders[1] ??
-          (ctx, scope) => _buildDefaultKeuanganContent(ctx),
+          (ctx, scope) => _buildPlaceholderContent(ctx, 'Keuangan'),
       2: widget.sectionBuilders[2] ??
           (ctx, scope) => _buildPlaceholderContent(ctx, 'Warga'),
       3: widget.sectionBuilders[3] ??
@@ -139,17 +140,241 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
     };
     _loadPengeluaran();
     _loadHomeStats();
+    _loadRecentTransaksi();
+    _loadRecentAspirasi();
+    _loadOngoingKegiatan();
+    _loadRecentBroadcast();
+  }
+
+  Future<void> _loadRecentTransaksi() async {
+    try {
+      final supabase = SupabaseService.client;
+
+      print('🔍 Loading transaksi data...');
+      print(
+          '📍 User auth status: ${supabase.auth.currentUser != null ? "Logged in" : "Not logged in"}');
+
+      // Load 2 pemasukan terbaru
+      print('📥 Loading pemasukan...');
+      final pemasukanResponse = await supabase
+          .from('pemasukan_lain')
+          .select(
+              'nama_pemasukan, jumlah, tanggal_pemasukan, kategori_pemasukan')
+          .order('tanggal_pemasukan', ascending: false)
+          .limit(2);
+      print(
+          '✅ Pemasukan loaded: ${pemasukanResponse is List ? pemasukanResponse.length : 0} records');
+
+      // Load 2 pengeluaran terbaru
+      print('📤 Loading pengeluaran...');
+      final pengeluaranResponse = await supabase
+          .from('pengeluaran')
+          .select(
+              'nama_pengeluaran, jumlah, tanggal_pengeluaran, kategori_pengeluaran')
+          .order('tanggal_pengeluaran', ascending: false)
+          .limit(2);
+      print(
+          '✅ Pengeluaran loaded: ${pengeluaranResponse is List ? pengeluaranResponse.length : 0} records');
+
+      List<Map<String, dynamic>> combined = [];
+
+      // Add pemasukan with type
+      if (pemasukanResponse is List) {
+        for (var item in pemasukanResponse) {
+          combined.add({
+            'title': item['nama_pemasukan'] ?? 'Pemasukan',
+            'subtitle': item['kategori_pemasukan'] ?? 'Tidak ada kategori',
+            'amount': item['jumlah'],
+            'date': DateTime.parse(item['tanggal_pemasukan']),
+            'type': 'pemasukan',
+          });
+        }
+      }
+
+      // Add pengeluaran with type
+      if (pengeluaranResponse is List) {
+        for (var item in pengeluaranResponse) {
+          combined.add({
+            'title': item['nama_pengeluaran'] ?? 'Pengeluaran',
+            'subtitle': item['kategori_pengeluaran'] ?? 'Tidak ada kategori',
+            'amount': item['jumlah'],
+            'date': DateTime.parse(item['tanggal_pengeluaran']),
+            'type': 'pengeluaran',
+          });
+        }
+      }
+
+      // Sort by date
+      combined.sort((a, b) => b['date'].compareTo(a['date']));
+
+      print('✅ Combined transaksi: ${combined.length} records');
+      print('📊 Transaksi data: $combined');
+
+      if (mounted) {
+        setState(() {
+          _recentTransaksi = combined.take(4).toList();
+          _isLoadingTransaksi = false;
+        });
+        print('✅ State updated - ${_recentTransaksi.length} transaksi loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading transaksi: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentTransaksi = [];
+          _isLoadingTransaksi = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadRecentAspirasi() async {
+    try {
+      final supabase = SupabaseService.client;
+
+      print('🔍 Loading aspirasi data...');
+      print(
+          '📍 User auth status: ${supabase.auth.currentUser != null ? "Logged in (${supabase.auth.currentUser?.email})" : "Not logged in"}');
+      print('📍 User ID: ${supabase.auth.currentUser?.id}');
+
+      final response = await supabase
+          .from('aspirasi')
+          .select('id, user_id, judul_aspirasi, deskripsi_aspirasi')
+          .order('id', ascending: false)
+          .limit(3);
+
+      // Get user emails for each aspirasi
+      if (response is List && response.isNotEmpty) {
+        for (var aspirasi in response) {
+          try {
+            final userId = aspirasi['user_id'];
+            if (userId != null) {
+              final userResponse = await supabase
+                  .from('warga_profiles')
+                  .select('nama_lengkap')
+                  .eq('id', userId)
+                  .maybeSingle();
+
+              aspirasi['user_name'] = userResponse?['nama_lengkap'] ?? 'Warga';
+            } else {
+              aspirasi['user_name'] = 'Anonim';
+            }
+          } catch (e) {
+            aspirasi['user_name'] = 'Warga';
+          }
+        }
+      }
+
+      print('✅ Aspirasi query completed');
+      print('📊 Response type: ${response.runtimeType}');
+      print(
+          '📊 Response length: ${response is List ? response.length : "Not a list"}');
+      print('📊 Data: $response');
+
+      if (mounted) {
+        setState(() {
+          _recentAspirasi =
+              response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingAspirasi = false;
+        });
+        print('✅ State updated - ${_recentAspirasi.length} aspirasi loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading aspirasi: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentAspirasi = [];
+          _isLoadingAspirasi = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadOngoingKegiatan() async {
+    try {
+      final supabase = SupabaseService.client;
+
+      print('🔍 Loading kegiatan data...');
+
+      // Ambil kegiatan terbaru (tidak peduli tanggal)
+      final response = await supabase
+          .from('kegiatan')
+          .select(
+              'nama_kegiatan, deskripsi, tanggal_kegiatan, lokasi_kegiatan, kategori_kegiatan, penanggung_jawab')
+          .order('tanggal_kegiatan', ascending: false)
+          .limit(3);
+
+      print('✅ Kegiatan query completed');
+      print(
+          '📊 Kegiatan response: ${response is List ? response.length : "Not a list"} records');
+      print('📊 Data: $response');
+
+      if (mounted) {
+        setState(() {
+          _ongoingKegiatan =
+              response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingKegiatan = false;
+        });
+        print('✅ State updated - ${_ongoingKegiatan.length} kegiatan loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading kegiatan: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _ongoingKegiatan = [];
+          _isLoadingKegiatan = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadRecentBroadcast() async {
+    try {
+      final supabase = SupabaseService.client;
+
+      print('🔍 Loading broadcast data...');
+
+      // Ambil 3 broadcast terbaru
+      final response = await supabase
+          .from('broadcast')
+          .select('uuid, judul_broadcast, isi_broadcast')
+          .limit(3);
+
+      print('✅ Broadcast query completed');
+      print(
+          '📊 Broadcast response: ${response is List ? response.length : "Not a list"} records');
+
+      if (mounted) {
+        setState(() {
+          _recentBroadcast =
+              response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingBroadcast = false;
+        });
+        print('✅ State updated - ${_recentBroadcast.length} broadcast loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading broadcast: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentBroadcast = [];
+          _isLoadingBroadcast = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadHomeStats() async {
     try {
       final supabase = SupabaseService.client;
-      
+
       // Load pemasukan lain
-      final pemasukanResponse = await supabase
-          .from('pemasukan_lain')
-          .select('jumlah');
-      
+      final pemasukanResponse =
+          await supabase.from('pemasukan_lain').select('jumlah');
+
       double pemasukanLain = 0;
       for (var item in pemasukanResponse) {
         pemasukanLain += (item['jumlah'] as num).toDouble();
@@ -160,17 +385,16 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
           .from('tagih_iuran')
           .select('jumlah')
           .eq('status_tagihan', 'sudah_bayar');
-      
+
       double iuranLunas = 0;
       for (var item in iuranResponse) {
         iuranLunas += (item['jumlah'] as num).toDouble();
       }
 
       // Load pengeluaran for saldo
-      final pengeluaranResponse = await supabase
-          .from('pengeluaran')
-          .select('jumlah');
-      
+      final pengeluaranResponse =
+          await supabase.from('pengeluaran').select('jumlah');
+
       double pengeluaran = 0;
       for (var item in pengeluaranResponse) {
         pengeluaran += (item['jumlah'] as num).toDouble();
@@ -180,26 +404,38 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
       double totalPemasukan = pemasukanLain + iuranLunas;
 
       // Load warga
-      final wargaResponse = await supabase
-          .from('warga_profiles')
-          .select('id');
+      print('🔍 Loading warga data...');
+      print(
+          '📍 User auth status: ${supabase.auth.currentUser != null ? "Logged in" : "Not logged in"}');
+      final wargaResponse = await supabase.from('warga_profiles').select('id');
+      print('✅ Warga query completed');
+      print(
+          '📊 Warga response: ${wargaResponse is List ? wargaResponse.length : "Not a list"} records');
+      print('📊 Warga data: $wargaResponse');
 
       // Load keluarga
-      final keluargaResponse = await supabase
-          .from('keluarga')
-          .select('id');
+      print('🔍 Loading keluarga data...');
+      final keluargaResponse = await supabase.from('keluarga').select('id');
+      print('✅ Keluarga query completed');
+      print(
+          '📊 Keluarga response: ${keluargaResponse is List ? keluargaResponse.length : "Not a list"} records');
+      print('📊 Keluarga data: $keluargaResponse');
 
       if (mounted) {
         setState(() {
           _totalPemasukan = totalPemasukan;
           _saldo = totalPemasukan - pengeluaran;
-          _totalWarga = wargaResponse.length;
-          _totalKeluarga = keluargaResponse.length;
+          _totalWarga = wargaResponse is List ? wargaResponse.length : 0;
+          _totalKeluarga =
+              keluargaResponse is List ? keluargaResponse.length : 0;
           _isLoadingStats = false;
         });
+        print(
+            '✅ Stats updated - Warga: $_totalWarga, Keluarga: $_totalKeluarga');
       }
-    } catch (e) {
-      print('Error loading home stats: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error loading home stats: $e');
+      print('📋 Stack trace: $stackTrace');
       if (mounted) {
         setState(() => _isLoadingStats = false);
       }
@@ -356,7 +592,9 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                 children: [
                   _buildHomeSummaryCard(
                     title: 'Saldo',
-                    value: _isLoadingStats ? 'Memuat...' : 'Rp ${formatCurrency(_saldo)}${getCurrencyUnit(_saldo)}',
+                    value: _isLoadingStats
+                        ? 'Memuat...'
+                        : 'Rp ${formatCurrency(_saldo)}${getCurrencyUnit(_saldo)}',
                     subtitle: 'Update hari ini',
                     icon: Icons.account_balance_wallet_rounded,
                     color: primaryColor,
@@ -384,6 +622,141 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               ),
             ),
             const SizedBox(height: 32),
+            // Transaksi Terbaru
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Transaksi Terbaru',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.goNamed('home-keuangan'),
+                  child: Text(
+                    'Lihat Semua',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (_isLoadingTransaksi)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentTransaksi.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada transaksi',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              )
+            else
+              ..._recentTransaksi.map((transaksi) {
+                final isIncome = transaksi['type'] == 'pemasukan';
+                final amount = (transaksi['amount'] as num).toDouble();
+                final date = transaksi['date'] as DateTime;
+                final now = DateTime.now();
+                final diff = now.difference(date);
+                String timeAgo;
+                if (diff.inDays > 0) {
+                  timeAgo = '${diff.inDays} hari lalu';
+                } else if (diff.inHours > 0) {
+                  timeAgo = '${diff.inHours} jam lalu';
+                } else if (diff.inMinutes > 0) {
+                  timeAgo = '${diff.inMinutes} menit lalu';
+                } else {
+                  timeAgo = 'Baru saja';
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: isIncome
+                                ? Colors.green.shade50
+                                : Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isIncome
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            color: isIncome ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                transaksi['title'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                transaksi['subtitle'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                timeAgo,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${isIncome ? '+' : '-'} Rp ${formatCurrency(amount)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: isIncome ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            const SizedBox(height: 32),
+            // Aspirasi Warga Terbaru
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -409,17 +782,93 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               ],
             ),
             const SizedBox(height: 12),
-            buildWargaAspirasiItem(
-              name: 'Pak Budi',
-              message: 'Mohon lampu jalan di Blok A diperbaiki secepatnya karena sudah mati 2 hari.',
-              time: '1j lalu',
-            ),
+            if (_isLoadingAspirasi)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentAspirasi.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada aspirasi',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              )
+            else
+              ..._recentAspirasi.map((aspirasi) {
+                // Use fetched user name
+                final userName = aspirasi['user_name'] ?? 'Warga';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.campaign_rounded,
+                            color: primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userName,
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                aspirasi['judul_aspirasi'] ??
+                                    aspirasi['deskripsi_aspirasi'] ??
+                                    '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade700,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             const SizedBox(height: 32),
+            // Kegiatan Berlangsung
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Log Aktivitas',
+                  'Kegiatan Berlangsung',
                   style: GoogleFonts.inter(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -427,7 +876,7 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
                   ),
                 ),
                 TextButton(
-                  onPressed: () => context.goNamed('activity-log'),
+                  onPressed: () => context.goNamed('home-kegiatan'),
                   child: Text(
                     'Lihat Semua',
                     style: GoogleFonts.inter(
@@ -440,133 +889,222 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
               ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.history_rounded,
-                      color: primaryColor,
-                      size: 24,
-                    ),
+            if (_isLoadingKegiatan)
+              const Center(child: CircularProgressIndicator())
+            else if (_ongoingKegiatan.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada kegiatan berlangsung',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              )
+            else
+              ..._ongoingKegiatan.map((kegiatan) {
+                final tanggal = DateTime.parse(kegiatan['tanggal_kegiatan']);
+                final dateFormat =
+                    '${tanggal.day}/${tanggal.month}/${tanggal.year}';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          'Update Data Warga',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.groups_rounded,
+                            color: Colors.orange,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Admin mengupdate data Keluarga Bpk. Santoso',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                kegiatan['nama_kegiatan'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                kegiatan['deskripsi'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    kegiatan['lokasi_kegiatan'] ?? '-',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    dateFormat,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '2j lalu',
+                );
+              }).toList(),
+            const SizedBox(height: 32),
+            // Broadcast Terbaru
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Broadcast Terbaru',
+                  style: GoogleFonts.inter(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.goNamed('list-broadcast'),
+                  child: Text(
+                    'Lihat Semua',
                     style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[500],
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: primaryColor,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.shade200),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.edit_note_rounded,
-                      color: Colors.orange,
-                      size: 24,
-                    ),
+            if (_isLoadingBroadcast)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentBroadcast.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada broadcast',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              )
+            else
+              ..._recentBroadcast.map((broadcast) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          'Input Pengeluaran',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.broadcast_on_personal_rounded,
+                            color: Colors.blue,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Bendahara input pengeluaran konsumsi rapat',
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                broadcast['judul_broadcast'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                broadcast['isi_broadcast'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '5j lalu',
-                    style: GoogleFonts.inter(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                );
+              }).toList(),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildDefaultKeuanganContent(BuildContext context) {
-    return _buildPlaceholderContent(context, 'Keuangan');
   }
 
   Widget _buildPlaceholderContent(BuildContext context, String title) {
@@ -711,15 +1249,19 @@ class _HomePageState extends State<HomePage> implements HomePageScope {
             ),
             child: Icon(icon, color: iconColor ?? Colors.white, size: 28),
           ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.black,
-              height: 1.2,
+          const SizedBox(height: 6),
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.inter(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+                height: 1.1,
+              ),
             ),
           ),
         ],

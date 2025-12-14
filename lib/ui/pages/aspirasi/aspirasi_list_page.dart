@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../../../core/services/supabase_service.dart';
 
 class AspirasiListPage extends StatefulWidget {
   const AspirasiListPage({super.key});
@@ -10,33 +11,59 @@ class AspirasiListPage extends StatefulWidget {
 }
 
 class _AspirasiListPageState extends State<AspirasiListPage> {
-  final List<Map<String, String>> _aspirasi = [
-    {
-      'NO': '1',
-      'PENGIRIM': 'Budi Santoso',
-      'JUDUL': 'Perbaikan Jalan RT 03',
-      'STATUS': 'Diterima',
-      'TANGGAL_DIBUAT': '15 Oktober 2025'
-    },
-    {
-      'NO': '2',
-      'PENGIRIM': 'Siti Aminah',
-      'JUDUL': 'Penambahan Lampu Jalan',
-      'STATUS': 'Pending',
-      'TANGGAL_DIBUAT': '18 Oktober 2025'
-    },
-    {
-      'NO': '3',
-      'PENGIRIM': 'Ahmad Wijaya',
-      'JUDUL': 'Renovasi Pos Ronda',
-      'STATUS': 'Ditolak',
-      'TANGGAL_DIBUAT': '20 Oktober 2025'
-    },
-  ];
+  List<Map<String, dynamic>> _aspirasi = [];
+  bool _isLoading = true;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String? _filterStatus;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAspirasi();
+  }
+
+  Future<void> _loadAspirasi() async {
+    try {
+      setState(() => _isLoading = true);
+      final supabase = SupabaseService.client;
+      
+      final response = await supabase
+          .from('aspirasi')
+          .select('id, user_id, judul_aspirasi, deskripsi_aspirasi')
+          .order('id', ascending: false);
+      
+      // Get user names for each aspirasi
+      if (response is List && response.isNotEmpty) {
+        for (var aspirasi in response) {
+          try {
+            final userId = aspirasi['user_id'];
+            if (userId != null) {
+              final userResponse = await supabase
+                  .from('warga_profiles')
+                  .select('nama_lengkap')
+                  .eq('id', userId)
+                  .maybeSingle();
+              
+              aspirasi['user_name'] = userResponse?['nama_lengkap'] ?? 'Warga';
+            } else {
+              aspirasi['user_name'] = 'Anonim';
+            }
+          } catch (e) {
+            aspirasi['user_name'] = 'Warga';
+          }
+        }
+      }
+      
+      setState(() {
+        _aspirasi = response is List ? List<Map<String, dynamic>>.from(response) : [];
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading aspirasi: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -44,83 +71,19 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     super.dispose();
   }
 
-  List<Map<String, String>> get _filteredAspirasi {
+  List<Map<String, dynamic>> get _filteredAspirasi {
     var filtered = _aspirasi;
 
     if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((item) {
-        return item['JUDUL']!.toLowerCase().contains(query) ||
-            item['PENGIRIM']!.toLowerCase().contains(query);
+        final judul = item['judul_aspirasi']?.toString().toLowerCase() ?? '';
+        final pengirim = item['user_name']?.toString().toLowerCase() ?? '';
+        return judul.contains(query) || pengirim.contains(query);
       }).toList();
     }
 
-    if (_filterStatus != null) {
-      filtered = filtered.where((item) => item['STATUS'] == _filterStatus).toList();
-    }
-
     return filtered;
-  }
-
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Filter Status',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RadioListTile<String>(
-              title: Text('Semua', style: GoogleFonts.inter(fontSize: 14)),
-              value: 'Semua',
-              groupValue: _filterStatus ?? 'Semua',
-              onChanged: (value) {
-                setState(() => _filterStatus = null);
-                Navigator.pop(context);
-              },
-              activeColor: const Color(0xff5067e9),
-            ),
-            RadioListTile<String>(
-              title: Text('Diterima', style: GoogleFonts.inter(fontSize: 14)),
-              value: 'Diterima',
-              groupValue: _filterStatus,
-              onChanged: (value) {
-                setState(() => _filterStatus = value);
-                Navigator.pop(context);
-              },
-              activeColor: const Color(0xff5067e9),
-            ),
-            RadioListTile<String>(
-              title: Text('Pending', style: GoogleFonts.inter(fontSize: 14)),
-              value: 'Pending',
-              groupValue: _filterStatus,
-              onChanged: (value) {
-                setState(() => _filterStatus = value);
-                Navigator.pop(context);
-              },
-              activeColor: const Color(0xff5067e9),
-            ),
-            RadioListTile<String>(
-              title: Text('Ditolak', style: GoogleFonts.inter(fontSize: 14)),
-              value: 'Ditolak',
-              groupValue: _filterStatus,
-              onChanged: (value) {
-                setState(() => _filterStatus = value);
-                Navigator.pop(context);
-              },
-              activeColor: const Color(0xff5067e9),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -182,51 +145,44 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: IconButton(
-                      onPressed: _showFilterDialog,
-                      icon: const Icon(Icons.filter_alt_rounded, color: Colors.white),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 24),
               Expanded(
-                child: _filteredAspirasi.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.search_off_rounded,
-                                size: 48, color: Colors.grey),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Tidak ada aspirasi ditemukan',
-                              style: GoogleFonts.inter(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: Color(0xff5067e9),
                         ),
                       )
-                    : ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        itemCount: _filteredAspirasi.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = _filteredAspirasi[index];
-                          return _buildAspirasiCard(item, primaryColor);
-                        },
-                      ),
+                    : _filteredAspirasi.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search_off_rounded,
+                                    size: 48, color: Colors.grey),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Tidak ada aspirasi ditemukan',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.grey,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: _filteredAspirasi.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final item = _filteredAspirasi[index];
+                              return _buildAspirasiCard(item, primaryColor);
+                            },
+                          ),
               ),
             ],
           ),
@@ -235,8 +191,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     );
   }
 
-  Widget _buildAspirasiCard(Map<String, String> item, Color primaryColor) {
-    final statusColor = _getStatusColor(item['STATUS']!);
+  Widget _buildAspirasiCard(Map<String, dynamic> item, Color primaryColor) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -255,7 +210,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            item['JUDUL']!,
+            item['judul_aspirasi'] ?? '',
             style: GoogleFonts.inter(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -268,21 +223,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
               Icon(Icons.person, size: 14, color: Colors.grey.shade500),
               const SizedBox(width: 6),
               Text(
-                item['PENGIRIM']!,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(Icons.calendar_today, size: 14, color: Colors.grey.shade500),
-              const SizedBox(width: 6),
-              Text(
-                item['TANGGAL_DIBUAT']!,
+                item['user_name'] ?? 'Tidak diketahui',
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   color: Colors.grey.shade600,
@@ -292,70 +233,49 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
           ),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  item['STATUS']!,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: statusColor,
+              SizedBox(
+                height: 32,
+                width: 32,
+                child: ElevatedButton(
+                  onPressed: () => _showDetailDialog(context, item),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Icon(
+                    Icons.info_rounded,
+                    color: Colors.blue.shade700,
+                    size: 16,
                   ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    height: 32,
-                    width: 32,
-                    child: ElevatedButton(
-                      onPressed: () => _showDetailDialog(context, item),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue.shade50,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Icon(
-                        Icons.info_rounded,
-                        color: Colors.blue.shade700,
-                        size: 16,
-                      ),
+              const SizedBox(width: 8),
+              SizedBox(
+                height: 32,
+                width: 32,
+                child: ElevatedButton(
+                  onPressed: () =>
+                      _showDeleteConfirmation(context, item['id']?.toString() ?? ''),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
                   ),
-                  const SizedBox(width: 8),
-                  SizedBox(
-                    height: 32,
-                    width: 32,
-                    child: ElevatedButton(
-                      onPressed: () =>
-                          _showDeleteConfirmation(context, item['NO']!),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade50,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        elevation: 0,
-                        padding: EdgeInsets.zero,
-                      ),
-                      child: Icon(
-                        Icons.delete_rounded,
-                        color: Colors.red.shade600,
-                        size: 16,
-                      ),
-                    ),
+                  child: Icon(
+                    Icons.delete_rounded,
+                    color: Colors.red.shade600,
+                    size: 16,
                   ),
-                ],
+                ),
               ),
             ],
           ),
@@ -364,21 +284,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Diterima':
-        return Colors.green;
-      case 'Pending':
-        return Colors.orange;
-      case 'Ditolak':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  void _showDetailDialog(BuildContext context, Map<String, String> item) {
-    final statusColor = _getStatusColor(item['STATUS']!);
+  void _showDetailDialog(BuildContext context, Map<String, dynamic> item) {
     final primaryColor = const Color(0xff5067e9);
     showDialog(
       context: context,
@@ -393,7 +299,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              item['JUDUL']!,
+              item['judul_aspirasi'] ?? '',
               style: GoogleFonts.inter(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -416,7 +322,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              item['PENGIRIM']!,
+              item['user_name'] ?? 'Tidak diketahui',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -425,32 +331,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Status',
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                item['STATUS']!,
-                style: GoogleFonts.inter(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: statusColor,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Tanggal Dibuat',
+              'Deskripsi',
               style: GoogleFonts.inter(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
@@ -459,10 +340,9 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              item['TANGGAL_DIBUAT']!,
+              item['deskripsi_aspirasi'] ?? 'Tidak ada deskripsi',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
                 color: Colors.black87,
               ),
             ),
@@ -555,7 +435,7 @@ class _AspirasiListPageState extends State<AspirasiListPage> {
                     onPressed: () {
                       Navigator.pop(context);
                       setState(() {
-                        _aspirasi.removeWhere((item) => item['NO'] == id);
+                        _aspirasi.removeWhere((item) => item['id']?.toString() == id);
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

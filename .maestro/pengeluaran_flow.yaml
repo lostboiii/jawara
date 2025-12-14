@@ -1,0 +1,10 @@
+appId: com.example.jawara
+---
+- launchApp
+- assertVisible: "Pengeluaran"
+- tapOn: "Pengeluaran"
+- assertVisible: "Daftar Pengeluaran|Pengeluaran"
+- tapOn:
+    text: "Tambah|\+"
+    optional: true
+- assertVisible: "Tambah Pengeluaran|Form"

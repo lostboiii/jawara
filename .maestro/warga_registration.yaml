@@ -1,0 +1,21 @@
+appId: com.example.jawara
+---
+- launchApp
+- tapOn: "Daftar"
+- tapOn: "Nama Lengkap"
+- inputText: "John Doe"
+- tapOn: "NIK"
+- inputText: "1234567890123456"
+- tapOn: "Email"
+- inputText: "john@example.com"
+- tapOn: "No HP"
+- inputText: "08123456789"
+- tapOn: "Password"
+- inputText: "password123"
+- tapOn: "Konfirmasi Password"
+- inputText: "password123"
+- scrollUntilVisible:
+    element: "Daftar"
+    direction: DOWN
+- tapOn: "Daftar"
+- assertVisible: "Berhasil|Sukses"

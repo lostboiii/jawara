@@ -20,11 +20,88 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
   double _saldo = 0;
   double _pemasukanLain = 0;
   double _iuranLunas = 0;
+  bool _isLoadingTransaksi = true;
+  List<Map<String, dynamic>> _recentTransaksi = [];
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadRecentTransaksi();
+  }
+
+  Future<void> _loadRecentTransaksi() async {
+    try {
+      print('🔍 Loading transaksi data...');
+      
+      // Load 2 pemasukan terbaru
+      print('📥 Loading pemasukan...');
+      final pemasukanResponse = await _supabase
+          .from('pemasukan_lain')
+          .select('nama_pemasukan, jumlah, tanggal_pemasukan, kategori_pemasukan')
+          .order('tanggal_pemasukan', ascending: false)
+          .limit(2);
+      print('✅ Pemasukan loaded: ${pemasukanResponse is List ? pemasukanResponse.length : 0} records');
+      
+      // Load 2 pengeluaran terbaru
+      print('📤 Loading pengeluaran...');
+      final pengeluaranResponse = await _supabase
+          .from('pengeluaran')
+          .select('nama_pengeluaran, jumlah, tanggal_pengeluaran, kategori_pengeluaran')
+          .order('tanggal_pengeluaran', ascending: false)
+          .limit(2);
+      print('✅ Pengeluaran loaded: ${pengeluaranResponse is List ? pengeluaranResponse.length : 0} records');
+      
+      List<Map<String, dynamic>> combined = [];
+      
+      // Add pemasukan with type
+      if (pemasukanResponse is List) {
+        for (var item in pemasukanResponse) {
+          combined.add({
+            'title': item['nama_pemasukan'] ?? 'Pemasukan',
+            'subtitle': item['kategori_pemasukan'] ?? 'Tidak ada kategori',
+            'amount': item['jumlah'],
+            'date': DateTime.parse(item['tanggal_pemasukan']),
+            'type': 'pemasukan',
+          });
+        }
+      }
+      
+      // Add pengeluaran with type
+      if (pengeluaranResponse is List) {
+        for (var item in pengeluaranResponse) {
+          combined.add({
+            'title': item['nama_pengeluaran'] ?? 'Pengeluaran',
+            'subtitle': item['kategori_pengeluaran'] ?? 'Tidak ada kategori',
+            'amount': item['jumlah'],
+            'date': DateTime.parse(item['tanggal_pengeluaran']),
+            'type': 'pengeluaran',
+          });
+        }
+      }
+      
+      // Sort by date
+      combined.sort((a, b) => b['date'].compareTo(a['date']));
+      
+      print('✅ Combined transaksi: ${combined.length} records');
+      
+      if (mounted) {
+        setState(() {
+          _recentTransaksi = combined.take(4).toList();
+          _isLoadingTransaksi = false;
+        });
+        print('✅ State updated - ${_recentTransaksi.length} transaksi loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading transaksi: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentTransaksi = [];
+          _isLoadingTransaksi = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -527,135 +604,116 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
               ),
             ),
             const SizedBox(height: 16),
-            _buildTransactionItem(
-              icon: Icons.trending_up_rounded,
-              iconColor: const Color(0xff5067e9),
-              title: 'Iuran Bulanan',
-              description: 'Iuran RT Februari 2024',
-              amount: '+ Rp 500.000',
-              amountColor: const Color(0xff5067e9),
-              date: '25 Nov 2025',
-            ),
-            const SizedBox(height: 12),
-            _buildTransactionItem(
-              icon: Icons.trending_down_rounded,
-              iconColor: const Color(0xff5067e9),
-              title: 'Pembelian Peralatan',
-              description: 'Pembelian tanda terima tagihan',
-              amount: '- Rp 200.000',
-              amountColor: const Color(0xff5067e9),
-              date: '24 Nov 2025',
-            ),
-            const SizedBox(height: 12),
-            _buildTransactionItem(
-              icon: Icons.trending_up_rounded,
-              iconColor: const Color(0xff5067e9),
-              title: 'Donasi Sosial',
-              description: 'Donasi untuk acara sosial RW',
-              amount: '+ Rp 1.000.000',
-              amountColor: const Color(0xff5067e9),
-              date: '23 Nov 2025',
-            ),
-            const SizedBox(height: 12),
-            _buildTransactionItem(
-              icon: Icons.trending_down_rounded,
-              iconColor: const Color(0xff5067e9),
-              title: 'Pembayaran Listrik',
-              description: 'Pembayaran listrik pos ronda',
-              amount: '- Rp 150.000',
-              amountColor: const Color(0xff5067e9),
-              date: '22 Nov 2025',
-            ),
+            if (_isLoadingTransaksi)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentTransaksi.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada transaksi',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              )
+            else
+              ..._recentTransaksi.map((transaksi) {
+                final isIncome = transaksi['type'] == 'pemasukan';
+                final amount = (transaksi['amount'] as num).toDouble();
+                final date = transaksi['date'] as DateTime;
+                final now = DateTime.now();
+                final diff = now.difference(date);
+                String timeAgo;
+                if (diff.inDays > 0) {
+                  timeAgo = '${diff.inDays} hari lalu';
+                } else if (diff.inHours > 0) {
+                  timeAgo = '${diff.inHours} jam lalu';
+                } else if (diff.inMinutes > 0) {
+                  timeAgo = '${diff.inMinutes} menit lalu';
+                } else {
+                  timeAgo = 'Baru saja';
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: isIncome
+                                ? Colors.green.shade50
+                                : Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            isIncome
+                                ? Icons.trending_up_rounded
+                                : Icons.trending_down_rounded,
+                            color: isIncome ? Colors.green : Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                transaksi['title'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                transaksi['subtitle'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                timeAgo,
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '${isIncome ? '+' : '-'} ${_formatRupiah(amount)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: isIncome ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             const SizedBox(height: 32),
           ],
         ),
-      ),
-    );
-  }
-
-  static Widget _buildTransactionItem({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String description,
-    required String amount,
-    required Color amountColor,
-    required String date,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey.shade600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  date,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.grey.shade500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            amount,
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: amountColor,
-            ),
-          ),
-        ],
       ),
     );
   }

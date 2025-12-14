@@ -20,26 +20,98 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
   int _kegiatanAkanDatang = 0;
   int _kegiatanSelesai = 0;
   Map<String, dynamic>? _nextKegiatan;
+  bool _isLoadingKegiatan = true;
+  List<Map<String, dynamic>> _ongoingKegiatan = [];
+  bool _isLoadingBroadcast = true;
+  List<Map<String, dynamic>> _recentBroadcast = [];
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _loadOngoingKegiatan();
+    _loadRecentBroadcast();
+  }
+
+  Future<void> _loadRecentBroadcast() async {
+    try {
+      print('🔍 Loading broadcast data...');
+
+      // Ambil broadcast terbaru
+      final response = await _supabase
+          .from('broadcast')
+          .select('uuid, judul_broadcast, isi_broadcast')
+          .limit(3);
+
+      print('✅ Broadcast query completed');
+      print(
+          '📊 Broadcast response: ${response is List ? response.length : "Not a list"} records');
+
+      if (mounted) {
+        setState(() {
+          _recentBroadcast =
+              response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingBroadcast = false;
+        });
+        print('✅ State updated - ${_recentBroadcast.length} broadcast loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading broadcast: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _recentBroadcast = [];
+          _isLoadingBroadcast = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadOngoingKegiatan() async {
+    try {
+      print('🔍 Loading kegiatan data...');
+
+      // Ambil kegiatan terbaru (tidak peduli tanggal)
+      final response = await _supabase
+          .from('kegiatan')
+          .select(
+              'nama_kegiatan, deskripsi, tanggal_kegiatan, lokasi_kegiatan, kategori_kegiatan, penanggung_jawab')
+          .order('tanggal_kegiatan', ascending: false)
+          .limit(3);
+
+      print('✅ Kegiatan query completed');
+      print(
+          '📊 Kegiatan response: ${response is List ? response.length : "Not a list"} records');
+
+      if (mounted) {
+        setState(() {
+          _ongoingKegiatan =
+              response is List ? List<Map<String, dynamic>>.from(response) : [];
+          _isLoadingKegiatan = false;
+        });
+        print('✅ State updated - ${_ongoingKegiatan.length} kegiatan loaded');
+      }
+    } catch (e, stackTrace) {
+      print('❌ Error loading kegiatan: $e');
+      print('📋 Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _ongoingKegiatan = [];
+          _isLoadingKegiatan = false;
+        });
+      }
+    }
   }
 
   Future<void> _loadData() async {
     try {
       final now = DateTime.now();
-      
+
       // Load total kegiatan
-      final kegiatanResponse = await _supabase
-          .from('kegiatan')
-          .select('id');
+      final kegiatanResponse = await _supabase.from('kegiatan').select('id');
 
       // Load total broadcast
-      final broadcastResponse = await _supabase
-          .from('broadcast')
-          .select('id');
+      final broadcastResponse = await _supabase.from('broadcast').select('id');
 
       // Load kegiatan yang akan datang (tanggal >= hari ini)
       final akanDatangResponse = await _supabase
@@ -67,8 +139,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
           _totalBroadcast = broadcastResponse.length;
           _kegiatanAkanDatang = akanDatangResponse.length;
           _kegiatanSelesai = selesaiResponse.length;
-          _nextKegiatan = nextKegiatanResponse.isNotEmpty 
-              ? nextKegiatanResponse.first 
+          _nextKegiatan = nextKegiatanResponse.isNotEmpty
+              ? nextKegiatanResponse.first
               : null;
           _isLoading = false;
         });
@@ -202,7 +274,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.only(bottom: 8, left: 8),
+                              padding:
+                                  const EdgeInsets.only(bottom: 8, left: 8),
                               child: Text(
                                 'Kegiatan',
                                 style: GoogleFonts.inter(
@@ -225,7 +298,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -278,7 +352,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -335,7 +410,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
               children: [
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -388,7 +464,8 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 12),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -509,76 +586,205 @@ class _HomeKegiatanPageState extends State<HomeKegiatanPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[300]!),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: primaryColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.groups_2_rounded,
-                      color: primaryColor,
-                      size: 24,
-                    ),
+            if (_isLoadingKegiatan)
+              const Center(child: CircularProgressIndicator())
+            else if (_ongoingKegiatan.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada kegiatan berlangsung',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                ),
+              )
+            else
+              ..._ongoingKegiatan.map((kegiatan) {
+                final tanggal = DateTime.parse(kegiatan['tanggal_kegiatan']);
+                final dateFormat =
+                    '${tanggal.day}/${tanggal.month}/${tanggal.year}';
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          'Rapat Rutin RW',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: primaryColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.groups_2_rounded,
+                            color: primaryColor,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Membahas program kerja dan keuangan RW',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.grey[600],
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              size: 14,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Balai Warga RW 05',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                kegiatan['nama_kegiatan'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 4),
+                              Text(
+                                kegiatan['deskripsi'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.grey[600],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    kegiatan['lokasi_kegiatan'] ?? '-',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.calendar_today_outlined,
+                                    size: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    dateFormat,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                );
+              }).toList(),
+            const SizedBox(height: 32),
+            Text(
+              'Broadcast Terbaru',
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
               ),
             ),
+            const SizedBox(height: 16),
+            if (_isLoadingBroadcast)
+              const Center(child: CircularProgressIndicator())
+            else if (_recentBroadcast.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Belum ada broadcast',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              )
+            else
+              ..._recentBroadcast.map((broadcast) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.broadcast_on_personal_rounded,
+                            color: Colors.blue,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                broadcast['judul_broadcast'],
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                broadcast['isi_broadcast'] ?? '',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.grey[600],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
           ],
         ),
       ),

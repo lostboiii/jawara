@@ -780,11 +780,23 @@ class _CetakLaporanPageState extends State<CetakLaporanPage> {
       Directory? directory;
 
       if (Platform.isAndroid) {
-        directory = await getApplicationDocumentsDirectory();
+        // Untuk Android, simpan di Downloads/Jawara
+        directory = Directory('/storage/emulated/0/Download/Jawara');
+        if (!await directory.exists()) {
+          await directory.create(recursive: true);
+        }
       } else if (Platform.isIOS) {
+        // Untuk iOS, gunakan Documents directory
         directory = await getApplicationDocumentsDirectory();
       } else if (Platform.isWindows) {
-        directory = await getDownloadsDirectory();
+        // Untuk Windows, simpan di Downloads/Jawara
+        final downloads = await getDownloadsDirectory();
+        if (downloads != null) {
+          directory = Directory('${downloads.path}/Jawara');
+          if (!await directory.exists()) {
+            await directory.create(recursive: true);
+          }
+        }
       }
 
       if (directory == null) {
@@ -798,11 +810,16 @@ class _CetakLaporanPageState extends State<CetakLaporanPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'File "$filename" berhasil disimpan\nLokasi: ${directory.path}',
+              'File berhasil disimpan!\n📁 ${directory.path}/$filename',
               style: GoogleFonts.inter(),
             ),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 4),
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
           ),
         );
       }
