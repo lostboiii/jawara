@@ -7,6 +7,7 @@ class KegiatanModel {
     this.lokasiKegiatan,
     this.penanggungJawab,
     this.deskripsi,
+    this.anggaran,
     this.createdAt,
     this.updatedAt,
   });
@@ -18,6 +19,7 @@ class KegiatanModel {
   final String? lokasiKegiatan;
   final String? penanggungJawab;
   final String? deskripsi;
+  final double? anggaran;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -32,6 +34,9 @@ class KegiatanModel {
       lokasiKegiatan: json['lokasi_kegiatan'] as String?,
       penanggungJawab: json['penanggung_jawab'] as String?,
       deskripsi: json['deskripsi'] as String?,
+      anggaran: json['anggaran'] != null 
+          ? double.tryParse(json['anggaran'].toString())
+          : null,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -50,6 +55,7 @@ class KegiatanModel {
       'lokasi_kegiatan': lokasiKegiatan,
       'penanggung_jawab': penanggungJawab,
       'deskripsi': deskripsi,
+      'anggaran': anggaran,
       if (createdAt != null) 'created_at': createdAt!.toIso8601String(),
       if (updatedAt != null) 'updated_at': updatedAt!.toIso8601String(),
     };
@@ -63,6 +69,7 @@ class KegiatanModel {
       'lokasi_kegiatan': lokasiKegiatan,
       'penanggung_jawab': penanggungJawab,
       'deskripsi': deskripsi,
+      'anggaran': anggaran,
     };
   }
 
@@ -74,6 +81,7 @@ class KegiatanModel {
     String? lokasiKegiatan,
     String? penanggungJawab,
     String? deskripsi,
+    double? anggaran,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -85,6 +93,7 @@ class KegiatanModel {
       lokasiKegiatan: lokasiKegiatan ?? this.lokasiKegiatan,
       penanggungJawab: penanggungJawab ?? this.penanggungJawab,
       deskripsi: deskripsi ?? this.deskripsi,
+      anggaran: anggaran ?? this.anggaran,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

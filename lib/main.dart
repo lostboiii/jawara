@@ -18,6 +18,7 @@ import 'package:jawara/data/repositories/broadcast_repository.dart';
 import 'package:jawara/viewmodels/broadcast_viewmodel.dart';
 import 'package:jawara/data/repositories/kegiatan_repository.dart';
 import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
+import 'package:jawara/viewmodels/dashboard_viewmodel.dart';
 import 'package:jawara/viewmodels/rumah_viewmodel.dart';
 import 'package:jawara/viewmodels/kategori_iuran_list_viewmodel.dart';
 import 'package:jawara/viewmodels/tagihan_viewmodel.dart';
@@ -110,6 +111,11 @@ class MyApp extends StatelessWidget {
           create: (context) => KegiatanViewModel(
             repository: context.read<KegiatanRepository>(),
           )..loadKegiatan(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => DashboardViewModel(
+            repository: context.read<KegiatanRepository>(),
+          ),
         ),
         ChangeNotifierProvider(
           create: (context) => RumahViewModel(),
