@@ -312,7 +312,7 @@ class _WargaHomePageState extends State<WargaHomePage> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () {},
+                          onPressed: () => context.goNamed('daftar-tagihan-warga'),
                           child: Text(
                             'Lihat Semua',
                             style: GoogleFonts.inter(
@@ -689,18 +689,26 @@ class _WargaHomePageState extends State<WargaHomePage> {
 
     return _tagihan.take(2).map((tagihan) {
       final kategori = tagihan['kategori_iuran'];
-      final statusLunas = tagihan['status_tagihan'] == 'lunas';
+      final statusLunas = tagihan['status_tagihan'] == 'sudah_bayar';
+      final isBelumBayar = tagihan['status_tagihan'] == 'belum_bayar';
       
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
+        child: GestureDetector(
+          onTap: isBelumBayar ? () {
+            context.goNamed(
+              'bayar-iuran',
+              pathParameters: {'tagihanId': tagihan['id']},
+            );
+          } : null,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Row(
             children: [
               Container(
                 width: 44,
@@ -754,6 +762,7 @@ class _WargaHomePageState extends State<WargaHomePage> {
               ),
             ],
           ),
+        ),
         ),
       );
     }).toList();

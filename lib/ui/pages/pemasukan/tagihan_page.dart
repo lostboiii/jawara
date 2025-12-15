@@ -82,11 +82,11 @@ class _TagihanPageState extends State<TagihanPage> {
 
       if (item['keluarga'] != null) {
         final keluarga = item['keluarga'];
+        final namaKepala = keluarga['nama_kepala'];
         final nomorKk = keluarga['nomor_kk'] ?? 'N/A';
-
-        if (keluarga['warga_profiles'] != null) {
-          final warga = keluarga['warga_profiles'];
-          namaKeluarga = 'KK ${warga['nama_lengkap'] ?? nomorKk}';
+        
+        if (namaKepala != null && namaKepala.toString().isNotEmpty) {
+          namaKeluarga = namaKepala;
         } else {
           namaKeluarga = 'KK $nomorKk';
         }
@@ -98,7 +98,7 @@ class _TagihanPageState extends State<TagihanPage> {
       }
 
       String status = 'Belum Bayar';
-      if (item['status_tagihan'] == 'lunas') {
+      if (item['status_tagihan'] == 'sudah_bayar') {
         status = 'Lunas';
       }
 
@@ -312,14 +312,11 @@ class _TagihanPageState extends State<TagihanPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TagihanViewModel(),
-      child: HomePage(
-        initialIndex: 1,
-        sectionBuilders: {
-          1: (ctx, scope) => _buildSection(ctx, scope),
-        },
-      ),
+    return HomePage(
+      initialIndex: 1,
+      sectionBuilders: {
+        1: (ctx, scope) => _buildSection(ctx, scope),
+      },
     );
   }
 
@@ -436,6 +433,35 @@ class _TagihanPageState extends State<TagihanPage> {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 80),
                     child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                // Tampilkan error jika ada
+                if (viewModel.errorMessage != null) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.error_outline, 
+                            size: 48, color: Colors.red),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Error!',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          viewModel.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
                   );
                 }
 

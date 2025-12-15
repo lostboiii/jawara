@@ -276,14 +276,11 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => KategoriIuranListViewModel(),
-      child: HomePage(
-        initialIndex: 1,
-        sectionBuilders: {
-          1: (ctx, scope) => _buildSection(ctx, scope),
-        },
-      ),
+    return HomePage(
+      initialIndex: 1,
+      sectionBuilders: {
+        1: (ctx, scope) => _buildSection(ctx, scope),
+      },
     );
   }
 
@@ -415,6 +412,35 @@ class _KategoriIuranPageState extends State<KategoriIuranPage> {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 80),
                     child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                // Tampilkan error jika ada
+                if (viewModel.errorMessage != null) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 60),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.error_outline, 
+                            size: 48, color: Colors.red),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Error!',
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          viewModel.errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: Colors.black54),
+                        ),
+                      ],
+                    ),
                   );
                 }
 

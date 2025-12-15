@@ -7,6 +7,8 @@ import 'package:jawara/ui/pages/pemasukan/edit_kategori_iuran_page.dart';
 import 'package:jawara/ui/pages/pemasukan/create_kategori_iuran_page.dart';
 import 'package:jawara/ui/pages/pemasukan/tagih_iuran_page.dart';
 import 'package:jawara/ui/pages/warga/daftar_warga_page.dart';
+import 'package:jawara/ui/pages/warga/bayar_iuran_page.dart';
+import 'package:jawara/ui/pages/warga/daftar_tagihan_warga_page.dart';
 import 'package:jawara/ui/pages/pemasukan/tagihan_page.dart';
 import 'package:jawara/viewmodels/daftar_keluarga_viewmodel.dart';
 import 'package:jawara/viewmodels/daftar_warga_viewmodel.dart';
@@ -175,6 +177,11 @@ final GoRouter appRouter = GoRouter(
       path: '/warga-home',
       name: 'warga-home',
       builder: (context, state) => const WargaHomePage(),
+    ),
+    GoRoute(
+      path: '/daftar-tagihan-warga',
+      name: 'daftar-tagihan-warga',
+      builder: (context, state) => const DaftarTagihanWargaPage(),
     ),
     GoRoute(
       path: AppRoutes.homeKeuangan,
@@ -525,6 +532,14 @@ final GoRouter appRouter = GoRouter(
           return const TagihanPage();
         }
         return DetailTagihanPage(tagihan: detailTagihan);
+      },
+    ),
+    GoRoute(
+      path: '/bayar-iuran/:tagihanId',
+      name: 'bayar-iuran',
+      builder: (context, state) {
+        final tagihanId = state.pathParameters['tagihanId']!;
+        return BayarIuranPage(tagihanId: tagihanId);
       },
     ),
     GoRoute(

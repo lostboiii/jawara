@@ -18,15 +18,20 @@ class KategoriIuranListViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 Loading kategori iuran...');
       final response = await _supabase
           .from('kategori_iuran')
           .select('id, nama_iuran, kategori_iuran')
           .order('nama_iuran');
 
+      debugPrint('✅ Kategori loaded: ${response.length} items');
+      debugPrint('📊 Data: $response');
+      
       _kategoris = List<Map<String, dynamic>>.from(response);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ Error loading kategori: $e');
       _isLoading = false;
       _errorMessage = 'Gagal memuat data: $e';
       notifyListeners();

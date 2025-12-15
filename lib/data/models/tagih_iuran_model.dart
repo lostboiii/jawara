@@ -6,6 +6,8 @@ class TagihIuranModel {
   final DateTime? tanggalBayar;
   final String? buktiBayar;
   final String kategoriId;
+  final String? keluargaId;
+  final String? metodePembayaranId;
 
   TagihIuranModel({
     required this.id,
@@ -15,6 +17,8 @@ class TagihIuranModel {
     required this.kategoriId,
     this.tanggalBayar,
     this.buktiBayar,
+    this.keluargaId,
+    this.metodePembayaranId,
   });
 
   factory TagihIuranModel.fromJson(Map<String, dynamic> json) {
@@ -28,6 +32,8 @@ class TagihIuranModel {
           : null,
       buktiBayar: json['bukti_bayar'],
       kategoriId: json['kategori_id'],
+      keluargaId: json['keluarga_id'],
+      metodePembayaranId: json['metode_pembayaran_id'],
     );
   }
 
@@ -39,6 +45,8 @@ class TagihIuranModel {
       'tanggal_bayar': tanggalBayar?.toIso8601String(),
       'bukti_bayar': buktiBayar,
       'kategori_id': kategoriId,
+      'keluarga_id': keluargaId,
+      'metode_pembayaran_id': metodePembayaranId,
     };
   }
 }

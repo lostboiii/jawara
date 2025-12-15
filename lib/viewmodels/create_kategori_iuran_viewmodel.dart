@@ -19,14 +19,17 @@ class CreateKategoriIuranViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('💾 Saving kategori iuran: $namaIuran ($kategoriIuran)');
       await _supabase.from('kategori_iuran').insert({
         'nama_iuran': namaIuran,
         'kategori_iuran': kategoriIuran,
       });
 
+      debugPrint('✅ Kategori iuran saved successfully');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ Error saving kategori: $e');
       _isLoading = false;
       _errorMessage = 'Gagal menyimpan data: $e';
       notifyListeners();

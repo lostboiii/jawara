@@ -18,6 +18,7 @@ class TagihanViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 Loading tagihan iuran...');
       final response = await _supabase
           .from('tagih_iuran')
           .select('''
@@ -25,10 +26,7 @@ class TagihanViewModel extends ChangeNotifier {
             keluarga:keluarga_id (
               id,
               nomor_kk,
-              kepala_keluarga_id,
-              warga_profiles!keluarga_kepala_keluarga_id_fkey (
-                nama_lengkap
-              )
+              kepala_keluarga_id
             ),
             kategori_iuran:kategori_id (
               nama_iuran
@@ -36,10 +34,35 @@ class TagihanViewModel extends ChangeNotifier {
           ''')
           .order('tanggal_tagihan', ascending: false);
 
+      debugPrint('✅ Tagihan loaded: ${response.length} items');
+      
+      // Enrich data dengan nama kepala keluarga
+      for (var item in response) {
+        if (item['keluarga'] != null && item['keluarga']['kepala_keluarga_id'] != null) {
+          try {
+            final wargaResponse = await _supabase
+                .from('warga_profiles')
+                .select('nama_lengkap')
+                .eq('id', item['keluarga']['kepala_keluarga_id'])
+                .single();
+            
+            item['keluarga']['nama_kepala'] = wargaResponse['nama_lengkap'];
+          } catch (e) {
+            debugPrint('⚠️ Gagal fetch nama kepala keluarga: $e');
+            item['keluarga']['nama_kepala'] = null;
+          }
+        }
+      }
+      
+      if (response.isNotEmpty) {
+        debugPrint('📊 Sample data: ${response.first}');
+      }
+      
       _tagihan = List<Map<String, dynamic>>.from(response);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ Error loading tagihan: $e');
       _isLoading = false;
       _errorMessage = 'Gagal memuat data tagihan: $e';
       notifyListeners();

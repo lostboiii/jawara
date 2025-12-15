@@ -18,14 +18,17 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 Loading kategori for tagih iuran...');
       final response = await _supabase
           .from('kategori_iuran')
           .select('id, nama_iuran, kategori_iuran');
 
+      debugPrint('✅ Loaded ${response.length} kategori');
       _kategoris = List<Map<String, dynamic>>.from(response);
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ Error loading kategori: $e');
       _isLoading = false;
       _errorMessage = 'Gagal memuat kategori: $e';
       notifyListeners();
@@ -42,9 +45,11 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      debugPrint('🔍 Loading keluarga for tagihan...');
       // Load semua keluarga
       final keluargaResponse = await _supabase.from('keluarga').select('id');
       final keluargaList = List<Map<String, dynamic>>.from(keluargaResponse);
+      debugPrint('✅ Found ${keluargaList.length} keluarga');
 
       // Buat tagihan untuk setiap keluarga
       final tagihanList = keluargaList.map((keluarga) {
@@ -57,12 +62,15 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
         };
       }).toList();
 
+      debugPrint('💾 Inserting ${tagihanList.length} tagihan to tagih_iuran table...');
       // Insert batch
       await _supabase.from('tagih_iuran').insert(tagihanList);
 
+      debugPrint('✅ Successfully created tagihan for all keluarga');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      debugPrint('❌ Error creating tagihan: $e');
       _isLoading = false;
       _errorMessage = 'Gagal menagih: $e';
       notifyListeners();

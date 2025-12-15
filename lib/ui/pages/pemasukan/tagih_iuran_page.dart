@@ -5,14 +5,26 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../../viewmodels/create_tagih_iuran_viewmodel.dart';
 
-class TagihIuranPage extends StatefulWidget {
+class TagihIuranPage extends StatelessWidget {
   const TagihIuranPage({super.key});
 
   @override
-  State<TagihIuranPage> createState() => _TagihIuranPageState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => CreateTagihIuranViewModel(),
+      child: const _TagihIuranPageContent(),
+    );
+  }
 }
 
-class _TagihIuranPageState extends State<TagihIuranPage> {
+class _TagihIuranPageContent extends StatefulWidget {
+  const _TagihIuranPageContent();
+
+  @override
+  State<_TagihIuranPageContent> createState() => _TagihIuranPageContentState();
+}
+
+class _TagihIuranPageContentState extends State<_TagihIuranPageContent> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _tanggalController = TextEditingController();
   final TextEditingController _jumlahController = TextEditingController();
@@ -38,9 +50,7 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
   Widget build(BuildContext context) {
     final primaryColor = const Color(0xff5067e9);
 
-    return ChangeNotifierProvider(
-      create: (_) => CreateTagihIuranViewModel(),
-      child: Scaffold(
+    return Scaffold(
         backgroundColor: Colors.white,
         body: SafeArea(
           child: Form(
@@ -112,7 +122,6 @@ class _TagihIuranPageState extends State<TagihIuranPage> {
             ),
           ),
         ),
-      ),
     );
   }
 

@@ -19,6 +19,8 @@ import 'package:jawara/viewmodels/broadcast_viewmodel.dart';
 import 'package:jawara/data/repositories/kegiatan_repository.dart';
 import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
 import 'package:jawara/viewmodels/rumah_viewmodel.dart';
+import 'package:jawara/viewmodels/kategori_iuran_list_viewmodel.dart';
+import 'package:jawara/viewmodels/tagihan_viewmodel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -111,6 +113,12 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (context) => RumahViewModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => KategoriIuranListViewModel(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TagihanViewModel(),
         ),
       ],
       child: Builder(
