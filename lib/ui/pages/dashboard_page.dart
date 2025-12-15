@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:jawara/viewmodels/dashboard_viewmodel.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -15,6 +18,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Load dashboard data saat halaman di-init
+    Future.microtask(() {
+      context.read<DashboardViewModel>().loadDashboardData();
+    });
   }
 
   @override
@@ -60,249 +67,242 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Widget _buildKegiatanTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ringkasan Kegiatan',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Stats Cards
-          Row(
+    return Consumer<DashboardViewModel>(
+      builder: (context, viewModel, child) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Total Kegiatan',
-                  '24',
-                  Icons.event,
-                  Colors.blue,
+              Text(
+                'Ringkasan Kegiatan',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Bulan Ini',
-                  '8',
-                  Icons.calendar_today,
-                  Colors.green,
+              const SizedBox(height: 16),
+              
+              // Stats Cards
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Total Kegiatan',
+                      viewModel.getTotalKegiatan().toString(),
+                      Icons.event,
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Bulan Ini',
+                      viewModel.getKegiatanBulanIni().toString(),
+                      Icons.calendar_today,
+                      Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Akan Datang',
+                      viewModel.getKegiatanAkanDatang().toString(),
+                      Icons.schedule,
+                      Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Selesai',
+                      viewModel.getKegiatanSelesai().toString(),
+                      Icons.check_circle,
+                      Colors.purple,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 24),
+              Text(
+                'Kegiatan Terbaru',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 12),
+              
+              // Recent Activities
+              if (viewModel.getKegiatanTerbaru().isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: const Text('Belum ada kegiatan'),
+                )
+              else
+                ...viewModel.getKegiatanTerbaru().map((kegiatan) {
+                  return _buildActivityItem(
+                    kegiatan.namaKegiatan,
+                    kegiatan.tanggalKegiatan != null
+                        ? DateFormat('EEEE, dd MMMM yyyy', 'id_ID').format(kegiatan.tanggalKegiatan!)
+                        : 'Tanggal tidak ditentukan',
+                    Icons.event_note,
+                    Colors.blue,
+                  );
+                }).toList(),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  'Akan Datang',
-                  '5',
-                  Icons.schedule,
-                  Colors.orange,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  'Selesai',
-                  '19',
-                  Icons.check_circle,
-                  Colors.purple,
-                ),
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 24),
-          Text(
-            'Kegiatan Terbaru',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Recent Activities
-          _buildActivityItem(
-            'Kerja Bakti',
-            'Minggu, 27 Oktober 2025',
-            Icons.cleaning_services,
-            Colors.blue,
-          ),
-          _buildActivityItem(
-            'Rapat RT',
-            'Jumat, 25 Oktober 2025',
-            Icons.meeting_room,
-            Colors.green,
-          ),
-          _buildActivityItem(
-            'Posyandu',
-            'Rabu, 23 Oktober 2025',
-            Icons.medical_services,
-            Colors.red,
-          ),
-          _buildActivityItem(
-            'Arisan Warga',
-            'Senin, 21 Oktober 2025',
-            Icons.people,
-            Colors.purple,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildKeuanganTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ringkasan Keuangan',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Balance Card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.indigo[600]!, Colors.indigo[400]!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+    return Consumer<DashboardViewModel>(
+      builder: (context, viewModel, child) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Ringkasan Keuangan',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.indigo.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Saldo Kas RT',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
+              const SizedBox(height: 16),
+              
+              // Balance Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.indigo[600]!, Colors.indigo[400]!],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Rp 15.750.000',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Pemasukan',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Rp 18.500.000',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Pengeluaran',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            'Rp 2.750.000',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.indigo.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-              ],
-            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Saldo Kas RT',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      viewModel.formatCurrency(viewModel.saldoKas),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Pemasukan',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                viewModel.formatCurrency(viewModel.totalPemasukan),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Pengeluaran',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                viewModel.formatCurrency(viewModel.totalPengeluaran),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              Text(
+                'Statistik Keuangan',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              _buildFinanceItem(
+                'Total Pemasukan',
+                viewModel.formatCurrency(viewModel.totalPemasukan),
+                Icons.payments,
+                Colors.green,
+                'Dari iuran warga',
+              ),
+              _buildFinanceItem(
+                'Total Pengeluaran Kegiatan',
+                viewModel.formatCurrency(viewModel.totalPengeluaran),
+                Icons.shopping_cart,
+                Colors.red,
+                '${viewModel.getTotalKegiatan()} kegiatan',
+              ),
+              _buildFinanceItem(
+                'Saldo Tersedia',
+                viewModel.formatCurrency(viewModel.saldoKas),
+                Icons.account_balance_wallet,
+                viewModel.saldoKas >= 0 ? Colors.blue : Colors.red,
+                viewModel.saldoKas >= 0 ? 'Positif' : 'Negatif',
+              ),
+            ],
           ),
-          
-          const SizedBox(height: 24),
-          Text(
-            'Statistik Bulan Ini',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          _buildFinanceItem(
-            'Total Iuran Warga',
-            'Rp 12.000.000',
-            Icons.payments,
-            Colors.green,
-            '+15%',
-          ),
-          _buildFinanceItem(
-            'Tunggakan',
-            'Rp 1.500.000',
-            Icons.warning,
-            Colors.orange,
-            '3 Warga',
-          ),
-          _buildFinanceItem(
-            'Pengeluaran Operasional',
-            'Rp 2.750.000',
-            Icons.shopping_cart,
-            Colors.red,
-            '-8%',
-          ),
-          _buildFinanceItem(
-            'Dana Sosial',
-            'Rp 3.500.000',
-            Icons.volunteer_activism,
-            Colors.blue,
-            'Tersedia',
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

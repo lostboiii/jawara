@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:jawara/viewmodels/kegiatan_viewmodel.dart';
+import 'package:jawara/viewmodels/dashboard_viewmodel.dart';
 
 class CreateKegiatanPage extends StatefulWidget {
   const CreateKegiatanPage({super.key});
@@ -23,6 +24,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
       TextEditingController();
   final TextEditingController _deskripsiController = TextEditingController();
   final TextEditingController _tanggalController = TextEditingController();
+  final TextEditingController _anggaranController = TextEditingController();
 
   // Dropdown values
   String? _selectedKategori;
@@ -43,6 +45,7 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     _penanggungJawabController.dispose();
     _deskripsiController.dispose();
     _tanggalController.dispose();
+    _anggaranController.dispose();
     super.dispose();
   }
 
@@ -112,6 +115,13 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
                 'Deskripsi',
                 'Masukan Deskripsi Kegiatan',
                 _deskripsiController,
+              ),
+              const SizedBox(height: 16),
+              _buildTextField(
+                'Anggaran (Rp)',
+                'Masukan Jumlah Anggaran',
+                _anggaranController,
+                keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 32),
               SizedBox(
@@ -428,7 +438,8 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
     }
 
     try {
-      final viewModel = context.read<KegiatanViewModel>();
+      final kegiatanViewModel = context.read<KegiatanViewModel>();
+      final dashboardViewModel = context.read<DashboardViewModel>();
       
       // Convert tanggal dari dd/MM/yyyy ke DateTime
       DateTime? tanggalKegiatan;
@@ -441,7 +452,18 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
         }
       }
 
-      await viewModel.addKegiatan(
+      // Parse anggaran
+      double? anggaran;
+      if (_anggaranController.text.isNotEmpty) {
+        try {
+          anggaran = double.parse(_anggaranController.text);
+        } catch (e) {
+          debugPrint('Error parsing anggaran: $e');
+        }
+      }
+
+      // Simpan kegiatan tanpa anggaran (anggaran hanya untuk update dashboard)
+      await kegiatanViewModel.addKegiatan(
         nama: _namaController.text,
         kategori: _selectedKategori!,
         tanggal: tanggalKegiatan,
@@ -453,6 +475,11 @@ class _CreateKegiatanPageState extends State<CreateKegiatanPage> {
             ? _deskripsiController.text 
             : null,
       );
+
+      // Update dashboard dengan anggaran (temporary, tidak disimpan ke database)
+      if (anggaran != null && anggaran > 0) {
+        dashboardViewModel.addPengeluaranTemporary(anggaran);
+      }
 
       if (!mounted) return;
 
