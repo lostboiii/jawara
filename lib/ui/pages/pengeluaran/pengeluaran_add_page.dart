@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/models/pengeluaran_model.dart';
 import '../../../viewmodels/pengeluaran_viewmodel.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
 import '../../../data/repositories/pengeluaran_repository.dart';
 
 class PengeluaranAddPage extends StatefulWidget {
@@ -191,6 +192,10 @@ class _PengeluaranAddPageState extends State<PengeluaranAddPage> {
       }
 
       if (!mounted) return;
+
+      // Reload financial data di DashboardViewModel
+      final dashboardVM = Provider.of<DashboardViewModel>(context, listen: false);
+      await dashboardVM.loadFinancialData();
 
       await showDialog(
         context: context,

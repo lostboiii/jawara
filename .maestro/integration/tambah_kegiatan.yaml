@@ -37,13 +37,13 @@ appId: com.example.jawara
 
 # Input penanggung jawab
 - tapOn:
-    point: "50%,45%"
+    point: "50%,60%"
 - inputText: "John Doe"
 - hideKeyboard
 
 # Input deskripsi
 - tapOn:
-    point: "50%,50%"
+    point: "50%,70%"
 - inputText: "Ini adalah deskripsi kegiatan test dari Maestro"
 - hideKeyboard
 

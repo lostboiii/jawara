@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../data/repositories/tagih_iuran_repository.dart';
 import '../../../viewmodels/bayar_iuran_viewmodel.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
 
 class BayarIuranPage extends StatelessWidget {
   const BayarIuranPage({super.key, required this.tagihanId});
@@ -114,6 +115,10 @@ class _BayarIuranPageContentState extends State<_BayarIuranPageContent> {
       if (!mounted) return;
 
       if (success) {
+        // Reload financial data di DashboardViewModel
+        final dashboardVM = Provider.of<DashboardViewModel>(context, listen: false);
+        await dashboardVM.loadFinancialData();
+        
         showDialog(
           context: context,
           barrierDismissible: false,

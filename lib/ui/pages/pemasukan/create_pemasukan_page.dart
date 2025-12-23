@@ -5,7 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 import '../../../data/repositories/pemasukan_repository.dart';
+import '../../../viewmodels/dashboard_viewmodel.dart';
 
 class CreatePemasukanPage extends StatefulWidget {
   const CreatePemasukanPage({super.key});
@@ -522,6 +524,10 @@ class _CreatePemasukanPageState extends State<CreatePemasukanPage> {
       setState(() => _isLoading = false);
 
       if (!mounted) return;
+
+      // Reload financial data di DashboardViewModel
+      final dashboardVM = Provider.of<DashboardViewModel>(context, listen: false);
+      await dashboardVM.loadFinancialData();
 
       await showDialog(
         context: context,

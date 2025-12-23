@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/models/kegiatan_model.dart';
 import '../data/repositories/kegiatan_repository.dart';
 
@@ -12,11 +13,13 @@ class DashboardViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // Dashboard data
-  double _saldoKas = 15750000; // Initial balance
-  double _totalPemasukan = 18500000;
-  double _totalPengeluaran = 2750000;
-  double _pengeluaranTemporary = 0; // Pengeluaran temporary (tidak disimpan ke database)
+  // Dashboard data - akan di-update dari database
+  double _saldoKas = 0;
+  double _totalPemasukan = 0;
+  double _totalPengeluaran = 0;
+  double _pemasukanLain = 0;
+  double _iuranLunas = 0;
+  double _pengeluaranTemporary = 0; // Pengeluaran temporary dari anggaran kegiatan
 
   List<KegiatanModel> get kegiatanList => List.unmodifiable(_kegiatanList);
   bool get isLoading => _isLoading;
@@ -26,6 +29,8 @@ class DashboardViewModel extends ChangeNotifier {
   double get totalPemasukan => _totalPemasukan;
   double get totalPengeluaran => _totalPengeluaran + _pengeluaranTemporary;
   double get pengeluaranTemporary => _pengeluaranTemporary;
+  double get pemasukanLain => _pemasukanLain;
+  double get iuranLunas => _iuranLunas;
 
   Future<void> loadDashboardData() async {
     _setLoading(true);
@@ -35,8 +40,8 @@ class DashboardViewModel extends ChangeNotifier {
         ..clear()
         ..addAll(data);
 
-      // Recalculate totals based on kegiatan
-      _calculateTotals();
+      // Load financial data from database
+      await loadFinancialData();
       _errorMessage = null;
     } catch (e) {
       _errorMessage = e.toString();
@@ -45,11 +50,51 @@ class DashboardViewModel extends ChangeNotifier {
     }
   }
 
-  void _calculateTotals() {
-    // Hanya hitung dari kegiatan yang ada di database (anggaran diabaikan)
-    // Pengeluaran hanya dari database kegiatan saja
-    _totalPengeluaran = 2750000; // Static value atau bisa dihitung dari data lain
-    _updateSaldo();
+  Future<void> loadFinancialData() async {
+    try {
+      final supabase = Supabase.instance.client;
+
+      // Load pemasukan lain
+      final pemasukanResponse = await supabase
+          .from('pemasukan_lain')
+          .select('jumlah');
+      
+      double pemasukanLain = 0;
+      for (var item in pemasukanResponse) {
+        pemasukanLain += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load iuran yang sudah dibayar
+      final iuranResponse = await supabase
+          .from('tagih_iuran')
+          .select('jumlah')
+          .eq('status_tagihan', 'sudah_bayar');
+      
+      double iuranLunas = 0;
+      for (var item in iuranResponse) {
+        iuranLunas += (item['jumlah'] as num).toDouble();
+      }
+
+      // Load pengeluaran
+      final pengeluaranResponse = await supabase
+          .from('pengeluaran')
+          .select('jumlah');
+      
+      double pengeluaran = 0;
+      for (var item in pengeluaranResponse) {
+        pengeluaran += (item['jumlah'] as num).toDouble();
+      }
+
+      // Update values
+      _pemasukanLain = pemasukanLain;
+      _iuranLunas = iuranLunas;
+      _totalPemasukan = pemasukanLain + iuranLunas;
+      _totalPengeluaran = pengeluaran;
+      _updateSaldo();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading financial data: $e');
+    }
   }
 
   void _updateSaldo() {

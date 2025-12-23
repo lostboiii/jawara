@@ -30,6 +30,25 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
     super.initState();
     _loadData();
     _loadRecentTransaksi();
+    
+    // Listen untuk perubahan dari DashboardViewModel (misal: penambahan iuran/pengeluaran)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dashboardVM = Provider.of<DashboardViewModel>(context, listen: false);
+      dashboardVM.addListener(_onDashboardChanged);
+    });
+  }
+
+  @override
+  void dispose() {
+    final dashboardVM = Provider.of<DashboardViewModel>(context, listen: false);
+    dashboardVM.removeListener(_onDashboardChanged);
+    super.dispose();
+  }
+
+  void _onDashboardChanged() {
+    // Reload data saat ada perubahan dari DashboardViewModel
+    _loadData();
+    _loadRecentTransaksi();
   }
 
   Future<void> _loadRecentTransaksi() async {
@@ -285,7 +304,7 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
                                 Text(
                                   _isLoading 
                                     ? 'Memuat...' 
-                                    : dashboardVM.formatCurrency(dashboardVM.saldoKas),
+                                    : dashboardVM.formatCurrency(_saldo),
                                   style: GoogleFonts.inter(
                                     fontSize: 32,
                                     fontWeight: FontWeight.w700,
@@ -454,7 +473,7 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
                             Text(
                               _isLoading 
                                 ? '...' 
-                                : dashboardVM.formatCurrency(dashboardVM.totalPengeluaran),
+                                : dashboardVM.formatCurrency(_totalPengeluaran),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
@@ -510,7 +529,7 @@ class _HomeKeuanganPageState extends State<HomeKeuanganPage> {
                             Text(
                               _isLoading 
                                 ? '...' 
-                                : dashboardVM.formatCurrency(dashboardVM.totalPemasukan),
+                                : dashboardVM.formatCurrency(_totalPemasukan),
                               style: GoogleFonts.inter(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,

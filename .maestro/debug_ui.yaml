@@ -1,6 +1,0 @@
-appId: com.example.jawara
----
-- launchApp
-- extendedWaitUntil:
-    visible: ".*"
-    timeout: 10000

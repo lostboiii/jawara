@@ -1,0 +1,24 @@
+appId: com.example.jawara
+---
+# - tapOn:
+#     point: "50%,20%"
+# - inputText: "Test Channel"
+# - hideKeyboard
+# - tapOn:
+#     point: "50%,30%"
+# - inputText: "1234567890"
+# - hideKeyboard
+# - tapOn:
+#     point: "50%,40%"
+# - inputText: "John Smith"
+# - hideKeyboard
+# - tapOn:
+#     text: "Simpan Channel"
+
+    # Edit pengeluaran
+- tapOn:
+    point: "50%,30%"
+- inputText: "5"
+- hideKeyboard
+- tapOn:
+    text: "Simpan Perubahan"
