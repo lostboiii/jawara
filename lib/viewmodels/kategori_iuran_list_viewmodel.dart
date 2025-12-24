@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:jawara/data/repositories/iuran_repository.dart';
 
 class KategoriIuranListViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final IuranRepository _repository;
+
+  KategoriIuranListViewModel({IuranRepository? repository})
+      : _repository = repository ?? IuranRepository();
 
   List<Map<String, dynamic>> _kategoris = [];
   bool _isLoading = false;
@@ -19,15 +22,13 @@ class KategoriIuranListViewModel extends ChangeNotifier {
 
     try {
       debugPrint('🔍 Loading kategori iuran...');
-      final response = await _supabase
-          .from('kategori_iuran')
-          .select('id, nama_iuran, kategori_iuran')
-          .order('nama_iuran');
+      
+      final response = await _repository.getKategoriIuran();
 
       debugPrint('✅ Kategori loaded: ${response.length} items');
       debugPrint('📊 Data: $response');
       
-      _kategoris = List<Map<String, dynamic>>.from(response);
+      _kategoris = response;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
