@@ -1,0 +1,21 @@
+appId: com.example.jawara
+---
+- assertVisible: "Masuk"
+- tapOn: 
+    text: "Masuk"
+- tapOn: 
+    text: "Masukkan Email"
+    optional: true
+- inputText: "dawoaw1212@gmail.com"
+- tapOn:
+    text: "Masukkan Kata Sandi" 
+    optional: true
+- inputText: "123123"
+- tapOn: "Masuk"
+
+- tapOn: "Lihat Semua"
+- assertVisible: "Laporan Keuangan"
+- tapOn: 
+    text: "Laporan Keuangan"
+- tapOn: "Keluar"
+ 

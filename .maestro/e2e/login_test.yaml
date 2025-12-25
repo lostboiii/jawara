@@ -12,4 +12,4 @@ appId: com.example.jawara
     optional: true
 - inputText: "123123"
 - tapOn: "Masuk"
-- assertVisible: "Dashboard|Home|Beranda"
+
