@@ -1,0 +1,107 @@
+appId: com.example.jawara
+---
+- assertVisible: "Masuk"
+
+- tapOn: 
+    text: "Masuk"
+
+- tapOn: 
+    text: "Masukkan Email"
+    optional: true
+
+- inputText: "dawoaw1212@gmail.com"
+
+- tapOn:
+    text: "Masukkan Kata Sandi" 
+    optional: true
+
+- inputText: "123123"
+
+- tapOn: "Masuk"
+
+- assertVisible: "Dashboard|Home|Beranda"
+
+- tapOn:
+    text: "Keuangan"
+
+- extendedWaitUntil:
+    visible: "Laporan Keuangan|Total Pemasukan"
+    timeout: 5000
+
+- assertVisible: "Laporan Keuangan"
+
+- tapOn:
+    point: "90%,15%"
+
+- extendedWaitUntil:
+    visible: "Filter|Terapkan"
+    timeout: 3000
+
+- tapOn:
+    text: "Dari Tanggal"
+    optional: true
+
+- tapOn:
+    point: "50%,40%"
+
+- tapOn:
+    text: "1"
+
+- tapOn:
+    text: "OKE"
+
+- tapOn:
+    text: "Sampai Tanggal"
+    optional: true
+
+- tapOn:
+    point: "50%,60%"
+
+- tapOn:
+    text: "31"
+
+- tapOn:
+    text: "OKE"
+
+- tapOn:
+    text: "Terapkan"
+
+- extendedWaitUntil:
+    visible: "Pemasukan|Pengeluaran"
+    timeout: 3000
+
+- assertVisible: "Total Pemasukan|Total Pengeluaran"
+
+- tapOn:
+    text: "Pemasukan"
+    optional: true
+
+- assertVisible: "Rp"
+
+- tapOn:
+    text: "Pengeluaran"
+    optional: true
+
+- assertVisible: "Rp"
+
+- scroll
+
+- back
+
+- tapOn:
+    point: "90%,10%"
+    optional: true
+
+- tapOn:
+    text: "Profil|Profile|Menu"
+    optional: true
+
+- tapOn:
+    text: "Keluar|Logout"
+    optional: true
+
+- tapOn:
+    text: "Ya|OK|Keluar"
+    optional: true
+
+- assertVisible: "Masuk"

@@ -1,0 +1,135 @@
+appId: com.example.jawara
+---
+- assertVisible: "Masuk"
+
+- tapOn: 
+    text: "Masuk"
+
+- tapOn: 
+    text: "Masukkan Email"
+    optional: true
+
+- inputText: "dawoaw1212@gmail.com"
+
+- tapOn:
+    text: "Masukkan Kata Sandi" 
+    optional: true
+
+- inputText: "123123"
+
+- tapOn: "Masuk"
+
+- assertVisible: "Dashboard|Home|Beranda"
+
+- tapOn: 
+    text: "Tambah Kegiatan"
+
+- extendedWaitUntil:
+    visible: "Simpan"
+
+- tapOn:
+    point: "50%,20%"
+- inputText: "Kegiatan Keuangan Test"
+- hideKeyboard
+
+- tapOn:
+    point: "50%,30%"
+- tapOn:
+    text: "pendidikan"
+
+- tapOn:
+    point: "50%,40%"
+- tapOn:
+    text: "OKE"
+
+- tapOn:
+    point: "50%,50%"
+- inputText: "Jakarta"
+- hideKeyboard
+
+- tapOn:
+    point: "50%,60%"
+- inputText: "Pak RT"
+- hideKeyboard
+
+- tapOn:
+    point: "50%,70%"
+- inputText: "Kegiatan untuk test E2E keuangan harian"
+- hideKeyboard
+
+- scroll
+
+- tapOn:
+    text: "Simpan"
+
+- assertVisible: "Berhasil!"
+
+- tapOn:
+    text: "OKE"
+
+- assertVisible: "Kegiatan Keuangan Test"
+
+- tapOn:
+    text: "Kegiatan Keuangan Test"
+
+- extendedWaitUntil:
+    visible: "Tambah Pengeluaran"
+    timeout: 5000
+
+- tapOn:
+    text: "Tambah Pengeluaran"
+
+- extendedWaitUntil:
+    visible: "Simpan"
+    timeout: 3000
+
+- tapOn:
+    point: "50%,20%"
+- inputText: "Beli Peralatan"
+- hideKeyboard
+
+- tapOn:
+    point: "50%,40%"
+- tapOn:
+    text: "Operasional"
+
+- tapOn:
+    point: "50%,50%"
+- inputText: "350000"
+- hideKeyboard
+
+- tapOn:
+    text: "Simpan"
+
+- assertVisible: "Berhasil!"
+- tapOn:
+    text: "OK"
+
+- assertVisible: "Beli Peralatan"
+- assertVisible: "Rp 350.000"
+
+- assertVisible: "Sisa Anggaran|Anggaran Tersisa"
+
+- scroll
+
+- assertVisible: "650.000|Rp 650.000"
+
+- back
+
+- tapOn:
+    point: "90%,10%"
+    optional: true
+
+- tapOn:
+    text: "Profil|Profile|Menu"
+    optional: true
+
+- tapOn:
+    text: "Keluar|Logout"
+    optional: true
+
+- tapOn:
+    text: "Ya|OK|Keluar"
+    optional: true
+
+- assertVisible: "Masuk"
