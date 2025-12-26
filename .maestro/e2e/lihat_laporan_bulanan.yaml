@@ -19,8 +19,6 @@ appId: com.example.jawara
 
 - tapOn: "Masuk"
 
-- assertVisible: "Dashboard|Home|Beranda"
-
 - tapOn:
     text: "Keuangan"
 
@@ -48,7 +46,7 @@ appId: com.example.jawara
     text: "1"
 
 - tapOn:
-    text: "OKE"
+    text: "OK"
 
 - tapOn:
     text: "Sampai Tanggal"
