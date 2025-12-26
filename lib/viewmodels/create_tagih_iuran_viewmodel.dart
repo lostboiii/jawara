@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:jawara/data/repositories/iuran_repository.dart';
 
 class CreateTagihIuranViewModel extends ChangeNotifier {
-  final _supabase = Supabase.instance.client;
+  final IuranRepository _repository;
+
+  CreateTagihIuranViewModel({IuranRepository? repository})
+      : _repository = repository ?? IuranRepository();
 
   List<Map<String, dynamic>> _kategoris = [];
   bool _isLoading = false;
@@ -19,12 +22,12 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
 
     try {
       debugPrint('🔍 Loading kategori for tagih iuran...');
-      final response = await _supabase
-          .from('kategori_iuran')
-          .select('id, nama_iuran, kategori_iuran');
+      
+      final response = await _repository.getKategoriIuran();
 
       debugPrint('✅ Loaded ${response.length} kategori');
-      _kategoris = List<Map<String, dynamic>>.from(response);
+      
+      _kategoris = response;
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -46,12 +49,11 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
 
     try {
       debugPrint('🔍 Loading keluarga for tagihan...');
-      // Load semua keluarga
-      final keluargaResponse = await _supabase.from('keluarga').select('id');
-      final keluargaList = List<Map<String, dynamic>>.from(keluargaResponse);
+      
+      final keluargaList = await _repository.getAllKeluargaId();
+      
       debugPrint('✅ Found ${keluargaList.length} keluarga');
 
-      // Buat tagihan untuk setiap keluarga
       final tagihanList = keluargaList.map((keluarga) {
         return {
           'kategori_id': kategoriId,
@@ -63,8 +65,10 @@ class CreateTagihIuranViewModel extends ChangeNotifier {
       }).toList();
 
       debugPrint('💾 Inserting ${tagihanList.length} tagihan to tagih_iuran table...');
-      // Insert batch
-      await _supabase.from('tagih_iuran').insert(tagihanList);
+      
+      if (tagihanList.isNotEmpty) {
+        await _repository.insertBatchTagihan(tagihanList);
+      }
 
       debugPrint('✅ Successfully created tagihan for all keluarga');
       _isLoading = false;
