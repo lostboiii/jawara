@@ -1,0 +1,82 @@
+appId: com.example.jawara
+---
+
+# ============================================================
+# LAUNCH APP
+# # ============================================================
+
+# ============================================================
+# LOGIN (STABIL DI SEMUA DEVICE)
+# ============================================================
+
+- assertVisible: "Masuk"
+- tapOn:
+    text: "Masuk"
+- extendedWaitUntil:
+    visible:
+      text: "Masukkan Email"
+    timeout: 5000
+- tapOn: 
+    text: "Masukkan Email"
+    optional: true
+- eraseText
+- inputText: "dawoaw1212@gmail.com"
+- hideKeyboard
+- tapOn:
+    text: "Masukkan Kata Sandi" 
+    optional: true
+- eraseText
+- inputText: "123123"
+- hideKeyboard
+
+- tapOn: "Masuk"
+
+
+# Pastikan login sukses
+- extendedWaitUntil:
+    visible:
+      text: "Beranda"
+    timeout: 10000
+
+- assertNotVisible:
+    text: "Login berhasil"
+
+# ============================================================
+# NAVIGASI KE KEUANGAN
+# ============================================================
+
+# Pastikan navbar tampil
+- assertVisible:
+    text: "Beranda"
+
+- tapOn:
+    point: "50%,89%"
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Keuangan"
+
+# ============================================================
+# NAVIGASI KE TAGIHAN
+# ============================================================
+
+- tapOn: "Tagih Iuran"
+- waitForAnimationToEnd
+
+- tapOn: "Kategori Iuran\nPilih Kategori Iuran"
+- waitForAnimationToEnd
+
+- tapOn: "iuran bulanan"
+- waitForAnimationToEnd
+
+- tapOn: "Jumlah\nMasukkan jumlah"
+- eraseText
+- inputText: "500000"
+- waitForAnimationToEnd
+- hideKeyboard
+
+- tapOn: "Tanggal Tagihan\ndd/mm/yyyy"
+- waitForAnimationToEnd
+- tapOn: "OKE"
+
+- tapOn: "Simpan"

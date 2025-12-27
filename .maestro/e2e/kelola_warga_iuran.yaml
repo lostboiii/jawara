@@ -1,0 +1,158 @@
+appId: com.example.jawara
+---
+
+# ============================================================
+# LAUNCH APP
+# # ============================================================
+
+# ============================================================
+# LOGIN (STABIL DI SEMUA DEVICE)
+# ============================================================
+
+- assertVisible: "Masuk"
+- tapOn:
+    text: "Masuk"
+- extendedWaitUntil:
+    visible:
+      text: "Masukkan Email"
+    timeout: 5000
+- tapOn: 
+    text: "Masukkan Email"
+    optional: true
+- eraseText
+- inputText: "dawoaw1212@gmail.com"
+- hideKeyboard
+- tapOn:
+    text: "Masukkan Kata Sandi" 
+    optional: true
+- eraseText
+- inputText: "123123"
+- hideKeyboard
+
+- tapOn: "Masuk"
+
+
+# Pastikan login sukses
+- extendedWaitUntil:
+    visible:
+      text: "Beranda"
+    timeout: 10000
+
+- assertNotVisible:
+    text: "Login berhasil"
+
+# ============================================================
+# NAVIGASI KE KEGIATAN (POINT FALLBACK)
+# ============================================================
+
+# Pastikan navbar tampil
+- assertVisible:
+    text: "Beranda"
+
+# Tap icon Kegiatan (navbar index 3)
+- tapOn:
+    point: "73%,89%"
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Kegiatan"
+
+# ============================================================
+# CREATE KEGIATAN (ANTI-CRASH)
+# ============================================================
+
+# Tap tambah kegiatan
+- tapOn:
+    point: "20%,85%"
+- waitForAnimationToEnd
+
+# Pastikan benar-benar di halaman create
+- assertVisible:
+    text: "Tambah Kegiatan"
+
+# ===============================
+# FORM INPUT
+# ===============================
+
+# Nama Kegiatan
+- tapOn: "Nama Kegiatan\nMasukan Nama Kegiatan"
+- eraseText
+- inputText: "Kegiatan E2E Test Maestro"
+- waitForAnimationToEnd
+
+- tapOn: "Kategori Kegiatan
+
+    Pilih Kategori Kegiatan"
+- waitForAnimationToEnd
+- tapOn: "Pendidikan"
+- waitForAnimationToEnd
+
+- tapOn: "Tanggal Kegiatan\ndd/mm/yyyy"
+- waitForAnimationToEnd
+- tapOn: "OKE"
+- waitForAnimationToEnd
+
+# swipe untuk field bawah
+- swipe:
+    direction: UP
+    duration: 300
+- waitForAnimationToEnd
+
+# Lokasi
+- tapOn: "Lokasi Kegiatan
+
+    Masukan Lokasi Kegiatan"
+- eraseText
+- inputText: "Balai Warga RT 01"
+- waitForAnimationToEnd
+
+# Penanggung jawab
+- tapOn: "Penanggung Jawab
+
+    Masukan Nama Penanggung Jawab"
+- eraseText
+- inputText: "John Doe"
+- waitForAnimationToEnd
+
+# swipe lagi
+- swipe:
+    direction: UP
+    duration: 300
+- waitForAnimationToEnd
+
+# Deskripsi
+- tapOn: "Deskripsi\nMasukan Deskripsi Kegiatan"
+- eraseText
+- inputText: "Deskripsi kegiatan testing E2E dengan Maestro"
+- waitForAnimationToEnd
+- hideKeyboard
+
+# Anggaran
+- tapOn: "Anggaran (Rp)
+
+    Masukan Jumlah Anggaran"
+- eraseText
+- inputText: "500000"
+- waitForAnimationToEnd
+- hideKeyboard
+
+
+# ===============================
+# SUBMIT
+# ===============================
+
+- tapOn:
+    text: "Simpan"
+
+- extendedWaitUntil:
+    visible:
+      text: "Berhasil!"
+    timeout: 5000
+
+- tapOn:
+    text: "OK"
+
+# ============================================================
+# FLOW SELESAI
+# ============================================================
+
